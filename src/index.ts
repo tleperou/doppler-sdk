@@ -4,54 +4,11 @@
 // const UNISWAP_V4_ADDRESS = '0x..';
 
 import { CurrencyAmount, Token } from "@uniswap/sdk-core";
-import { PoolKey } from "@uniswap/v4-sdk";
+import { MethodParameters, PoolKey } from "@uniswap/v4-sdk";
+import { DopplerSaltPredictionParams, DopplerCreateParams, AirlockParams } from "./types";
 
-/// TYPES
 
-export interface CommonParams {
-  /**
-   * The pool manager address
-   */
-  poolManager: string,
-  startingTime: bigint,
-  endingTime: bigint,
-  minimumProceeds: bigint,
-  maximumProceeds: bigint,
-  startingTick: number,
-  endingTick: number,
-  epochLength: bigint,
-  gamma: number,
-  isToken0: boolean,
-}
-
-export interface TokenParams {
-  name: string,
-  symbol: string,
-  // initialSupply: bigint,
-}
-
-export interface DopplerSaltPredictionParams extends CommonParams {
-  initialSupply: bigint,
-}
-
-export interface DopplerCreateParams extends DopplerSaltPredictionParams {
-  salt: bigint,
-}
-
-export interface AirlockParams extends TokenParams, DopplerCreateParams {
-  numeraire: string,
-  owner: string,
-  tokenFactory: string,
-  tokenData: string,
-  governanceFactory: string,
-  governanceData: string,
-  hookFactory: string,
-  hookData: string,
-  recipients: string[],
-  amounts: bigint[],
-}
-
-export function encodeDopplerPredictParams(params: DopplerSaltPredictionParams) {
+export function encodeDopplerPredictParams(params: DopplerSaltPredictionParams): MethodParameters {
   params; // to stop ts from complaining; remove later
   // TODO: get DopplerFactory ABI
   // TODO: encode the call using `predict` function
@@ -61,7 +18,7 @@ export function encodeDopplerPredictParams(params: DopplerSaltPredictionParams) 
   };
 }
 
-export function encodeDopplerCreateParams(params: DopplerCreateParams) {
+export function encodeDopplerCreateParams(params: DopplerCreateParams): MethodParameters {
   params; // to stop ts from complaining; remove later
   // TODO: get DopplerFactory ABI
   // TODO: encode the call using `create` function
@@ -71,7 +28,7 @@ export function encodeDopplerCreateParams(params: DopplerCreateParams) {
   };
 }
 
-export function encodeAirlockCreateParams(params: AirlockParams) {
+export function encodeAirlockCreateParams(params: AirlockParams): MethodParameters {
   params; // to stop ts from complaining; remove later
 
   // TODO: get AirlockFactory ABI
@@ -89,7 +46,7 @@ export function encodeAirlockCreateParams(params: AirlockParams) {
 
 // Initial version will simply use Quoter lens
 // TBD if we should use CurrencyAmount<Token> or split into amount and token
-export function encodeQuoteParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount<Token>) {
+export function encodeQuoteParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount<Token>): MethodParameters {
   /* from Quoter.sol, needs params: 
           PoolKey poolKey;
         bool zeroForOne;
@@ -105,11 +62,14 @@ export function encodeQuoteParams(poolKey: PoolKey, tokenInAmount: CurrencyAmoun
 
   // TODO: get Quoter lens ABI
   // TODO: encode the call
-  return;
+  return {
+    calldata: '0x',
+    value: '0x',
+  };
 }
 
 // TODO: not sure how to calculate this yet
-export function encodeQuoteAheadParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount<Token>, epochsAhead: number) {
+export function encodeQuoteAheadParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount<Token>, epochsAhead: number): MethodParameters {
   const zeroForOne = poolKey.currency0 === tokenInAmount.currency.address;
   const exactAmount = tokenInAmount.toExact(); // needs to convert to uint128
   const hookData = '0x';
@@ -118,10 +78,13 @@ export function encodeQuoteAheadParams(poolKey: PoolKey, tokenInAmount: Currency
   exactAmount; // to stop ts from complaining; remove later
   hookData; // to stop ts from complaining; remove later
   epochsAhead; // to stop ts from complaining; remove later
-  return;
+  return {
+    calldata: '0x',
+    value: '0x',
+  };
 }
 
-export function encodeSwapParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount<Token>, tokenOutAmount: CurrencyAmount<Token>) {
+export function encodeSwapParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount<Token>, tokenOutAmount: CurrencyAmount<Token>): MethodParameters {
   poolKey; // to stop ts from complaining; remove later
   tokenInAmount; // to stop ts from complaining; remove later
   tokenOutAmount; // to stop ts from complaining; remove later
@@ -134,7 +97,7 @@ export function encodeSwapParams(poolKey: PoolKey, tokenInAmount: CurrencyAmount
   };
 }
 
-export function encodeTotalTokensSold(poolKey: PoolKey) {
+export function encodeTotalTokensSold(poolKey: PoolKey): MethodParameters {
   const hookAddress = poolKey.hooks;
   hookAddress; // to stop ts from complaining; remove later
   // get hook abi
@@ -145,7 +108,7 @@ export function encodeTotalTokensSold(poolKey: PoolKey) {
   };
 }
 
-export function encodeTotalProceeds(poolKey: PoolKey) {
+export function encodeTotalProceeds(poolKey: PoolKey): MethodParameters {
   const hookAddress = poolKey.hooks;
   hookAddress; // to stop ts from complaining; remove later
   // get hook abi
