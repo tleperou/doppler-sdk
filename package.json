@@ -55,7 +55,6 @@
   "dependencies": {
     "@uniswap/sdk-core": "^5.9.0",
     "@uniswap/v4-sdk": "^1.10.4",
-    "jsbi": "^4.3.0",
     "viem": "^2.21.42"
   }
 }

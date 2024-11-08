@@ -1,13 +1,11 @@
-import JSBI from "jsbi"
-
 export class Position {
   public readonly tickLower: number
   public readonly tickUpper: number
-  public readonly liquidity: JSBI
+  public readonly liquidity: bigint 
   public readonly salt: number
   public readonly type: 'lowerSlug' | 'upperSlug' | `pdSlug${number}`
   
-  constructor(tickLower: number, tickUpper: number, liquidity: JSBI, salt: number, type: 'lowerSlug' | 'upperSlug' | `pdSlug${number}`) {
+  constructor(tickLower: number, tickUpper: number, liquidity: bigint, salt: number, type: 'lowerSlug' | 'upperSlug' | `pdSlug${number}`) {
     this.tickLower = tickLower
     this.tickUpper = tickUpper
     this.liquidity = liquidity
