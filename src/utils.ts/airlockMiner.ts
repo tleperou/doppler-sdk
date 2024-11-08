@@ -1,7 +1,6 @@
 import {
   Address,
   Hash,
-  Hex,
   keccak256,
   encodeAbiParameters,
   encodePacked,

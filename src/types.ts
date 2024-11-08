@@ -2,14 +2,14 @@ import { Address, Hash, Hex } from 'viem';
 import { Token } from '@uniswap/sdk-core';
 import { PoolKey } from '@uniswap/v4-sdk';
 
+// TODO: Add governance data
 export interface Doppler {
   address: Address;
   assetToken: Token;
   quoteToken: Token;
   hook: Address;
-  governance: Address;
   poolKey: PoolKey;
-  deployedAt: number;
+  deployedAt: bigint;
   deploymentTx: Hex;
 }
 
@@ -27,6 +27,7 @@ export interface DopplerState {
 
 export interface DeploymentConfig {
   salt: Hash;
+  dopplerAddress: Address;
   poolKey: PoolKey;
   token: TokenConfig;
   hook: HookConfig;
@@ -40,6 +41,8 @@ export interface TokenConfig {
 }
 
 export interface HookConfig {
+  assetToken: Token;
+  quoteToken: Token;
   startTime: number; // in seconds
   endTime: number; // in seconds
   epochLength: number; // in seconds

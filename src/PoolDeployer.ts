@@ -1,18 +1,24 @@
 import { DopplerPool } from './entities';
 import { DeploymentConfig, Doppler } from './types';
-import { ContractManager } from './ContractManager';
 import { Clients } from './DopplerSDK';
-import { encodePacked, WalletClient } from 'viem';
-import { getPoolKey } from '@uniswap/v4-sdk';
-import { Token } from '@uniswap/sdk-core';
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  decodeFunctionResult,
+  encodePacked,
+  getContract,
+  toBytes,
+} from 'viem';
+import { AddressProvider } from './AddressProvider';
+import { AirlockABI } from './abis/AirlockABI';
 
 export class PoolDeployer {
   private readonly clients: Clients;
-  private readonly contracts: ContractManager;
+  private readonly addressProvider: AddressProvider;
 
-  constructor(clients: Clients, contracts: ContractManager) {
+  constructor(clients: Clients, addressProvider: AddressProvider) {
     this.clients = clients;
-    this.contracts = contracts;
+    this.addressProvider = addressProvider;
   }
 
   async deploy(
@@ -25,9 +31,14 @@ export class PoolDeployer {
       );
     }
 
-    const address = wallet.account.address;
+    const {
+      airlock,
+      tokenFactory,
+      governanceFactory,
+      dopplerFactory,
+    } = this.addressProvider.getAddresses();
 
-    const hookFactoryData = encodePacked(
+    const dopplerFactoryData = encodePacked(
       [
         'uint256',
         'uint256',
@@ -52,20 +63,68 @@ export class PoolDeployer {
         config.hook.gamma,
         false,
         BigInt(config.hook.numPdSlugs),
-        this.contracts.airlock().address,
+        airlock,
       ]
     );
 
-    const result = await this.contracts
-      .airlock()
-      .simulate.create(
-        [
-          config.token.name,
-          config.token.symbol,
-          config.token.totalSupply,
-          config.token.totalSupply,
-        ],
-        { account: address }
-      );
+    const airlockContract = getContract({
+      address: airlock,
+      abi: AirlockABI,
+      client: { public: this.clients.public, wallet: wallet },
+    });
+
+    const createArgs = [
+      config.token.name,
+      config.token.symbol,
+      config.token.totalSupply,
+      config.token.totalSupply,
+      config.poolKey,
+      [],
+      [],
+      tokenFactory,
+      toBytes(''),
+      governanceFactory,
+      toBytes(''),
+      dopplerFactory,
+      dopplerFactoryData,
+      airlock,
+      config.salt,
+    ];
+
+    try {
+      await airlockContract.simulate.create(createArgs);
+    } catch (err) {
+      if (err instanceof BaseError) {
+        const revertError = err.walk(
+          err => err instanceof ContractFunctionRevertedError
+        );
+        if (revertError instanceof ContractFunctionRevertedError) {
+          const errorName = revertError.data?.errorName ?? '';
+          if (errorName === 'DUPLICATE_POOL_KEY') {
+            throw new Error('Pool key already exists');
+          }
+        }
+      }
+    }
+    const receipt = await airlockContract.write.create(createArgs);
+    const { blockNumber } = await this.clients.public.getTransactionReceipt({
+      hash: receipt,
+    });
+    const { timestamp } = await this.clients.public.getBlock({
+      blockNumber,
+    });
+
+    const doppler: Doppler = {
+      address: config.dopplerAddress,
+      assetToken: config.hook.assetToken,
+      quoteToken: config.hook.quoteToken,
+      hook: config.dopplerAddress,
+      poolKey: config.poolKey,
+      deployedAt: timestamp,
+      deploymentTx: receipt,
+    };
+
+    const dopplerPool = new DopplerPool(doppler, this.clients);
+    return { doppler, pool: dopplerPool };
   }
 }

@@ -130,12 +130,15 @@ export class DopplerConfigBuilder {
     return {
       salt,
       poolKey,
+      dopplerAddress: hookAddress,
       token: {
         name: params.name,
         symbol: params.symbol,
         totalSupply: params.totalSupply,
       },
       hook: {
+        assetToken: token,
+        quoteToken: eth,
         startTime: startTime,
         endTime: endTime,
         epochLength: params.epochLength,

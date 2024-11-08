@@ -1,22 +1,21 @@
-import { PublicClient } from "viem"
-import { Doppler, DopplerState } from "../types"
+import { Doppler } from '../types';
+import { Clients } from '../DopplerSDK';
 
 export class DopplerPool {
-  private readonly doppler: Doppler
-  
-  private readonly client: PublicClient
+  private readonly doppler: Doppler;
+  private readonly clients: Clients;
 
-  constructor(doppler: Doppler, client: PublicClient) {
-    this.doppler = doppler
-    this.client = client
+  constructor(doppler: Doppler, clients: Clients) {
+    this.doppler = doppler;
+    this.clients = clients;
   }
 
-//   async getState(): Promise<DopplerState> {
-//   }
+  //   async getState(): Promise<DopplerState> {
+  //   }
 
-//   async getPositions(): Promise<Position[]> {
-//   }
+  //   async getPositions(): Promise<Position[]> {
+  //   }
 
-//   async canMigrate(): Promise<boolean> {
-//   }
+  //   async canMigrate(): Promise<boolean> {
+  //   }
 }
