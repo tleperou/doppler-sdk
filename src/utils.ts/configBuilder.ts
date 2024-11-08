@@ -1,0 +1,249 @@
+import { Price, Token } from '@uniswap/sdk-core';
+import { priceToClosestTick, Pool } from '@uniswap/v4-sdk';
+import { DeploymentConfig } from '../types';
+import { MineParams, mine } from './airlockMiner';
+import { AddressProvider } from '../AddressProvider';
+
+// this maps onto the tick range, startingTick -> endingTick
+export interface PriceRange {
+  startPrice: Price<Token, Token>;
+  endPrice: Price<Token, Token>;
+}
+
+export interface DopplerConfigParams {
+  // Token details
+  name: string;
+  symbol: string;
+  totalSupply: bigint;
+  numTokensToSell: bigint;
+
+  // Time parameters
+  startTimeOffset: number; // in days from now
+  duration: number; // in days
+  epochLength: number; // in seconds
+
+  // Price parameters
+  priceRange: PriceRange;
+  tickSpacing: number;
+  fee: number; // In bips
+
+  // Sale parameters
+  minProceeds: bigint;
+  maxProceeds: bigint;
+  numPdSlugs?: number; // uses a default if not set
+}
+
+export class DopplerConfigBuilder {
+  private static readonly MAX_TICK_SPACING = 30;
+  private static readonly DEFAULT_PD_SLUGS = 5;
+
+  /**
+   * Validates and builds pool configuration from user-friendly parameters
+   */
+  public static buildConfig(
+    params: DopplerConfigParams,
+    addressProvider: AddressProvider
+  ): DeploymentConfig {
+    this.validateBasicParams(params);
+
+    const { startTick, endTick } = this.computeTicks(
+      params.priceRange,
+      params.tickSpacing
+    );
+
+    const gamma = this.computeOptimalGamma(
+      startTick,
+      endTick,
+      params.duration,
+      params.epochLength
+    );
+
+    const now = Math.floor(Date.now() / 1000);
+    const startTime = now + params.startTimeOffset * 24 * 60 * 60;
+    const endTime = startTime + params.duration * 24 * 60 * 60;
+
+    const totalDuration = endTime - startTime;
+    if (totalDuration % params.epochLength !== 0) {
+      throw new Error('Epoch length must divide total duration evenly');
+    }
+
+    if (gamma % params.tickSpacing !== 0) {
+      throw new Error('Computed gamma must be divisible by tick spacing');
+    }
+
+    const {
+      tokenFactory,
+      dopplerFactory,
+      poolManager,
+      airlock,
+    } = addressProvider.getAddresses();
+
+    const mineParams: MineParams = {
+      poolManager,
+      numTokensToSell: params.numTokensToSell,
+      minTick: startTick,
+      maxTick: endTick,
+      airlock,
+      name: params.name,
+      symbol: params.symbol,
+      initialSupply: params.totalSupply,
+      numeraire: '0x0000000000000000000000000000000000000000',
+      startingTime: BigInt(startTime),
+      endingTime: BigInt(endTime),
+      minimumProceeds: params.minProceeds,
+      maximumProceeds: params.maxProceeds,
+      epochLength: BigInt(params.epochLength),
+      gamma,
+      numPDSlugs: BigInt(params.numPdSlugs ?? this.DEFAULT_PD_SLUGS),
+    };
+
+    const [salt, hookAddress, tokenAddress] = mine(
+      tokenFactory,
+      dopplerFactory,
+      mineParams
+    );
+
+    const token = new Token(
+      addressProvider.getChainId(),
+      tokenAddress,
+      18,
+      params.name,
+      params.symbol
+    );
+
+    const eth = new Token(
+      addressProvider.getChainId(),
+      '0x0000000000000000000000000000000000000000',
+      18,
+      'ETH',
+      'Ether'
+    );
+
+    const poolKey = Pool.getPoolKey(
+      token,
+      eth,
+      params.fee,
+      params.tickSpacing,
+      hookAddress
+    );
+
+    return {
+      salt,
+      poolKey,
+      dopplerAddress: hookAddress,
+      token: {
+        name: params.name,
+        symbol: params.symbol,
+        totalSupply: params.totalSupply,
+      },
+      hook: {
+        assetToken: token,
+        quoteToken: eth,
+        startTime: startTime,
+        endTime: endTime,
+        epochLength: params.epochLength,
+        startTick,
+        endTick,
+        gamma,
+        maxProceeds: params.maxProceeds,
+        minProceeds: params.minProceeds,
+        numTokensToSell: params.numTokensToSell,
+        numPdSlugs: params.numPdSlugs ?? DopplerConfigBuilder.DEFAULT_PD_SLUGS,
+      },
+      pool: {
+        tickSpacing: params.tickSpacing,
+        fee: params.fee,
+      },
+    };
+  }
+
+  // Converts price range to tick range, ensuring alignment with tick spacing
+  private static computeTicks(
+    priceRange: PriceRange,
+    tickSpacing: number
+  ): { startTick: number; endTick: number } {
+    // Convert prices to sqrt price X96
+    let startTick = priceToClosestTick(priceRange.startPrice);
+    let endTick = priceToClosestTick(priceRange.endPrice);
+
+    // Align to tick spacing
+    startTick = Math.floor(startTick / tickSpacing) * tickSpacing;
+    endTick = Math.floor(endTick / tickSpacing) * tickSpacing;
+
+    // Validate tick range
+    if (startTick === endTick) {
+      throw new Error('Start and end prices must result in different ticks');
+    }
+
+    return { startTick, endTick };
+  }
+
+  // Computes optimal gamma parameter based on price range and time parameters
+  private static computeOptimalGamma(
+    startTick: number,
+    endTick: number,
+    durationDays: number,
+    epochLength: number
+  ): number {
+    // Calculate total number of epochs
+    const totalEpochs = (durationDays * 24 * 60 * 60) / epochLength;
+
+    // Calculate required tick movement per epoch to cover the range
+    const tickDelta = Math.abs(endTick - startTick);
+    const gammaRaw = Math.ceil(tickDelta / totalEpochs);
+
+    // Ensure gamma is at least 1 tick
+    return Math.max(1, gammaRaw);
+  }
+
+  // Converts decimal price to sqrt price X96 format
+  private static priceToSqrtPriceX96(price: Price<Token, Token>): bigint {
+    return BigInt(price.quotient.toString());
+  }
+
+  // Validates basic parameters
+  private static validateBasicParams(params: DopplerConfigParams) {
+    // Validate tick spacing
+    if (params.tickSpacing > this.MAX_TICK_SPACING) {
+      throw new Error(`Tick spacing cannot exceed ${this.MAX_TICK_SPACING}`);
+    }
+
+    // Validate time parameters
+    if (params.startTimeOffset < 0) {
+      throw new Error('Start time offset must be positive');
+    }
+    if (params.duration <= 0) {
+      throw new Error('Duration must be positive');
+    }
+    if (params.epochLength <= 0) {
+      throw new Error('Epoch length must be positive');
+    }
+
+    // Validate proceeds
+    if (params.maxProceeds < params.minProceeds) {
+      throw new Error('Maximum proceeds must be greater than minimum proceeds');
+    }
+
+    // Validate price range
+    if (
+      params.priceRange.startPrice.quotient.toString() === '0' ||
+      params.priceRange.endPrice.quotient.toString() === '0'
+    ) {
+      throw new Error('Prices must be positive');
+    }
+    if (
+      params.priceRange.startPrice.quotient ===
+      params.priceRange.endPrice.quotient
+    ) {
+      throw new Error('Start and end prices must be different');
+    }
+  }
+
+  // Helper to suggest optimal epoch length based on duration
+  public static suggestEpochLength(durationDays: number): number {
+    if (durationDays > 30) return 2 * 60 * 60; // 2 hours
+    if (durationDays > 7) return 1 * 60 * 60; // 1 hour
+    if (durationDays > 1) return 1 * 60 * 30; // 30 minutes
+    return 1 * 60 * 20; // 20 minutes
+  }
+}
