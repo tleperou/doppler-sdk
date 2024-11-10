@@ -1,6 +1,5 @@
 import { Address, PublicClient } from 'viem';
-import { DopplerPool } from './entities';
-import { Token } from '@uniswap/sdk-core';
+import { Doppler } from './types';
 import { PoolDeployer } from './PoolDeployer';
 import { DeploymentConfig } from './types';
 
@@ -13,25 +12,25 @@ export class DopplerRegistry {
     this.chainId = chainId;
   }
 
-  public async addDoppler(deployment: DopplerDeployment) {
+  public async addDoppler(deployment: Doppler) {
     const stored = this.getStoredDopplers();
     stored[this.chainId] = stored[this.chainId] || {};
-    stored[this.chainId][deployment.pool] = deployment;
+    stored[this.chainId][deployment.address] = deployment;
     this.storeDopplers(stored);
   }
 
-  public getDoppler(poolAddress: Address): DopplerDeployment | undefined {
+  public getDoppler(poolAddress: Address): Doppler | undefined {
     const stored = this.getStoredDopplers();
     return stored[this.chainId]?.[poolAddress];
   }
 
-  public getAllDopplers(): DopplerDeployment[] {
+  public getAllDopplers(): Doppler[] {
     const stored = this.getStoredDopplers();
     return Object.values(stored[this.chainId] || {});
   }
 
   private getStoredDopplers(): {
-    [chainId: number]: { [poolAddress: string]: DopplerDeployment };
+    [chainId: number]: { [poolAddress: string]: Doppler };
   } {
     if (typeof localStorage === 'undefined') return {};
 
@@ -40,7 +39,7 @@ export class DopplerRegistry {
   }
 
   private storeDopplers(dopplers: {
-    [chainId: number]: { [poolAddress: string]: DopplerDeployment };
+    [chainId: number]: { [poolAddress: string]: Doppler };
   }) {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(
@@ -63,16 +62,16 @@ export class DopplerDeployer {
     this.registry = new DopplerRegistry(client.chain?.id ?? 1);
   }
 
-  async deploy(config: DeploymentConfig): Promise<DopplerPool> {
+  async deploy(config: DeploymentConfig): Promise<Doppler> {
     const { doppler, pool } = await this.deployer.deploy(config);
 
     // Save deployment info
     await this.registry.addDoppler(doppler);
 
-    return pool;
+    return doppler;
   }
 
-  getDeployedPools(): DopplerDeployment[] {
+  getDeployedPools(): Doppler[] {
     return this.registry.getAllDopplers();
   }
 }
