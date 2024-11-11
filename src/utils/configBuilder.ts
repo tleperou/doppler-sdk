@@ -1,9 +1,8 @@
 import { CurrencyAmount, Price, Token } from '@uniswap/sdk-core';
 import { priceToClosestTick, Pool } from '@uniswap/v4-sdk';
-import { parseEther } from 'viem/utils';
 import { DeploymentConfig } from '../types';
 import { MineParams, mine } from './airlockMiner';
-import { AddressProvider } from '../AddressProvider';
+import { DopplerAddressProvider } from '../AddressProvider';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -43,7 +42,7 @@ export class DopplerConfigBuilder {
    */
   public static buildConfig(
     params: DopplerConfigParams,
-    addressProvider: AddressProvider
+    addressProvider: DopplerAddressProvider
   ): DeploymentConfig {
     this.validateBasicParams(params);
 
@@ -98,7 +97,7 @@ export class DopplerConfigBuilder {
       numPDSlugs: BigInt(params.numPdSlugs ?? this.DEFAULT_PD_SLUGS),
     };
 
-    const [salt, hookAddress, tokenAddress] = mine(
+    const [salt, dopplerAddress, tokenAddress] = mine(
       tokenFactory,
       dopplerFactory,
       mineParams
@@ -125,13 +124,13 @@ export class DopplerConfigBuilder {
       eth,
       params.fee,
       params.tickSpacing,
-      hookAddress
+      dopplerAddress
     );
 
     return {
       salt,
       poolKey,
-      dopplerAddress: hookAddress,
+      dopplerAddress,
       token: {
         name: params.name,
         symbol: params.symbol,

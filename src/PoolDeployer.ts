@@ -1,22 +1,53 @@
 import { DopplerPool } from './entities';
 import { DeploymentConfig, Doppler } from './types';
-import { Clients } from './DopplerSDK';
+import { DopplerClients } from './DopplerSDK';
 import {
   BaseError,
   ContractFunctionRevertedError,
-  decodeFunctionResult,
   encodePacked,
   getContract,
   toBytes,
 } from 'viem';
-import { AddressProvider } from './AddressProvider';
+import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
 
-export class PoolDeployer {
-  private readonly clients: Clients;
-  private readonly addressProvider: AddressProvider;
+// this maps onto the tick range, startingTick -> endingTick
+export interface PriceRange {
+  startPrice: number;
+  endPrice: number;
+}
 
-  constructor(clients: Clients, addressProvider: AddressProvider) {
+export interface DopplerConfigParams {
+  // Token details
+  name: string;
+  symbol: string;
+  totalSupply: bigint;
+  numTokensToSell: bigint;
+
+  // Time parameters
+  startTimeOffset: number; // in days from now
+  duration: number; // in days
+  epochLength: number; // in seconds
+
+  // Price parameters
+  priceRange: PriceRange;
+  tickSpacing: number;
+  fee: number; // In bips
+
+  // Sale parameters
+  minProceeds: bigint;
+  maxProceeds: bigint;
+  numPdSlugs?: number; // uses a default if not set
+}
+
+export class PoolDeployer {
+  private readonly clients: DopplerClients;
+  private readonly addressProvider: DopplerAddressProvider;
+
+  constructor(
+    clients: DopplerClients,
+    addressProvider: DopplerAddressProvider
+  ) {
     this.clients = clients;
     this.addressProvider = addressProvider;
   }

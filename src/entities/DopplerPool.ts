@@ -1,11 +1,11 @@
 import { Doppler } from '../types';
-import { Clients } from '../DopplerSDK';
+import { DopplerClients } from '../DopplerSDK';
 
 export class DopplerPool {
   private readonly doppler: Doppler;
-  private readonly clients: Clients;
+  private readonly clients: DopplerClients;
 
-  constructor(doppler: Doppler, clients: Clients) {
+  constructor(doppler: Doppler, clients: DopplerClients) {
     this.doppler = doppler;
     this.clients = clients;
   }
