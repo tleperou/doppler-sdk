@@ -59,6 +59,9 @@ export class DopplerConfigBuilder {
       params.epochLength,
       params.tickSpacing
     );
+    console.log('startTick', startTick);
+    console.log('endTick', endTick);
+    console.log('gamma', gamma);
 
     const now = Math.floor(Date.now() / 1000);
     const startTime = now + params.startTimeOffset * 24 * 60 * 60;

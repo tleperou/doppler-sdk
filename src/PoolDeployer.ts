@@ -68,6 +68,7 @@ export class PoolDeployer {
       tokenFactory,
       governanceFactory,
       dopplerFactory,
+      migrator,
     } = this.addressProvider.getAddresses();
 
     const dopplerFactoryData = encodePacked(
@@ -89,10 +90,14 @@ export class PoolDeployer {
         config.hook.maxProceeds,
         BigInt(config.hook.startTime),
         BigInt(config.hook.endTime),
-        config.hook.startTick,
-        config.hook.endTick,
-        BigInt(config.hook.epochLength),
-        config.hook.gamma,
+        // config.hook.startTick,
+        1600,
+        // config.hook.endTick,
+        171200,
+        // BigInt(config.hook.epochLength),
+        BigInt(400),
+        // config.hook.gamma,
+        800,
         false,
         BigInt(config.hook.numPdSlugs),
         airlock,
@@ -119,29 +124,26 @@ export class PoolDeployer {
       toHex(''),
       dopplerFactory,
       dopplerFactoryData,
-      airlock,
+      migrator,
       config.salt,
     ];
 
-    // try {
-    //   const receipt = await airlockContract.simulate.create(createArgs);
-    //   console.log('receipt', receipt);
-    // } catch (err) {
-    //   if (err instanceof BaseError) {
-    //     const revertError = err.walk(
-    //       err => err instanceof ContractFunctionRevertedError
-    //     );
-    //     if (revertError instanceof ContractFunctionRevertedError) {
-    //       const errorName = revertError.data?.errorName ?? '';
-    //       if (errorName === 'DUPLICATE_POOL_KEY') {
-    //         throw new Error('Pool key already exists');
-    //       }
-    //     }
-    //   }
-    // }
-    console.log('createArgs', createArgs);
+    try {
+      await airlockContract.simulate.create(createArgs);
+    } catch (err) {
+      if (err instanceof BaseError) {
+        const revertError = err.walk(
+          err => err instanceof ContractFunctionRevertedError
+        );
+        if (revertError instanceof ContractFunctionRevertedError) {
+          const errorName = revertError.data?.errorName ?? '';
+          if (errorName === 'DUPLICATE_POOL_KEY') {
+            throw new Error('Pool key already exists');
+          }
+        }
+      }
+    }
     const receipt = await airlockContract.write.create(createArgs);
-    console.log('receipt', receipt);
     const { blockNumber } = await this.clients.public.getTransactionReceipt({
       hash: receipt,
     });

@@ -16,19 +16,19 @@ describe('Doppler Pool Deployment', () => {
     const configParams: DopplerConfigParams = {
       name: 'Test Token',
       symbol: 'TEST',
-      totalSupply: parseEther('1000000'),
-      numTokensToSell: parseEther('100000'),
+      totalSupply: parseEther('1000'),
+      numTokensToSell: parseEther('1000'),
       startTimeOffset: 1,
-      duration: 1,
-      epochLength: 100,
+      duration: 3,
+      epochLength: 400,
       priceRange: {
-        startPrice: 0.001,
-        endPrice: 0.0005,
+        startPrice: 0.1,
+        endPrice: 0.0001,
       },
-      tickSpacing: 10,
+      tickSpacing: 8,
       fee: 500,
-      minProceeds: parseEther('10'),
-      maxProceeds: parseEther('1000'),
+      minProceeds: parseEther('100'),
+      maxProceeds: parseEther('600'),
     };
 
     const config = DopplerConfigBuilder.buildConfig(
