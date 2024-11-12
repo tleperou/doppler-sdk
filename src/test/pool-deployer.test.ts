@@ -13,11 +13,13 @@ describe('Doppler Pool Deployment', () => {
   });
 
   it('should deploy a new Doppler pool', async () => {
+    const block = await testEnv.publicClient.getBlock();
     const configParams: DopplerConfigParams = {
-      name: 'Test Token',
-      symbol: 'TEST',
+      name: 'Gud Coin',
+      symbol: 'GUD',
       totalSupply: parseEther('1000'),
       numTokensToSell: parseEther('1000'),
+      blockTimestamp: Number(block.timestamp),
       startTimeOffset: 1,
       duration: 3,
       epochLength: 400,
@@ -26,7 +28,7 @@ describe('Doppler Pool Deployment', () => {
         endPrice: 0.0001,
       },
       tickSpacing: 8,
-      fee: 500,
+      fee: 300,
       minProceeds: parseEther('100'),
       maxProceeds: parseEther('600'),
     };

@@ -5,7 +5,11 @@ import {
   encodeAbiParameters,
   encodePacked,
   getAddress,
+  fromHex,
+  Hex,
 } from 'viem';
+import { DopplerBytecode } from '../abis/DopplerABI';
+import { DERC20Bytecode } from '../abis/DERC20ABI';
 
 const FLAG_MASK = BigInt(0x3fff);
 
@@ -55,12 +59,28 @@ export function mine(
 ): [Hash, Address, Address] {
   const isToken0 =
     params.numeraire !== '0x0000000000000000000000000000000000000000';
+  console.log('flags', flags);
+
+  console.log('params.numeraire', params.numeraire);
+  console.log('params.poolManager', params.poolManager);
+  console.log('params.numTokensToSell', params.numTokensToSell);
+  console.log('params.minimumProceeds', params.minimumProceeds);
+  console.log('params.maximumProceeds', params.maximumProceeds);
+  console.log('params.startingTime', params.startingTime);
+  console.log('params.endingTime', params.endingTime);
+  console.log('params.minTick', params.minTick);
+  console.log('params.maxTick', params.maxTick);
+  console.log('params.epochLength', params.epochLength);
+  console.log('params.gamma', params.gamma);
+  console.log('isToken0', isToken0);
+  console.log('params.numPDSlugs', params.numPDSlugs);
+  console.log('params.airlock', params.airlock);
 
   const hookInitHash = keccak256(
     encodePacked(
       ['bytes', 'bytes'],
       [
-        '0x...', // Doppler contract creation code would go here
+        DopplerBytecode.object as Hex,
         encodeAbiParameters(
           [
             { type: 'address' },
@@ -101,7 +121,7 @@ export function mine(
     encodePacked(
       ['bytes', 'bytes'],
       [
-        '0x...', // DERC20 contract creation code would go here
+        DERC20Bytecode.object as Hex,
         encodeAbiParameters(
           [
             { type: 'string' },
@@ -121,11 +141,12 @@ export function mine(
       ]
     )
   );
-
   for (let salt = BigInt(0); salt < BigInt(1_000_000); salt++) {
     const saltBytes = `0x${salt.toString(16).padStart(64, '0')}` as Hash;
     const hook = computeCreate2Address(saltBytes, hookInitHash, hookFactory);
     const token = computeCreate2Address(saltBytes, tokenInitHash, tokenFactory);
+    console.log('hook', hook);
+    console.log('token', token);
 
     const hookBigInt = BigInt(hook);
     const tokenBigInt = BigInt(token);
@@ -136,6 +157,11 @@ export function mine(
       ((isToken0 && tokenBigInt < numeraireBigInt) ||
         (!isToken0 && tokenBigInt > numeraireBigInt))
     ) {
+      console.log('found');
+      console.log('hookInitHash', hookInitHash);
+      console.log('tokenInitHash', tokenInitHash);
+      console.log('hook', hook);
+      console.log('token', token);
       return [saltBytes, hook, token];
     }
   }

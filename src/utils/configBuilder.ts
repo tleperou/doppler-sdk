@@ -19,6 +19,7 @@ export interface DopplerConfigParams {
   numTokensToSell: bigint;
 
   // Time parameters
+  blockTimestamp: number;
   startTimeOffset: number; // in days from now
   duration: number; // in days
   epochLength: number; // in seconds
@@ -47,25 +48,27 @@ export class DopplerConfigBuilder {
   ): DeploymentConfig {
     this.validateBasicParams(params);
 
-    const { startTick, endTick } = this.computeTicks(
-      params.priceRange,
-      params.tickSpacing
-    );
+    // const { startTick, endTick } = this.computeTicks(
+    //   params.priceRange,
+    //   params.tickSpacing
+    // );
 
-    const gamma = this.computeOptimalGamma(
-      startTick,
-      endTick,
-      params.duration,
-      params.epochLength,
-      params.tickSpacing
-    );
-    console.log('startTick', startTick);
-    console.log('endTick', endTick);
-    console.log('gamma', gamma);
+    const startTick = 1600;
+    const endTick = 171200;
 
-    const now = Math.floor(Date.now() / 1000);
-    const startTime = now + params.startTimeOffset * 24 * 60 * 60;
-    const endTime = startTime + params.duration * 24 * 60 * 60;
+    // const gamma = this.computeOptimalGamma(
+    //   startTick,
+    //   endTick,
+    //   params.duration,
+    //   params.epochLength,
+    //   params.tickSpacing
+    // );
+
+    const gamma = 800;
+
+    const startTime =
+      params.blockTimestamp + params.startTimeOffset * 24 * 60 * 60;
+    const endTime = params.blockTimestamp + params.duration * 24 * 60 * 60;
 
     const totalDuration = endTime - startTime;
     if (totalDuration % params.epochLength !== 0) {
@@ -101,12 +104,16 @@ export class DopplerConfigBuilder {
       gamma,
       numPDSlugs: BigInt(params.numPdSlugs ?? this.DEFAULT_PD_SLUGS),
     };
+    console.log('mineParams', mineParams);
 
     const [salt, dopplerAddress, tokenAddress] = mine(
       tokenFactory,
       dopplerFactory,
       mineParams
     );
+    console.log('salt', salt);
+    console.log('dopplerAddress', dopplerAddress);
+    console.log('tokenAddress', tokenAddress);
 
     const token = new Token(
       addressProvider.getChainId(),
@@ -131,6 +138,7 @@ export class DopplerConfigBuilder {
       params.tickSpacing,
       dopplerAddress
     );
+    console.log('poolKey', poolKey);
 
     return {
       salt,

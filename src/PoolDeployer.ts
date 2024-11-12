@@ -4,6 +4,7 @@ import { DopplerClients } from './DopplerSDK';
 import {
   BaseError,
   ContractFunctionRevertedError,
+  encodeAbiParameters,
   encodePacked,
   getContract,
   toBytes,
@@ -26,6 +27,7 @@ export interface DopplerConfigParams {
   numTokensToSell: bigint;
 
   // Time parameters
+  blockTimestamp: number;
   startTimeOffset: number; // in days from now
   duration: number; // in days
   epochLength: number; // in seconds
@@ -71,38 +73,35 @@ export class PoolDeployer {
       migrator,
     } = this.addressProvider.getAddresses();
 
-    const dopplerFactoryData = encodePacked(
+    const dopplerFactoryData = encodeAbiParameters(
       [
-        'uint256',
-        'uint256',
-        'uint256',
-        'uint256',
-        'int24',
-        'int24',
-        'uint256',
-        'int24',
-        'bool',
-        'uint256',
-        'address',
+        { name: 'minimumProceeds', type: 'uint256' },
+        { name: 'maximumProceeds', type: 'uint256' },
+        { name: 'startingTime', type: 'uint256' },
+        { name: 'endingTime', type: 'uint256' },
+        { name: 'startTick', type: 'int24' },
+        { name: 'endTick', type: 'int24' },
+        { name: 'epochLength', type: 'uint256' },
+        { name: 'gamma', type: 'int24' },
+        { name: 'isToken0', type: 'bool' },
+        { name: 'numPDSlugs', type: 'uint256' },
+        { name: 'airlock', type: 'address' },
       ],
       [
         config.hook.minProceeds,
         config.hook.maxProceeds,
         BigInt(config.hook.startTime),
         BigInt(config.hook.endTime),
-        // config.hook.startTick,
-        1600,
-        // config.hook.endTick,
-        171200,
-        // BigInt(config.hook.epochLength),
-        BigInt(400),
-        // config.hook.gamma,
-        800,
+        config.hook.startTick,
+        config.hook.endTick,
+        BigInt(config.hook.epochLength),
+        config.hook.gamma,
         false,
         BigInt(config.hook.numPdSlugs),
         airlock,
       ]
     );
+    console.log('factoryData', dopplerFactoryData);
 
     const airlockContract = getContract({
       address: airlock,
