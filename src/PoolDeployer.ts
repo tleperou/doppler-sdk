@@ -139,13 +139,11 @@ export class PoolDeployer {
         }
       }
     }
+    // TODO: this is a hack to get the timestamp of the block
+    // where the airlock contract was deployed
+    // TODO: find a better way to get the deployment block
     const receipt = await airlockContract.write.create(createArgs);
-    const { blockNumber } = await this.clients.public.getTransactionReceipt({
-      hash: receipt,
-    });
-    const { timestamp } = await this.clients.public.getBlock({
-      blockNumber,
-    });
+    const { timestamp } = await this.clients.public.getBlock();
 
     const doppler: Doppler = {
       address: config.dopplerAddress,
