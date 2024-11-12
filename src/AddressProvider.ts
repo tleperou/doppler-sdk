@@ -1,13 +1,12 @@
-import { Address } from 'viem'
-import { Clients } from './DopplerSDK'
+import { Address } from 'viem';
 
 export interface DopplerAddresses {
-  airlock: Address
-  tokenFactory: Address
-  dopplerFactory: Address
-  governanceFactory: Address
-  migrator: Address
-  poolManager: Address
+  airlock: Address;
+  tokenFactory: Address;
+  dopplerFactory: Address;
+  governanceFactory: Address;
+  migrator: Address;
+  poolManager: Address;
 }
 
 export const DOPPLER_ADDRESSES: { [chainId: number]: DopplerAddresses } = {
@@ -18,33 +17,33 @@ export const DOPPLER_ADDRESSES: { [chainId: number]: DopplerAddresses } = {
     dopplerFactory: '0x...' as Address,
     governanceFactory: '0x...' as Address,
     migrator: '0x...' as Address,
-    poolManager: '0x...' as Address
+    poolManager: '0x...' as Address,
   },
-}
+};
 
-export class AddressProvider {
-  private readonly chainId: number
-  private readonly addresses: DopplerAddresses
+export class DopplerAddressProvider {
+  private readonly chainId: number;
+  private readonly addresses: DopplerAddresses;
 
   constructor(chainId: number, addresses?: Partial<DopplerAddresses>) {
-    this.chainId = chainId
-    
-    const defaultAddresses = DOPPLER_ADDRESSES[chainId]
+    this.chainId = chainId;
+
+    const defaultAddresses = DOPPLER_ADDRESSES[chainId];
     if (!defaultAddresses && !addresses) {
-      throw new Error(`No default addresses found for chain ${chainId}`)
+      throw new Error(`No default addresses found for chain ${chainId}`);
     }
 
     this.addresses = {
       ...defaultAddresses,
-      ...addresses
-    }
+      ...addresses,
+    };
   }
 
   public getAddresses(): DopplerAddresses {
-    return this.addresses
+    return this.addresses;
   }
 
   public getChainId(): number {
-    return this.chainId
+    return this.chainId;
   }
 }

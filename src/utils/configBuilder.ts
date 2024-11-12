@@ -1,37 +1,15 @@
-import { CurrencyAmount, Price, Token } from '@uniswap/sdk-core';
+import { Price, Token } from '@uniswap/sdk-core';
 import { priceToClosestTick, Pool } from '@uniswap/v4-sdk';
-import { parseEther } from 'viem/utils';
 import { DeploymentConfig } from '../types';
 import { MineParams, mine } from './airlockMiner';
-import { AddressProvider } from '../AddressProvider';
+import { DopplerAddressProvider } from '../AddressProvider';
+import { parseEther } from 'viem';
+import { DopplerConfigParams } from '../PoolDeployer';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
   startPrice: number;
   endPrice: number;
-}
-
-export interface DopplerConfigParams {
-  // Token details
-  name: string;
-  symbol: string;
-  totalSupply: bigint;
-  numTokensToSell: bigint;
-
-  // Time parameters
-  startTimeOffset: number; // in days from now
-  duration: number; // in days
-  epochLength: number; // in seconds
-
-  // Price parameters
-  priceRange: PriceRange;
-  tickSpacing: number;
-  fee: number; // In bips
-
-  // Sale parameters
-  minProceeds: bigint;
-  maxProceeds: bigint;
-  numPdSlugs?: number; // uses a default if not set
 }
 
 export class DopplerConfigBuilder {
@@ -43,7 +21,7 @@ export class DopplerConfigBuilder {
    */
   public static buildConfig(
     params: DopplerConfigParams,
-    addressProvider: AddressProvider
+    addressProvider: DopplerAddressProvider
   ): DeploymentConfig {
     this.validateBasicParams(params);
 
@@ -56,12 +34,13 @@ export class DopplerConfigBuilder {
       startTick,
       endTick,
       params.duration,
-      params.epochLength
+      params.epochLength,
+      params.tickSpacing
     );
 
-    const now = Math.floor(Date.now() / 1000);
-    const startTime = now + params.startTimeOffset * 24 * 60 * 60;
-    const endTime = startTime + params.duration * 24 * 60 * 60;
+    const startTime =
+      params.blockTimestamp + params.startTimeOffset * 24 * 60 * 60;
+    const endTime = params.blockTimestamp + params.duration * 24 * 60 * 60;
 
     const totalDuration = endTime - startTime;
     if (totalDuration % params.epochLength !== 0) {
@@ -98,7 +77,7 @@ export class DopplerConfigBuilder {
       numPDSlugs: BigInt(params.numPdSlugs ?? this.DEFAULT_PD_SLUGS),
     };
 
-    const [salt, hookAddress, tokenAddress] = mine(
+    const [salt, dopplerAddress, tokenAddress] = mine(
       tokenFactory,
       dopplerFactory,
       mineParams
@@ -125,13 +104,13 @@ export class DopplerConfigBuilder {
       eth,
       params.fee,
       params.tickSpacing,
-      hookAddress
+      dopplerAddress
     );
 
     return {
       salt,
       poolKey,
-      dopplerAddress: hookAddress,
+      dopplerAddress,
       token: {
         name: params.name,
         symbol: params.symbol,
@@ -163,22 +142,32 @@ export class DopplerConfigBuilder {
     priceRange: PriceRange,
     tickSpacing: number
   ): { startTick: number; endTick: number } {
-    const assetToken = new Token(
+    const quoteToken = new Token(
       1,
       '0x0000000000000000000000000000000000000000',
       18
     );
-    const quoteToken = new Token(
+    const assetToken = new Token(
       1,
       '0x0000000000000000000000000000000000000001',
       18
     );
     // Convert prices to sqrt price X96
     let startTick = priceToClosestTick(
-      new Price(assetToken, quoteToken, 1, priceRange.startPrice)
+      new Price(
+        assetToken,
+        quoteToken,
+        parseEther('1').toString(),
+        parseEther(priceRange.startPrice.toString()).toString()
+      )
     );
     let endTick = priceToClosestTick(
-      new Price(assetToken, quoteToken, 1, priceRange.endPrice)
+      new Price(
+        assetToken,
+        quoteToken,
+        parseEther('1').toString(),
+        parseEther(priceRange.endPrice.toString()).toString()
+      )
     );
 
     // Align to tick spacing
@@ -198,7 +187,8 @@ export class DopplerConfigBuilder {
     startTick: number,
     endTick: number,
     durationDays: number,
-    epochLength: number
+    epochLength: number,
+    tickSpacing: number
   ): number {
     // Calculate total number of epochs
     const totalEpochs = (durationDays * 24 * 60 * 60) / epochLength;
@@ -207,8 +197,17 @@ export class DopplerConfigBuilder {
     const tickDelta = Math.abs(endTick - startTick);
     const gammaRaw = Math.ceil(tickDelta / totalEpochs);
 
-    // Ensure gamma is at least 1 tick
-    return Math.max(1, gammaRaw);
+    // Round up to nearest multiple of tick spacing
+    let gamma = Math.ceil(gammaRaw / tickSpacing) * tickSpacing;
+
+    // Ensure gamma is at least 1 tick spacing
+    gamma = Math.max(tickSpacing, gamma);
+
+    if (gamma % tickSpacing !== 0) {
+      throw new Error('Computed gamma must be divisible by tick spacing');
+    }
+
+    return gamma;
   }
 
   // Converts decimal price to sqrt price X96 format

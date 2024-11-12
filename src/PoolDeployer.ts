@@ -1,22 +1,54 @@
 import { DopplerPool } from './entities';
 import { DeploymentConfig, Doppler } from './types';
-import { Clients } from './DopplerSDK';
+import { DopplerClients } from './DopplerSDK';
 import {
   BaseError,
   ContractFunctionRevertedError,
-  decodeFunctionResult,
-  encodePacked,
+  encodeAbiParameters,
   getContract,
-  toBytes,
+  toHex,
 } from 'viem';
-import { AddressProvider } from './AddressProvider';
+import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
 
-export class PoolDeployer {
-  private readonly clients: Clients;
-  private readonly addressProvider: AddressProvider;
+// this maps onto the tick range, startingTick -> endingTick
+export interface PriceRange {
+  startPrice: number;
+  endPrice: number;
+}
 
-  constructor(clients: Clients, addressProvider: AddressProvider) {
+export interface DopplerConfigParams {
+  // Token details
+  name: string;
+  symbol: string;
+  totalSupply: bigint;
+  numTokensToSell: bigint;
+
+  // Time parameters
+  blockTimestamp: number;
+  startTimeOffset: number; // in days from now
+  duration: number; // in days
+  epochLength: number; // in seconds
+
+  // Price parameters
+  priceRange: PriceRange;
+  tickSpacing: number;
+  fee: number; // In bips
+
+  // Sale parameters
+  minProceeds: bigint;
+  maxProceeds: bigint;
+  numPdSlugs?: number; // uses a default if not set
+}
+
+export class PoolDeployer {
+  private readonly clients: DopplerClients;
+  private readonly addressProvider: DopplerAddressProvider;
+
+  constructor(
+    clients: DopplerClients,
+    addressProvider: DopplerAddressProvider
+  ) {
     this.clients = clients;
     this.addressProvider = addressProvider;
   }
@@ -36,21 +68,22 @@ export class PoolDeployer {
       tokenFactory,
       governanceFactory,
       dopplerFactory,
+      migrator,
     } = this.addressProvider.getAddresses();
 
-    const dopplerFactoryData = encodePacked(
+    const dopplerFactoryData = encodeAbiParameters(
       [
-        'uint256',
-        'uint256',
-        'uint256',
-        'uint256',
-        'int24',
-        'int24',
-        'uint256',
-        'int24',
-        'bool',
-        'uint256',
-        'address',
+        { name: 'minimumProceeds', type: 'uint256' },
+        { name: 'maximumProceeds', type: 'uint256' },
+        { name: 'startingTime', type: 'uint256' },
+        { name: 'endingTime', type: 'uint256' },
+        { name: 'startTick', type: 'int24' },
+        { name: 'endTick', type: 'int24' },
+        { name: 'epochLength', type: 'uint256' },
+        { name: 'gamma', type: 'int24' },
+        { name: 'isToken0', type: 'bool' },
+        { name: 'numPDSlugs', type: 'uint256' },
+        { name: 'airlock', type: 'address' },
       ],
       [
         config.hook.minProceeds,
@@ -82,12 +115,12 @@ export class PoolDeployer {
       [],
       [],
       tokenFactory,
-      toBytes(''),
+      toHex(''),
       governanceFactory,
-      toBytes(''),
+      toHex(''),
       dopplerFactory,
       dopplerFactoryData,
-      airlock,
+      migrator,
       config.salt,
     ];
 
@@ -106,13 +139,11 @@ export class PoolDeployer {
         }
       }
     }
+    // TODO: this is a hack to get the timestamp of the block
+    // where the airlock contract was deployed
+    // TODO: find a better way to get the deployment block
     const receipt = await airlockContract.write.create(createArgs);
-    const { blockNumber } = await this.clients.public.getTransactionReceipt({
-      hash: receipt,
-    });
-    const { timestamp } = await this.clients.public.getBlock({
-      blockNumber,
-    });
+    const { timestamp } = await this.clients.public.getBlock();
 
     const doppler: Doppler = {
       address: config.dopplerAddress,

@@ -5,7 +5,10 @@ import {
   encodeAbiParameters,
   encodePacked,
   getAddress,
+  Hex,
 } from 'viem';
+import { DopplerBytecode } from '../abis/DopplerABI';
+import { DERC20Bytecode } from '../abis/DERC20ABI';
 
 const FLAG_MASK = BigInt(0x3fff);
 
@@ -60,7 +63,7 @@ export function mine(
     encodePacked(
       ['bytes', 'bytes'],
       [
-        '0x...', // Doppler contract creation code would go here
+        DopplerBytecode.object as Hex,
         encodeAbiParameters(
           [
             { type: 'address' },
@@ -101,7 +104,7 @@ export function mine(
     encodePacked(
       ['bytes', 'bytes'],
       [
-        '0x...', // DERC20 contract creation code would go here
+        DERC20Bytecode.object as Hex,
         encodeAbiParameters(
           [
             { type: 'string' },
@@ -121,7 +124,6 @@ export function mine(
       ]
     )
   );
-
   for (let salt = BigInt(0); salt < BigInt(1_000_000); salt++) {
     const saltBytes = `0x${salt.toString(16).padStart(64, '0')}` as Hash;
     const hook = computeCreate2Address(saltBytes, hookInitHash, hookFactory);
