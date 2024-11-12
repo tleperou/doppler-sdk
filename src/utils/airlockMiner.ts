@@ -138,11 +138,6 @@ export function mine(
       ((isToken0 && tokenBigInt < numeraireBigInt) ||
         (!isToken0 && tokenBigInt > numeraireBigInt))
     ) {
-      console.log('found');
-      console.log('hookInitHash', hookInitHash);
-      console.log('tokenInitHash', tokenInitHash);
-      console.log('hook', hook);
-      console.log('token', token);
       return [saltBytes, hook, token];
     }
   }
