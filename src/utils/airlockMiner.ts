@@ -5,7 +5,6 @@ import {
   encodeAbiParameters,
   encodePacked,
   getAddress,
-  fromHex,
   Hex,
 } from 'viem';
 import { DopplerBytecode } from '../abis/DopplerABI';

@@ -22,7 +22,7 @@ describe('Doppler Pool Deployment', () => {
       blockTimestamp: Number(block.timestamp),
       startTimeOffset: 1,
       duration: 3,
-      epochLength: 400,
+      epochLength: 1600,
       priceRange: {
         startPrice: 0.1,
         endPrice: 0.0001,

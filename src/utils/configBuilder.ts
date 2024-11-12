@@ -1,38 +1,15 @@
-import { CurrencyAmount, Price, Token } from '@uniswap/sdk-core';
+import { Price, Token } from '@uniswap/sdk-core';
 import { priceToClosestTick, Pool } from '@uniswap/v4-sdk';
 import { DeploymentConfig } from '../types';
 import { MineParams, mine } from './airlockMiner';
 import { DopplerAddressProvider } from '../AddressProvider';
 import { parseEther } from 'viem';
+import { DopplerConfigParams } from '../PoolDeployer';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
   startPrice: number;
   endPrice: number;
-}
-
-export interface DopplerConfigParams {
-  // Token details
-  name: string;
-  symbol: string;
-  totalSupply: bigint;
-  numTokensToSell: bigint;
-
-  // Time parameters
-  blockTimestamp: number;
-  startTimeOffset: number; // in days from now
-  duration: number; // in days
-  epochLength: number; // in seconds
-
-  // Price parameters
-  priceRange: PriceRange;
-  tickSpacing: number;
-  fee: number; // In bips
-
-  // Sale parameters
-  minProceeds: bigint;
-  maxProceeds: bigint;
-  numPdSlugs?: number; // uses a default if not set
 }
 
 export class DopplerConfigBuilder {
@@ -48,23 +25,18 @@ export class DopplerConfigBuilder {
   ): DeploymentConfig {
     this.validateBasicParams(params);
 
-    // const { startTick, endTick } = this.computeTicks(
-    //   params.priceRange,
-    //   params.tickSpacing
-    // );
+    const { startTick, endTick } = this.computeTicks(
+      params.priceRange,
+      params.tickSpacing
+    );
 
-    const startTick = 1600;
-    const endTick = 171200;
-
-    // const gamma = this.computeOptimalGamma(
-    //   startTick,
-    //   endTick,
-    //   params.duration,
-    //   params.epochLength,
-    //   params.tickSpacing
-    // );
-
-    const gamma = 800;
+    const gamma = this.computeOptimalGamma(
+      startTick,
+      endTick,
+      params.duration,
+      params.epochLength,
+      params.tickSpacing
+    );
 
     const startTime =
       params.blockTimestamp + params.startTimeOffset * 24 * 60 * 60;
@@ -111,9 +83,6 @@ export class DopplerConfigBuilder {
       dopplerFactory,
       mineParams
     );
-    console.log('salt', salt);
-    console.log('dopplerAddress', dopplerAddress);
-    console.log('tokenAddress', tokenAddress);
 
     const token = new Token(
       addressProvider.getChainId(),
@@ -175,12 +144,12 @@ export class DopplerConfigBuilder {
     priceRange: PriceRange,
     tickSpacing: number
   ): { startTick: number; endTick: number } {
-    const assetToken = new Token(
+    const quoteToken = new Token(
       1,
       '0x0000000000000000000000000000000000000000',
       18
     );
-    const quoteToken = new Token(
+    const assetToken = new Token(
       1,
       '0x0000000000000000000000000000000000000001',
       18
@@ -231,10 +200,16 @@ export class DopplerConfigBuilder {
     const gammaRaw = Math.ceil(tickDelta / totalEpochs);
 
     // Round up to nearest multiple of tick spacing
-    const gamma = Math.ceil(gammaRaw / tickSpacing) * tickSpacing;
+    let gamma = Math.ceil(gammaRaw / tickSpacing) * tickSpacing;
 
     // Ensure gamma is at least 1 tick spacing
-    return Math.max(tickSpacing, gamma);
+    gamma = Math.max(tickSpacing, gamma);
+
+    if (gamma % tickSpacing !== 0) {
+      throw new Error('Computed gamma must be divisible by tick spacing');
+    }
+
+    return gamma;
   }
 
   // Converts decimal price to sqrt price X96 format
