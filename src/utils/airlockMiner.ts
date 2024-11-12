@@ -59,22 +59,6 @@ export function mine(
 ): [Hash, Address, Address] {
   const isToken0 =
     params.numeraire !== '0x0000000000000000000000000000000000000000';
-  console.log('flags', flags);
-
-  console.log('params.numeraire', params.numeraire);
-  console.log('params.poolManager', params.poolManager);
-  console.log('params.numTokensToSell', params.numTokensToSell);
-  console.log('params.minimumProceeds', params.minimumProceeds);
-  console.log('params.maximumProceeds', params.maximumProceeds);
-  console.log('params.startingTime', params.startingTime);
-  console.log('params.endingTime', params.endingTime);
-  console.log('params.minTick', params.minTick);
-  console.log('params.maxTick', params.maxTick);
-  console.log('params.epochLength', params.epochLength);
-  console.log('params.gamma', params.gamma);
-  console.log('isToken0', isToken0);
-  console.log('params.numPDSlugs', params.numPDSlugs);
-  console.log('params.airlock', params.airlock);
 
   const hookInitHash = keccak256(
     encodePacked(
@@ -145,8 +129,6 @@ export function mine(
     const saltBytes = `0x${salt.toString(16).padStart(64, '0')}` as Hash;
     const hook = computeCreate2Address(saltBytes, hookInitHash, hookFactory);
     const token = computeCreate2Address(saltBytes, tokenInitHash, tokenFactory);
-    console.log('hook', hook);
-    console.log('token', token);
 
     const hookBigInt = BigInt(hook);
     const tokenBigInt = BigInt(token);

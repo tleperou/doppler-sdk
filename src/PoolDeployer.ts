@@ -5,9 +5,7 @@ import {
   BaseError,
   ContractFunctionRevertedError,
   encodeAbiParameters,
-  encodePacked,
   getContract,
-  toBytes,
   toHex,
 } from 'viem';
 import { DopplerAddressProvider } from './AddressProvider';
@@ -101,7 +99,6 @@ export class PoolDeployer {
         airlock,
       ]
     );
-    console.log('factoryData', dopplerFactoryData);
 
     const airlockContract = getContract({
       address: airlock,
