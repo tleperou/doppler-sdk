@@ -19,8 +19,8 @@ describe('Doppler Pool Deployment', () => {
       totalSupply: parseEther('1000000'),
       numTokensToSell: parseEther('100000'),
       startTimeOffset: 1,
-      duration: 7,
-      epochLength: 3600,
+      duration: 1,
+      epochLength: 100,
       priceRange: {
         startPrice: 0.001,
         endPrice: 0.0005,

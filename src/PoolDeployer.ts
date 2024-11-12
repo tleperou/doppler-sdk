@@ -7,6 +7,7 @@ import {
   encodePacked,
   getContract,
   toBytes,
+  toHex,
 } from 'viem';
 import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
@@ -113,31 +114,34 @@ export class PoolDeployer {
       [],
       [],
       tokenFactory,
-      toBytes(''),
+      toHex(''),
       governanceFactory,
-      toBytes(''),
+      toHex(''),
       dopplerFactory,
       dopplerFactoryData,
       airlock,
       config.salt,
     ];
 
-    try {
-      await airlockContract.simulate.create(createArgs);
-    } catch (err) {
-      if (err instanceof BaseError) {
-        const revertError = err.walk(
-          err => err instanceof ContractFunctionRevertedError
-        );
-        if (revertError instanceof ContractFunctionRevertedError) {
-          const errorName = revertError.data?.errorName ?? '';
-          if (errorName === 'DUPLICATE_POOL_KEY') {
-            throw new Error('Pool key already exists');
-          }
-        }
-      }
-    }
+    // try {
+    //   const receipt = await airlockContract.simulate.create(createArgs);
+    //   console.log('receipt', receipt);
+    // } catch (err) {
+    //   if (err instanceof BaseError) {
+    //     const revertError = err.walk(
+    //       err => err instanceof ContractFunctionRevertedError
+    //     );
+    //     if (revertError instanceof ContractFunctionRevertedError) {
+    //       const errorName = revertError.data?.errorName ?? '';
+    //       if (errorName === 'DUPLICATE_POOL_KEY') {
+    //         throw new Error('Pool key already exists');
+    //       }
+    //     }
+    //   }
+    // }
+    console.log('createArgs', createArgs);
     const receipt = await airlockContract.write.create(createArgs);
+    console.log('receipt', receipt);
     const { blockNumber } = await this.clients.public.getTransactionReceipt({
       hash: receipt,
     });

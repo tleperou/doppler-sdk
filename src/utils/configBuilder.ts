@@ -3,6 +3,7 @@ import { priceToClosestTick, Pool } from '@uniswap/v4-sdk';
 import { DeploymentConfig } from '../types';
 import { MineParams, mine } from './airlockMiner';
 import { DopplerAddressProvider } from '../AddressProvider';
+import { parseEther } from 'viem';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -55,7 +56,8 @@ export class DopplerConfigBuilder {
       startTick,
       endTick,
       params.duration,
-      params.epochLength
+      params.epochLength,
+      params.tickSpacing
     );
 
     const now = Math.floor(Date.now() / 1000);
@@ -174,10 +176,20 @@ export class DopplerConfigBuilder {
     );
     // Convert prices to sqrt price X96
     let startTick = priceToClosestTick(
-      new Price(assetToken, quoteToken, 1, priceRange.startPrice)
+      new Price(
+        assetToken,
+        quoteToken,
+        parseEther('1').toString(),
+        parseEther(priceRange.startPrice.toString()).toString()
+      )
     );
     let endTick = priceToClosestTick(
-      new Price(assetToken, quoteToken, 1, priceRange.endPrice)
+      new Price(
+        assetToken,
+        quoteToken,
+        parseEther('1').toString(),
+        parseEther(priceRange.endPrice.toString()).toString()
+      )
     );
 
     // Align to tick spacing
@@ -197,7 +209,8 @@ export class DopplerConfigBuilder {
     startTick: number,
     endTick: number,
     durationDays: number,
-    epochLength: number
+    epochLength: number,
+    tickSpacing: number
   ): number {
     // Calculate total number of epochs
     const totalEpochs = (durationDays * 24 * 60 * 60) / epochLength;
@@ -206,8 +219,11 @@ export class DopplerConfigBuilder {
     const tickDelta = Math.abs(endTick - startTick);
     const gammaRaw = Math.ceil(tickDelta / totalEpochs);
 
-    // Ensure gamma is at least 1 tick
-    return Math.max(1, gammaRaw);
+    // Round up to nearest multiple of tick spacing
+    const gamma = Math.ceil(gammaRaw / tickSpacing) * tickSpacing;
+
+    // Ensure gamma is at least 1 tick spacing
+    return Math.max(tickSpacing, gamma);
   }
 
   // Converts decimal price to sqrt price X96 format
