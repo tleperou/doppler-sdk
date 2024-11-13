@@ -53,9 +53,7 @@ export class PoolDeployer {
     this.addressProvider = addressProvider;
   }
 
-  async deploy(
-    config: DeploymentConfig
-  ): Promise<{ doppler: Doppler; pool: DopplerPool }> {
+  async deploy(config: DeploymentConfig): Promise<{ pool: DopplerPool }> {
     const wallet = this.clients.wallet;
     if (!wallet?.account?.address) {
       throw new Error(
@@ -100,6 +98,8 @@ export class PoolDeployer {
       ]
     );
 
+    console.log('dopplerFactoryData', dopplerFactoryData);
+
     const airlockContract = getContract({
       address: airlock,
       abi: AirlockABI,
@@ -123,6 +123,8 @@ export class PoolDeployer {
       migrator,
       config.salt,
     ];
+
+    console.log('createArgs', createArgs);
 
     try {
       await airlockContract.simulate.create(createArgs);
@@ -156,6 +158,6 @@ export class PoolDeployer {
     };
 
     const dopplerPool = new DopplerPool(doppler, this.clients);
-    return { doppler, pool: dopplerPool };
+    return { pool: dopplerPool };
   }
 }

@@ -40,9 +40,14 @@ describe('Doppler Pool Deployment', () => {
         testEnv.addresses
       )
     );
-    const { doppler, pool } = await testEnv.sdk.deployer.deploy(config);
+    const { pool } = await testEnv.sdk.deployer.deploy(config);
 
-    expect(doppler.address).toBeDefined();
-    expect(doppler.deploymentTx).toBeDefined();
+    expect(pool.doppler.address).toBeDefined();
+    expect(pool.doppler.deploymentTx).toBeDefined();
+
+    const state = await pool.getState();
+    console.log('state', state);
+
+    expect(state.lastEpoch).toBe(0);
   });
 });
