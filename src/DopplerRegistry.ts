@@ -1,7 +1,5 @@
-import { Address, PublicClient } from 'viem';
+import { Address } from 'viem';
 import { Doppler } from './types';
-import { PoolDeployer } from './PoolDeployer';
-import { DeploymentConfig } from './types';
 
 export class DopplerRegistry {
   private static STORAGE_KEY = 'deployed-dopplers';
@@ -47,31 +45,5 @@ export class DopplerRegistry {
         JSON.stringify(dopplers)
       );
     }
-  }
-}
-
-// Update PoolDeployer to use registry
-export class DopplerDeployer {
-  private readonly client: PublicClient;
-  private readonly deployer: PoolDeployer;
-  private readonly registry: DopplerRegistry;
-
-  constructor(client: PublicClient, deployer: PoolDeployer) {
-    this.client = client;
-    this.deployer = deployer;
-    this.registry = new DopplerRegistry(client.chain?.id ?? 1);
-  }
-
-  async deploy(config: DeploymentConfig): Promise<Doppler> {
-    const { doppler, pool } = await this.deployer.deploy(config);
-
-    // Save deployment info
-    await this.registry.addDoppler(doppler);
-
-    return doppler;
-  }
-
-  getDeployedPools(): Doppler[] {
-    return this.registry.getAllDopplers();
   }
 }

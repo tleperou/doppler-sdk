@@ -1,6 +1,5 @@
 import { Address, Hash, Hex } from 'viem';
 import { Token } from '@uniswap/sdk-core';
-import { PoolKey } from '@uniswap/v4-sdk';
 
 // TODO: Add governance data
 export interface Doppler {

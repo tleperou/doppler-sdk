@@ -7,7 +7,6 @@ import {
   encodeAbiParameters,
   getContract,
   toHex,
-  Chain,
 } from 'viem';
 import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
@@ -114,15 +113,17 @@ export class PoolDeployer {
       config.poolKey as PoolKey,
       [] as `0x${string}`[],
       [] as bigint[],
-      toHex(tokenFactory),
+      tokenFactory,
       toHex(''),
-      toHex(governanceFactory),
+      governanceFactory,
       toHex(''),
-      toHex(dopplerFactory),
+      dopplerFactory,
       dopplerFactoryData,
-      toHex(migrator),
+      migrator,
       config.salt,
     ] as const;
+
+    console.log(createArgs);
 
     try {
       await airlockContract.simulate.create(createArgs);
@@ -142,7 +143,12 @@ export class PoolDeployer {
     // TODO: this is a hack to get the timestamp of the block
     // where the airlock contract was deployed
     // TODO: find a better way to get the deployment block
-    const receipt = await airlockContract.write.create(createArgs);
+    console.log("here");
+    const receipt = await airlockContract.write.create(createArgs, {
+      account: wallet.account,
+      chain: this.clients.public.chain,
+    });
+    console.log('Receipt', receipt);
     const { timestamp } = await this.clients.public.getBlock();
 
     const doppler: Doppler = {

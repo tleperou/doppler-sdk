@@ -1,8 +1,7 @@
 import { DopplerABI } from '../abis/DopplerABI';
-import { Doppler } from '../types';
+import { Doppler, DopplerState } from '../types';
 import { DopplerClients } from '../DopplerSDK';
-import { getContract } from 'viem';
-
+import { readContract } from 'viem/actions';
 export class DopplerPool {
   public readonly doppler: Doppler;
   private readonly clients: DopplerClients;
@@ -12,21 +11,26 @@ export class DopplerPool {
     this.clients = clients;
   }
 
-  contract() {
-    return getContract({
+  async getState(): Promise<DopplerState> {
+    const state = await readContract(this.clients.public, {
       address: this.doppler.address,
       abi: DopplerABI,
-      client: this.clients.public,
+      functionName: 'state',
     });
-  }
+    const feesAccrued = state[5];
+    // Convert bigint to bytes and extract amounts using bit operations
+    const amount0 = feesAccrued >> BigInt(128); // arithmetic right shift for high bits
+    const amount1 = feesAccrued & ((BigInt(1) << BigInt(128)) - BigInt(1)); // mask low bits
 
-  async getState<T>(): Promise<T> {
-    const state = await this.contract().read.state();
-    return state as T;
+    return {
+      lastEpoch: state[0],
+      tickAccumulator: state[1],
+      totalTokensSold: state[2],
+      totalProceeds: state[3],
+      totalTokensSoldLastEpoch: state[4],
+      feesAccrued: { amount0, amount1 },
+    };
   }
-
-  //   async getState(): Promise<DopplerState> {
-  //   }
 
   //   async getPositions(): Promise<Position[]> {
   //   }

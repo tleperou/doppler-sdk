@@ -6,7 +6,7 @@ import { DopplerSDK } from '../DopplerSDK';
 // Test accounts from anvil
 const TEST_PRIVATE_KEY =
   '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-const TEST_ACCOUNT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+// const TEST_ACCOUNT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 export async function setupTestEnvironment() {
   const publicClient = createPublicClient({

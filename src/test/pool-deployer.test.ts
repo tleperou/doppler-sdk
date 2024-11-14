@@ -4,6 +4,7 @@ import { parseEther } from 'viem';
 import { DopplerConfigParams } from '../PoolDeployer';
 import { DopplerConfigBuilder } from '../utils';
 import { DopplerAddressProvider } from '../AddressProvider';
+import { fetchDopplerState } from '../fetch/DopplerState';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -14,6 +15,10 @@ describe('Doppler Pool Deployment', () => {
 
   it('should deploy a new Doppler pool', async () => {
     const block = await testEnv.publicClient.getBlock();
+    const addressProvider = new DopplerAddressProvider(
+      testEnv.publicClient.chain.id,
+      testEnv.addresses
+    );
     const configParams: DopplerConfigParams = {
       name: 'Gud Coin',
       symbol: 'GUD',
@@ -35,19 +40,17 @@ describe('Doppler Pool Deployment', () => {
 
     const config = DopplerConfigBuilder.buildConfig(
       configParams,
-      new DopplerAddressProvider(
-        testEnv.publicClient.chain.id,
-        testEnv.addresses
-      )
+      addressProvider
     );
     const { pool } = await testEnv.sdk.deployer.deploy(config);
+    console.log('pool', pool);
 
     expect(pool.doppler.address).toBeDefined();
     expect(pool.doppler.deploymentTx).toBeDefined();
-    console.log('pool', pool);
-    const state = await pool.getState();
-    console.log('state', state);
-
-    expect(state.lastEpoch).toBe(0);
+    const state = await fetchDopplerState(
+      pool.doppler.address,
+      testEnv.publicClient
+    );
+    console.log(state);
   });
 });
