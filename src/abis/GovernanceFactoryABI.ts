@@ -1,5 +1,4 @@
-import { Abi } from 'viem';
-export const GovernanceFactoryABI: Abi = [
+export const GovernanceFactoryABI = [
   { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
   {
     type: 'function',
@@ -24,4 +23,4 @@ export const GovernanceFactoryABI: Abi = [
     ],
     stateMutability: 'view',
   },
-];
+] as const;

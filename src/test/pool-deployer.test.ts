@@ -44,7 +44,7 @@ describe('Doppler Pool Deployment', () => {
 
     expect(pool.doppler.address).toBeDefined();
     expect(pool.doppler.deploymentTx).toBeDefined();
-
+    console.log('pool', pool);
     const state = await pool.getState();
     console.log('state', state);
 

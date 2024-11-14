@@ -1,5 +1,4 @@
-import { Abi } from 'viem';
-export const DopplerFactoryABI: Abi = [
+export const DopplerFactoryABI = [
   {
     type: 'function',
     name: 'create',
@@ -16,4 +15,4 @@ export const DopplerFactoryABI: Abi = [
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
     stateMutability: 'nonpayable',
   },
-];
+] as const;

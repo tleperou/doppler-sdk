@@ -506,7 +506,7 @@ export const DERC20ABI = [
     name: 'VotesExpiredSignature',
     inputs: [{ name: 'expiry', type: 'uint256', internalType: 'uint256' }],
   },
-];
+] as const;
 
 export const DERC20Bytecode = {
   object:

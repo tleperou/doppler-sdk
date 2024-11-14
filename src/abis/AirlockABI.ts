@@ -1,5 +1,4 @@
-import { Abi } from 'viem';
-export const AirlockABI: Abi = [
+export const AirlockABI = [
   {
     type: 'constructor',
     inputs: [
@@ -241,4 +240,4 @@ export const AirlockABI: Abi = [
   },
   { type: 'error', name: 'WrongInitialSupply', inputs: [] },
   { type: 'error', name: 'WrongModuleState', inputs: [] },
-];
+] as const;

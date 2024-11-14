@@ -3,16 +3,6 @@ import { Doppler } from '../types';
 import { DopplerClients } from '../DopplerSDK';
 import { getContract } from 'viem';
 
-interface DopplerState {
-  lastEpoch: number;
-  tickAccumulator: bigint;
-  totalTokensSold: bigint;
-  totalProceeds: bigint;
-  totalTokensSoldLastEpoch: bigint;
-  feesAccruedAsset: bigint;
-  feesAccruedQuote: bigint;
-}
-
 export class DopplerPool {
   public readonly doppler: Doppler;
   private readonly clients: DopplerClients;
@@ -30,9 +20,9 @@ export class DopplerPool {
     });
   }
 
-  async getState(): Promise<DopplerState> {
+  async getState<T>(): Promise<T> {
     const state = await this.contract().read.state();
-    return state as DopplerState;
+    return state as T;
   }
 
   //   async getState(): Promise<DopplerState> {
