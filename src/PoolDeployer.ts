@@ -7,9 +7,11 @@ import {
   encodeAbiParameters,
   getContract,
   toHex,
+  Chain,
 } from 'viem';
 import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
+import { PoolKey } from './types';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -109,20 +111,18 @@ export class PoolDeployer {
       config.token.symbol,
       config.token.totalSupply,
       config.token.totalSupply,
-      config.poolKey,
-      [],
-      [],
-      tokenFactory,
+      config.poolKey as PoolKey,
+      [] as `0x${string}`[],
+      [] as bigint[],
+      toHex(tokenFactory),
       toHex(''),
-      governanceFactory,
+      toHex(governanceFactory),
       toHex(''),
-      dopplerFactory,
+      toHex(dopplerFactory),
       dopplerFactoryData,
-      migrator,
+      toHex(migrator),
       config.salt,
-    ];
-
-    console.log('createArgs', createArgs);
+    ] as const;
 
     try {
       await airlockContract.simulate.create(createArgs);

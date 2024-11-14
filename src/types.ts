@@ -59,3 +59,11 @@ export interface PoolConfig {
   tickSpacing: number;
   fee: number; // In bips (e.g., 3000 for 0.3%)
 }
+
+export interface PoolKey {
+  currency0: `0x${string}`;
+  currency1: `0x${string}`;
+  fee: number;
+  tickSpacing: number;
+  hooks: `0x${string}`;
+};
