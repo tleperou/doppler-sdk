@@ -1,5 +1,6 @@
 import { Address, Hash, Hex } from 'viem';
 import { Token } from '@uniswap/sdk-core';
+import { PoolKey } from '@uniswap/v4-sdk';
 
 // TODO: Add governance data
 export interface Doppler {
@@ -8,6 +9,7 @@ export interface Doppler {
   quoteToken: Token;
   hook: Address;
   poolKey: PoolKey;
+  poolId: `0x${string}`;
   deployedAt: bigint;
   deploymentTx: Hex;
 }
@@ -22,6 +24,7 @@ export interface DopplerState {
     amount0: bigint;
     amount1: bigint;
   };
+  currentTick: number;
 }
 
 export interface PositionState {
@@ -35,6 +38,7 @@ export interface DeploymentConfig {
   salt: Hash;
   dopplerAddress: Address;
   poolKey: PoolKey;
+  poolId: `0x${string}`;
   token: TokenConfig;
   hook: HookConfig;
   pool: PoolConfig;
@@ -65,11 +69,3 @@ export interface PoolConfig {
   tickSpacing: number;
   fee: number; // In bips (e.g., 3000 for 0.3%)
 }
-
-export interface PoolKey {
-  currency0: `0x${string}`;
-  currency1: `0x${string}`;
-  fee: number;
-  tickSpacing: number;
-  hooks: `0x${string}`;
-};

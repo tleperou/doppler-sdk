@@ -10,7 +10,6 @@ import {
 } from 'viem';
 import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
-import { PoolKey } from './types';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -105,12 +104,21 @@ export class PoolDeployer {
       client: { public: this.clients.public, wallet: wallet },
     });
 
+    const poolKey = {
+      ...config.poolKey,
+      currency0: config.poolKey.currency0 as `0x${string}`,
+      currency1: config.poolKey.currency1 as `0x${string}`,
+      hooks: config.poolKey.hooks as `0x${string}`,
+    }
+
+    console.log("poolKey", poolKey);
+
     const createArgs = [
       config.token.name,
       config.token.symbol,
       config.token.totalSupply,
       config.token.totalSupply,
-      config.poolKey as PoolKey,
+      poolKey,
       [] as `0x${string}`[],
       [] as bigint[],
       tokenFactory,
@@ -157,6 +165,7 @@ export class PoolDeployer {
       quoteToken: config.hook.quoteToken,
       hook: config.dopplerAddress,
       poolKey: config.poolKey,
+      poolId: config.poolId,
       deployedAt: timestamp,
       deploymentTx: receipt,
     };

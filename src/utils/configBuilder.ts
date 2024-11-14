@@ -1,5 +1,5 @@
 import { Price, Token } from '@uniswap/sdk-core';
-import { priceToClosestTick, Pool } from '@uniswap/v4-sdk';
+import { priceToClosestTick, Pool, PoolKey } from '@uniswap/v4-sdk';
 import { DeploymentConfig } from '../types';
 import { MineParams, mine } from './airlockMiner';
 import { DopplerAddressProvider } from '../AddressProvider';
@@ -99,7 +99,7 @@ export class DopplerConfigBuilder {
       'Ether'
     );
 
-    const poolKey = Pool.getPoolKey(
+    const poolKey: PoolKey = Pool.getPoolKey(
       token,
       eth,
       params.fee,
@@ -107,9 +107,18 @@ export class DopplerConfigBuilder {
       dopplerAddress
     );
 
+    const poolId = Pool.getPoolId(
+      token,
+      eth,
+      poolKey.fee,
+      poolKey.tickSpacing,
+      poolKey.hooks
+    ) as `0x${string}`;
+
     return {
       salt,
       poolKey,
+      poolId,
       dopplerAddress,
       token: {
         name: params.name,

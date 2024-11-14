@@ -50,6 +50,8 @@ describe('Doppler Pool Deployment', () => {
     expect(pool.doppler.deploymentTx).toBeDefined();
     const state = await fetchDopplerState(
       pool.doppler.address,
+      pool.doppler.poolId,
+      addressProvider,
       testEnv.publicClient
     );
 
