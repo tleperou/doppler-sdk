@@ -24,6 +24,13 @@ export interface DopplerState {
   };
 }
 
+export interface PositionState {
+  tickLower: number;
+  tickUpper: number;
+  liquidity: bigint;
+  salt: Hash;
+}
+
 export interface DeploymentConfig {
   salt: Hash;
   dopplerAddress: Address;

@@ -19,7 +19,7 @@ export async function fetchDopplerState(
   { chainId, overrides = {} }: FetchDopplerStateParams = {}
 ): Promise<DopplerState> {
   // Ensure we have the chain ID
-  chainId = chainId ?? await getChainId(client);
+  chainId = chainId ?? (await getChainId(client));
 
   // Fetch the state with any provided overrides
   const state = await readContract(client, {

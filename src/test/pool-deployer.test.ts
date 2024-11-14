@@ -5,6 +5,7 @@ import { DopplerConfigParams } from '../PoolDeployer';
 import { DopplerConfigBuilder } from '../utils';
 import { DopplerAddressProvider } from '../AddressProvider';
 import { fetchDopplerState } from '../fetch/DopplerState';
+import { fetchPositionState } from '../fetch/PositionState';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -51,6 +52,16 @@ describe('Doppler Pool Deployment', () => {
       pool.doppler.address,
       testEnv.publicClient
     );
+
+    const slugs = await fetchPositionState(
+      pool.doppler.address,
+      testEnv.publicClient
+    );
+
     console.log(state);
+    console.log(slugs);
+    expect(slugs[0].liquidity).toBeDefined();
+    expect(slugs[1].liquidity).toBeDefined();
+    expect(slugs[2].liquidity).toBeDefined();
   });
 });
