@@ -28,20 +28,21 @@ export async function fetchDopplerState(
   const poolManager = addressProvider.getAddresses().poolManager;
 
   const [state, poolState] = await Promise.all([
-  readContract(client, {
-    ...overrides,
-    address: dopplerAddress,
-    abi: DopplerABI,
-    functionName: 'state',
-  }),
-  readContract(client, {
-    ...overrides,
-    address: poolManager,
-    abi: StateViewABI,
-    functionName: 'getSlot0',
-    args: [poolId],
-  })
-]);
+    readContract(client, {
+      ...overrides,
+      address: dopplerAddress,
+      abi: DopplerABI,
+      functionName: 'state',
+    }),
+    readContract(client, {
+      ...overrides,
+      address: poolManager,
+      abi: StateViewABI,
+      functionName: 'getSlot0',
+      args: [poolId],
+    })
+  ]);
+
 
   // Process the fees data
   const feesAccrued = state[5];

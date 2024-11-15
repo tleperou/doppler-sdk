@@ -44,10 +44,16 @@ describe('Doppler Pool Deployment', () => {
       addressProvider
     );
     const { pool } = await testEnv.sdk.deployer.deploy(config);
-    console.log('pool', pool);
 
     expect(pool.doppler.address).toBeDefined();
     expect(pool.doppler.deploymentTx).toBeDefined();
+    const slugs = await fetchPositionState(
+      pool.doppler.address,
+      testEnv.publicClient
+    );
+
+    console.log(slugs);
+
     const state = await fetchDopplerState(
       pool.doppler.address,
       pool.doppler.poolId,
@@ -55,13 +61,7 @@ describe('Doppler Pool Deployment', () => {
       testEnv.publicClient
     );
 
-    const slugs = await fetchPositionState(
-      pool.doppler.address,
-      testEnv.publicClient
-    );
-
     console.log(state);
-    console.log(slugs);
     expect(slugs[0].liquidity).toBeDefined();
     expect(slugs[1].liquidity).toBeDefined();
     expect(slugs[2].liquidity).toBeDefined();

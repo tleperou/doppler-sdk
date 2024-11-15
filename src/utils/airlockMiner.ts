@@ -63,7 +63,7 @@ export function mine(
     encodePacked(
       ['bytes', 'bytes'],
       [
-        DopplerBytecode.object as Hex,
+        DopplerBytecode as Hex,
         encodeAbiParameters(
           [
             { type: 'address' },
