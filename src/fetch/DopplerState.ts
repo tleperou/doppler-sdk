@@ -1,6 +1,6 @@
 import { DopplerABI } from '../abis/DopplerABI';
 import { DopplerState } from '../types';
-import { Address, Client, keccak256, encodePacked } from 'viem';
+import { Address, Client, Hex } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
 import { DopplerAddressProvider } from '../AddressProvider';
 import { StateViewABI } from '../abis/StateViewABI';
@@ -17,7 +17,7 @@ export type FetchDopplerStateParams = {
 
 export async function fetchDopplerState(
   dopplerAddress: Address,
-  poolId: `0x${string}`,
+  poolId: Hex,
   addressProvider: DopplerAddressProvider,
   client: Client,
   { chainId, overrides = {} }: FetchDopplerStateParams = {}
@@ -25,7 +25,7 @@ export async function fetchDopplerState(
   // Ensure we have the chain ID
   chainId = chainId ?? (await getChainId(client));
 
-  const poolManager = addressProvider.getAddresses().poolManager;
+  const stateView = addressProvider.getAddresses().stateView;
 
   const [state, poolState] = await Promise.all([
     readContract(client, {
@@ -36,19 +36,17 @@ export async function fetchDopplerState(
     }),
     readContract(client, {
       ...overrides,
-      address: poolManager,
+      address: stateView,
       abi: StateViewABI,
       functionName: 'getSlot0',
       args: [poolId],
-    })
+    }),
   ]);
-
 
   // Process the fees data
   const feesAccrued = state[5];
   const amount0 = feesAccrued >> BigInt(128);
   const amount1 = feesAccrued & ((BigInt(1) << BigInt(128)) - BigInt(1));
-
 
   // Return a well-structured state object
   return {
@@ -60,4 +58,28 @@ export async function fetchDopplerState(
     totalTokensSoldLastEpoch: state[4],
     feesAccrued: { amount0, amount1 },
   };
+}
+
+export async function fetchTokensRemaining(
+  dopplerAddress: Address,
+  client: Client,
+  { chainId, overrides = {} }: FetchDopplerStateParams = {}
+): Promise<bigint> {
+  chainId = chainId ?? (await getChainId(client));
+  const [state, numTokensToSell] = await Promise.all([
+    readContract(client, {
+      ...overrides,
+      address: dopplerAddress,
+      abi: DopplerABI,
+      functionName: 'state',
+    }),
+    readContract(client, {
+      ...overrides,
+      address: dopplerAddress,
+      abi: DopplerABI,
+      functionName: 'numTokensToSell',
+    }),
+  ]);
+
+  return numTokensToSell - state[2];
 }

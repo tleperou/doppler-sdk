@@ -1,13 +1,16 @@
 import { DopplerPool } from './entities';
 import { DeploymentConfig, Doppler } from './types';
 import { DopplerClients } from './DopplerSDK';
+import { Token } from '@uniswap/sdk-core';
 import {
   BaseError,
   ContractFunctionRevertedError,
   encodeAbiParameters,
   getContract,
   toHex,
+  Hex,
 } from 'viem';
+import { Pool } from '@uniswap/v4-sdk';
 import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
 
@@ -54,6 +57,7 @@ export class PoolDeployer {
   }
 
   async deploy(config: DeploymentConfig): Promise<{ pool: DopplerPool }> {
+    const chainId = this.addressProvider.getChainId();
     const wallet = this.clients.wallet;
     if (!wallet?.account?.address) {
       throw new Error(
@@ -98,8 +102,6 @@ export class PoolDeployer {
       ]
     );
 
-    console.log(dopplerFactoryData);
-
     const airlockContract = getContract({
       address: airlock,
       abi: AirlockABI,
@@ -108,12 +110,21 @@ export class PoolDeployer {
 
     const poolKey = {
       ...config.poolKey,
-      currency0: config.poolKey.currency0 as `0x${string}`,
-      currency1: config.poolKey.currency1 as `0x${string}`,
-      hooks: config.poolKey.hooks as `0x${string}`,
-    }
+      currency0: config.poolKey.currency0 as Hex,
+      currency1: config.poolKey.currency1 as Hex,
+      hooks: config.poolKey.hooks as Hex,
+    };
 
-    console.log("poolKey", poolKey);
+    const currency0 = new Token(chainId, poolKey.currency0, 18);
+    const currency1 = new Token(chainId, poolKey.currency1, 18);
+
+    const poolId = Pool.getPoolId(
+      currency0,
+      currency1,
+      poolKey.fee,
+      poolKey.tickSpacing,
+      poolKey.hooks
+    ) as Hex;
 
     const createArgs = [
       config.token.name,
@@ -121,7 +132,7 @@ export class PoolDeployer {
       config.token.totalSupply,
       config.token.totalSupply,
       poolKey,
-      [] as `0x${string}`[],
+      [] as Hex[],
       [] as bigint[],
       tokenFactory,
       toHex(''),
@@ -132,8 +143,6 @@ export class PoolDeployer {
       migrator,
       config.salt,
     ] as const;
-
-    console.log(createArgs);
 
     try {
       await airlockContract.simulate.create(createArgs);
@@ -153,12 +162,10 @@ export class PoolDeployer {
     // TODO: this is a hack to get the timestamp of the block
     // where the airlock contract was deployed
     // TODO: find a better way to get the deployment block
-    console.log("here");
     const receipt = await airlockContract.write.create(createArgs, {
       account: wallet.account,
       chain: this.clients.public.chain,
     });
-    console.log('Receipt', receipt);
     const { timestamp } = await this.clients.public.getBlock();
 
     const doppler: Doppler = {
@@ -166,8 +173,8 @@ export class PoolDeployer {
       assetToken: config.hook.assetToken,
       quoteToken: config.hook.quoteToken,
       hook: config.dopplerAddress,
-      poolKey: config.poolKey,
-      poolId: config.poolId,
+      poolKey,
+      poolId,
       deployedAt: timestamp,
       deploymentTx: receipt,
     };

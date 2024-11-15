@@ -77,8 +77,6 @@ export class DopplerConfigBuilder {
       numPDSlugs: BigInt(params.numPdSlugs ?? this.DEFAULT_PD_SLUGS),
     };
 
-    console.log("mineParams", mineParams);
-
     const [salt, dopplerAddress, tokenAddress] = mine(
       tokenFactory,
       dopplerFactory,
@@ -109,18 +107,9 @@ export class DopplerConfigBuilder {
       dopplerAddress
     );
 
-    const poolId = Pool.getPoolId(
-      token,
-      eth,
-      poolKey.fee,
-      poolKey.tickSpacing,
-      poolKey.hooks
-    ) as `0x${string}`;
-
     return {
       salt,
       poolKey,
-      poolId,
       dopplerAddress,
       token: {
         name: params.name,

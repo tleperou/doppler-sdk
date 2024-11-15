@@ -52,8 +52,6 @@ describe('Doppler Pool Deployment', () => {
       testEnv.publicClient
     );
 
-    console.log(slugs);
-
     const state = await fetchDopplerState(
       pool.doppler.address,
       pool.doppler.poolId,
@@ -61,9 +59,8 @@ describe('Doppler Pool Deployment', () => {
       testEnv.publicClient
     );
 
-    console.log(state);
-    expect(slugs[0].liquidity).toBeDefined();
-    expect(slugs[1].liquidity).toBeDefined();
-    expect(slugs[2].liquidity).toBeDefined();
+    expect(slugs[0].liquidity).toEqual(BigInt(0));
+    expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));
+    expect(slugs[2].liquidity).toBeGreaterThan(BigInt(0));
   });
 });

@@ -9,7 +9,7 @@ export interface Doppler {
   quoteToken: Token;
   hook: Address;
   poolKey: PoolKey;
-  poolId: `0x${string}`;
+  poolId: Hex;
   deployedAt: bigint;
   deploymentTx: Hex;
 }
@@ -32,13 +32,13 @@ export interface PositionState {
   tickUpper: number;
   liquidity: bigint;
   salt: Hash;
+  type: 'lowerSlug' | 'upperSlug' | 'pdSlug';
 }
 
 export interface DeploymentConfig {
   salt: Hash;
   dopplerAddress: Address;
   poolKey: PoolKey;
-  poolId: `0x${string}`;
   token: TokenConfig;
   hook: HookConfig;
   pool: PoolConfig;
