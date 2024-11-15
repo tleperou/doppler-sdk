@@ -98,6 +98,8 @@ export class PoolDeployer {
       ]
     );
 
+    console.log(dopplerFactoryData);
+
     const airlockContract = getContract({
       address: airlock,
       abi: AirlockABI,
