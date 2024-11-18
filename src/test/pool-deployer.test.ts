@@ -6,6 +6,7 @@ import { DopplerConfigBuilder } from '../utils';
 import { DopplerAddressProvider } from '../AddressProvider';
 import { fetchDopplerState } from '../fetch/DopplerState';
 import { fetchPositionState } from '../fetch/PositionState';
+import { buyAsset } from '../trade/buyAsset';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -15,11 +16,15 @@ describe('Doppler Pool Deployment', () => {
   });
 
   it('should deploy a new Doppler pool', async () => {
-    const block = await testEnv.publicClient.getBlock();
+    if (!testEnv.clients.test || !testEnv.clients.wallet) {
+      throw new Error('Test client not found');
+    }
+    const block = await testEnv.clients.public.getBlock();
     const addressProvider = new DopplerAddressProvider(
-      testEnv.publicClient.chain.id,
+      31337,
       testEnv.addresses
     );
+
     const configParams: DopplerConfigParams = {
       name: 'Gud Coin',
       symbol: 'GUD',
@@ -47,20 +52,29 @@ describe('Doppler Pool Deployment', () => {
 
     expect(pool.doppler.address).toBeDefined();
     expect(pool.doppler.deploymentTx).toBeDefined();
+
+    await testEnv.clients.test?.increaseTime({ seconds: 24 * 60 * 60 });
     const slugs = await fetchPositionState(
       pool.doppler.address,
-      testEnv.publicClient
+      testEnv.clients.public
     );
 
     const state = await fetchDopplerState(
       pool.doppler.address,
       pool.doppler.poolId,
       addressProvider,
-      testEnv.publicClient
+      testEnv.clients.public
     );
 
     expect(slugs[0].liquidity).toEqual(BigInt(0));
     expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));
     expect(slugs[2].liquidity).toBeGreaterThan(BigInt(0));
+    const tx = await buyAsset(
+      pool.doppler,
+      addressProvider,
+      parseEther('0.0005'),
+      testEnv.clients.wallet
+    );
+    expect(tx).toBeDefined();
   });
 });

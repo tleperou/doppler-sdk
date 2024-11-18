@@ -8,6 +8,7 @@ export interface DopplerAddresses {
   migrator: Address;
   poolManager: Address;
   stateView: Address;
+  customRouter: Address;
 }
 
 export const DOPPLER_ADDRESSES: { [chainId: number]: DopplerAddresses } = {
@@ -20,6 +21,7 @@ export const DOPPLER_ADDRESSES: { [chainId: number]: DopplerAddresses } = {
     migrator: '0x...' as Address,
     poolManager: '0x...' as Address,
     stateView: '0x...' as Address,
+    customRouter: '0x...' as Address,
   },
 };
 

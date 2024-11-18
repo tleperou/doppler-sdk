@@ -1,7 +1,7 @@
 import { DopplerPool } from './entities';
 import { DeploymentConfig, Doppler } from './types';
-import { DopplerClients } from './DopplerSDK';
 import { Token } from '@uniswap/sdk-core';
+import { Clients } from './DopplerSDK';
 import {
   BaseError,
   ContractFunctionRevertedError,
@@ -9,6 +9,9 @@ import {
   getContract,
   toHex,
   Hex,
+  WalletClient,
+  PublicClient,
+  TestClient,
 } from 'viem';
 import { Pool } from '@uniswap/v4-sdk';
 import { DopplerAddressProvider } from './AddressProvider';
@@ -45,20 +48,17 @@ export interface DopplerConfigParams {
 }
 
 export class PoolDeployer {
-  private readonly clients: DopplerClients;
+  private readonly client: Clients;
   private readonly addressProvider: DopplerAddressProvider;
 
-  constructor(
-    clients: DopplerClients,
-    addressProvider: DopplerAddressProvider
-  ) {
-    this.clients = clients;
+  constructor(clients: Clients, addressProvider: DopplerAddressProvider) {
+    this.client = clients;
     this.addressProvider = addressProvider;
   }
 
   async deploy(config: DeploymentConfig): Promise<{ pool: DopplerPool }> {
     const chainId = this.addressProvider.getChainId();
-    const wallet = this.clients.wallet;
+    const wallet = this.client.wallet;
     if (!wallet?.account?.address) {
       throw new Error(
         'No wallet account found. Please connect a wallet first.'
@@ -105,7 +105,7 @@ export class PoolDeployer {
     const airlockContract = getContract({
       address: airlock,
       abi: AirlockABI,
-      client: { public: this.clients.public, wallet: wallet },
+      client: { public: this.client.public, wallet },
     });
 
     const poolKey = {
@@ -164,9 +164,9 @@ export class PoolDeployer {
     // TODO: find a better way to get the deployment block
     const receipt = await airlockContract.write.create(createArgs, {
       account: wallet.account,
-      chain: this.clients.public.chain,
+      chain: this.client.public.chain,
     });
-    const { timestamp } = await this.clients.public.getBlock();
+    const { timestamp } = await this.client.public.getBlock();
 
     const doppler: Doppler = {
       address: config.dopplerAddress,
@@ -179,7 +179,7 @@ export class PoolDeployer {
       deploymentTx: receipt,
     };
 
-    const dopplerPool = new DopplerPool(doppler, this.clients);
+    const dopplerPool = new DopplerPool(doppler, this.client);
     return { pool: dopplerPool };
   }
 }

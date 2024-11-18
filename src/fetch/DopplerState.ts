@@ -22,7 +22,6 @@ export async function fetchDopplerState(
   client: Client,
   { chainId, overrides = {} }: FetchDopplerStateParams = {}
 ): Promise<DopplerState> {
-  // Ensure we have the chain ID
   chainId = chainId ?? (await getChainId(client));
 
   const stateView = addressProvider.getAddresses().stateView;

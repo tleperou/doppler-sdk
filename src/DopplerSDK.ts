@@ -1,4 +1,4 @@
-import { PublicClient, WalletClient } from 'viem';
+import { PublicClient, WalletClient, TestClient } from 'viem';
 import { PoolDeployer } from './PoolDeployer';
 import { DopplerRegistry } from './DopplerRegistry';
 import { GovernanceManager } from './GovernanceManager';
@@ -8,9 +8,10 @@ export interface DopplerSDKConfig {
   addresses: DopplerAddresses;
 }
 
-export interface DopplerClients {
+export interface Clients {
   public: PublicClient;
   wallet?: WalletClient;
+  test?: TestClient;
 }
 
 export class DopplerSDK {
@@ -19,16 +20,16 @@ export class DopplerSDK {
   public readonly governance: GovernanceManager;
   public readonly addresses: DopplerAddressProvider;
 
-  private readonly clients: DopplerClients;
+  private readonly clients: Clients;
 
-  constructor(clients: DopplerClients, config: DopplerSDKConfig) {
+  constructor(clients: Clients, config: DopplerSDKConfig) {
     this.clients = clients;
     this.addresses = new DopplerAddressProvider(
-      clients.public.chain?.id ?? 1,
+      clients.public.chain?.id ?? 31337,
       config.addresses
     );
     this.deployer = new PoolDeployer(this.clients, this.addresses);
-    this.dopplers = new DopplerRegistry(this.clients.public.chain?.id ?? 1);
-    this.governance = new GovernanceManager(this.clients.public);
+    this.dopplers = new DopplerRegistry(this.clients.public.chain?.id ?? 31337);
+    this.governance = new GovernanceManager(this.clients);
   }
 }
