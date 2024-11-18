@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { setupTestEnvironment } from './setup';
 import { parseEther } from 'viem';
+import { readContract } from 'viem/actions';
 import { DopplerConfigParams } from '../PoolDeployer';
 import { DopplerConfigBuilder } from '../utils';
 import { DopplerAddressProvider } from '../AddressProvider';
 import { fetchDopplerState } from '../fetch/DopplerState';
 import { fetchPositionState } from '../fetch/PositionState';
 import { buyAsset } from '../trade/buyAsset';
+import { DopplerABI } from '../abis/DopplerABI';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -49,11 +51,26 @@ describe('Doppler Pool Deployment', () => {
       addressProvider
     );
     const { pool } = await testEnv.sdk.deployer.deploy(config);
-
     expect(pool.doppler.address).toBeDefined();
     expect(pool.doppler.deploymentTx).toBeDefined();
 
-    await testEnv.clients.test?.increaseTime({ seconds: 24 * 60 * 60 });
+    const startingTime = await readContract(testEnv.clients.public, {
+      address: pool.doppler.address,
+      abi: DopplerABI,
+      functionName: 'startingTime',
+      args: [],
+    });
+    const { timestamp } = await testEnv.clients.public.getBlock();
+    const delta = Number(startingTime) - Number(timestamp);
+    await testEnv.clients.test.increaseTime({
+      seconds: delta + 1,
+    });
+    await testEnv.clients.test.mine({ blocks: 1 });
+    const {
+      timestamp: timestampAfter,
+    } = await testEnv.clients.public.getBlock();
+    expect(timestampAfter).toBeGreaterThan(startingTime);
+
     const slugs = await fetchPositionState(
       pool.doppler.address,
       testEnv.clients.public
