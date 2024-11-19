@@ -1,34 +1,35 @@
 import {
   Address,
   createTestClient,
+  Hex,
   http,
+  parseEther,
   publicActions,
   walletActions,
 } from 'viem';
-import { Clients, DopplerSDK } from '../DopplerSDK';
+import { Clients, DopplerSDK } from '../../DopplerSDK';
 import { foundry } from 'viem/chains';
-import { DopplerAddresses } from '../AddressProvider';
+import { DopplerAddresses } from '../../AddressProvider';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
-} from './abis/DeployDopplerFactoryABI';
+} from '../abis/DeployDopplerFactoryABI';
 import { randomBytes } from 'crypto';
+import { DopplerAddressProvider } from '../../AddressProvider';
 
 interface TestEnvironment {
   sdk: DopplerSDK;
   clients: Clients;
-  addresses: DopplerAddresses;
+  addressProvider: DopplerAddressProvider;
 }
 
-const ANVIL_PRIVATE_KEY =
-  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-
-const deploymentFactoryAddress = `0x${randomBytes(20).toString(
-  'hex'
-)}` as Address;
-
 export async function setupTestEnvironment(): Promise<TestEnvironment> {
+  const privateKey = `0x${randomBytes(32).toString('hex')}` as Hex;
+  const deploymentFactoryAddress = `0x${randomBytes(20).toString(
+    'hex'
+  )}` as Address;
+
   const publicClient = createTestClient({
     chain: foundry,
     mode: 'anvil',
@@ -36,7 +37,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
   }).extend(publicActions);
 
   const walletClient = createTestClient({
-    account: privateKeyToAccount(ANVIL_PRIVATE_KEY),
+    account: privateKeyToAccount(privateKey),
     chain: foundry,
     mode: 'anvil',
     transport: http(),
@@ -46,6 +47,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     chain: foundry,
     mode: 'anvil',
     transport: http(),
+  });
+
+  testClient.setBalance({
+    address: privateKeyToAccount(privateKey).address,
+    value: parseEther('1000000'),
   });
 
   testClient.setCode({
@@ -82,6 +88,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     stateView: contractAddresses[6] as Address,
     customRouter: contractAddresses[7] as Address,
   };
+  const addressProvider = new DopplerAddressProvider(31337, addresses);
 
   const sdk = new DopplerSDK(
     { public: publicClient, wallet: walletClient },
@@ -93,6 +100,6 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
   return {
     sdk,
     clients: { public: publicClient, wallet: walletClient, test: testClient },
-    addresses,
+    addressProvider,
   };
 }
