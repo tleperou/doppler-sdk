@@ -16,6 +16,7 @@ import {
 import { Pool } from '@uniswap/v4-sdk';
 import { DopplerAddressProvider } from './AddressProvider';
 import { AirlockABI } from './abis/AirlockABI';
+import { waitForTransactionReceipt } from 'viem/actions';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -162,9 +163,12 @@ export class PoolDeployer {
     // TODO: this is a hack to get the timestamp of the block
     // where the airlock contract was deployed
     // TODO: find a better way to get the deployment block
-    const receipt = await airlockContract.write.create(createArgs, {
+    const createHash = await airlockContract.write.create(createArgs, {
       account: wallet.account,
       chain: this.client.public.chain,
+    });
+    await waitForTransactionReceipt(this.client.public, {
+      hash: createHash,
     });
     const { timestamp } = await this.client.public.getBlock();
 
@@ -176,7 +180,7 @@ export class PoolDeployer {
       poolKey,
       poolId,
       deployedAt: timestamp,
-      deploymentTx: receipt,
+      deploymentTx: createHash,
     };
 
     const dopplerPool = new DopplerPool(doppler, this.client);
