@@ -9,7 +9,6 @@ import {
 } from 'viem';
 import { Clients, DopplerSDK } from '../../DopplerSDK';
 import { foundry } from 'viem/chains';
-import { DopplerAddresses } from '../../AddressProvider';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
   DeployDopplerFactoryABI,
