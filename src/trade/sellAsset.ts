@@ -4,7 +4,7 @@ import { DopplerAddressProvider } from '../AddressProvider';
 import { CustomRouterABI } from '../abis/CustomRouter';
 import { Doppler } from '../types';
 
-export async function buyAssetExactIn(
+export async function sellAssetExactIn(
   doppler: Doppler,
   addressProvider: DopplerAddressProvider,
   amountIn: bigint,
@@ -23,8 +23,7 @@ export async function buyAssetExactIn(
     await simulateContract(client, {
       address: customRouter,
       abi: CustomRouterABI,
-      functionName: 'buyExactIn',
-      value: amountIn,
+      functionName: 'sellExactIn',
       args: [
         {
           ...doppler.poolKey,
@@ -36,6 +35,7 @@ export async function buyAssetExactIn(
       ],
     });
   } catch (err) {
+    console.log(err);
     if (err instanceof BaseError) {
       const revertError = err.walk(
         err => err instanceof ContractFunctionRevertedError
@@ -51,8 +51,7 @@ export async function buyAssetExactIn(
     account,
     address: customRouter,
     abi: CustomRouterABI,
-    functionName: 'buyExactIn',
-    value: amountIn,
+    functionName: 'sellExactIn',
     args: [
       {
         ...doppler.poolKey,
@@ -65,7 +64,7 @@ export async function buyAssetExactIn(
   });
 }
 
-export async function buyAssetExactOut(
+export async function sellAssetExactOut(
   doppler: Doppler,
   addressProvider: DopplerAddressProvider,
   amountOut: bigint,
@@ -79,27 +78,11 @@ export async function buyAssetExactOut(
     throw new Error('Account not found');
   }
 
-  const { result: ethNeeded } = await simulateContract(client, {
-    address: customRouter,
-    abi: CustomRouterABI,
-    functionName: 'computeBuyExactOut',
-    args: [
-      {
-        ...doppler.poolKey,
-        currency0: doppler.poolKey.currency0 as Hex,
-        currency1: doppler.poolKey.currency1 as Hex,
-        hooks: doppler.poolKey.hooks as Hex,
-      },
-      amountOut,
-    ],
-  });
-
   try {
     await simulateContract(client, {
       address: customRouter,
       abi: CustomRouterABI,
-      functionName: 'buyExactOut',
-      value: ethNeeded,
+      functionName: 'sellExactOut',
       args: [
         {
           ...doppler.poolKey,
@@ -127,8 +110,7 @@ export async function buyAssetExactOut(
     account,
     address: customRouter,
     abi: CustomRouterABI,
-    functionName: 'buyExactOut',
-    value: ethNeeded,
+    functionName: 'sellExactOut',
     args: [
       {
         ...doppler.poolKey,

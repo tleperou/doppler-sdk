@@ -9,9 +9,6 @@ import {
   getContract,
   toHex,
   Hex,
-  WalletClient,
-  PublicClient,
-  TestClient,
 } from 'viem';
 import { Pool } from '@uniswap/v4-sdk';
 import { DopplerAddressProvider } from './AddressProvider';
