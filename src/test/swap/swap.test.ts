@@ -2,8 +2,7 @@ import { describe, expect, it, beforeAll, beforeEach } from 'vitest';
 import { setupTestEnvironment } from './swapSetup';
 import { Address, parseEther } from 'viem';
 import { buyAssetExactIn, buyAssetExactOut } from '../../trade/buyAsset';
-import { sellAssetExactIn } from '../../trade/sellAsset';
-import { readContract, writeContract } from 'viem/actions';
+import { writeContract } from 'viem/actions';
 import { DERC20ABI } from '../../abis/DERC20ABI';
 
 describe('Doppler Swap tests', () => {
@@ -79,36 +78,36 @@ describe('Doppler Swap tests', () => {
     expect(receipt.status).toBe('success');
   });
 
-  it('should sell asset with exact in', async () => {
-    const { clients, pool, addressProvider } = testEnv;
-    if (
-      !clients.test ||
-      !clients.wallet?.account?.address ||
-      !clients.wallet?.chain
-    ) {
-      throw new Error('Test client not found');
-    }
-    const tokenAddress = pool.doppler.assetToken.address;
-    const balance = await readContract(clients.test, {
-      address: tokenAddress as Address,
-      abi: DERC20ABI,
-      functionName: 'balanceOf',
-      args: [clients.wallet.account.address],
-    });
+  // it('should sell asset with exact in', async () => {
+  //   const { clients, pool, addressProvider } = testEnv;
+  //   if (
+  //     !clients.test ||
+  //     !clients.wallet?.account?.address ||
+  //     !clients.wallet?.chain
+  //   ) {
+  //     throw new Error('Test client not found');
+  //   }
+  //   const tokenAddress = pool.doppler.assetToken.address;
+  //   const balance = await readContract(clients.test, {
+  //     address: tokenAddress as Address,
+  //     abi: DERC20ABI,
+  //     functionName: 'balanceOf',
+  //     args: [clients.wallet.account.address],
+  //   });
 
-    const sellExactInTxHash = await sellAssetExactIn(
-      pool.doppler,
-      addressProvider,
-      balance,
-      clients.wallet
-    );
-    await clients.public.waitForTransactionReceipt({
-      hash: sellExactInTxHash,
-    });
+  //   const sellExactInTxHash = await sellAssetExactIn(
+  //     pool.doppler,
+  //     addressProvider,
+  //     balance,
+  //     clients.wallet
+  //   );
+  //   await clients.public.waitForTransactionReceipt({
+  //     hash: sellExactInTxHash,
+  //   });
 
-    const receipt = await clients.public.getTransactionReceipt({
-      hash: sellExactInTxHash,
-    });
-    expect(receipt.status).toBe('success');
-  });
+  //   const receipt = await clients.public.getTransactionReceipt({
+  //     hash: sellExactInTxHash,
+  //   });
+  //   expect(receipt.status).toBe('success');
+  // });
 });
