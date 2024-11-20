@@ -56,10 +56,7 @@ describe('Doppler Pool Deployment', () => {
     expect(doppler.address).toBeDefined();
     expect(doppler.deploymentTx).toBeDefined();
 
-    const slugs = await fetchPositionState(
-      doppler.address,
-      clients.publicClient
-    );
+    const slugs = await fetchPositionState(doppler, clients.publicClient);
 
     expect(slugs[0].liquidity).toEqual(BigInt(0));
     expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));
