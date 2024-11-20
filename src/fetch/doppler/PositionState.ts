@@ -1,6 +1,6 @@
 import { DopplerABI } from '../../abis/DopplerABI';
-import { PositionState } from '../../types';
-import { Address, Client, Hex } from 'viem';
+import { Doppler, PositionState } from '../../types';
+import { Client, Hex } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
 
 export type ViewOverrides = {
@@ -14,16 +14,17 @@ export type FetchPositionStateParams = {
 };
 
 export async function fetchPositionState(
-  dopplerAddress: Address,
+  dopplerAddress: Doppler,
   client: Client,
   { chainId, overrides = {} }: FetchPositionStateParams = {}
 ): Promise<PositionState[]> {
   // Ensure we have the chain ID
   chainId = chainId ?? (await getChainId(client));
+  const { address } = dopplerAddress;
 
   const numPdSlugs = await readContract(client, {
     ...overrides,
-    address: dopplerAddress,
+    address,
     abi: DopplerABI,
     functionName: 'numPDSlugs',
   });
@@ -31,7 +32,7 @@ export async function fetchPositionState(
   // Fetch the state with any provided overrides
   const lowerSlugState = await readContract(client, {
     ...overrides,
-    address: dopplerAddress,
+    address,
     abi: DopplerABI,
     functionName: 'positions',
     args: [
@@ -41,7 +42,7 @@ export async function fetchPositionState(
 
   const upperSlugState = await readContract(client, {
     ...overrides,
-    address: dopplerAddress,
+    address,
     abi: DopplerABI,
     functionName: 'positions',
     args: [
@@ -53,7 +54,7 @@ export async function fetchPositionState(
     getPdSalts(Number(numPdSlugs)).map(salt =>
       readContract(client, {
         ...overrides,
-        address: dopplerAddress,
+        address,
         abi: DopplerABI,
         functionName: 'positions',
         args: [salt],
