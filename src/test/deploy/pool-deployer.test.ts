@@ -15,7 +15,7 @@ describe('Doppler Pool Deployment', () => {
   it('should deploy a new Doppler pool', async () => {
     const { sdk, addressProvider, clients } = testEnv;
 
-    if (!clients.test || !clients.wallet) {
+    if (!clients.test || !clients.wallet || !clients.wallet.chain) {
       throw new Error('Test client not found');
     }
 
@@ -41,17 +41,15 @@ describe('Doppler Pool Deployment', () => {
 
     const config = DopplerConfigBuilder.buildConfig(
       configParams,
+      clients.wallet.chain.id,
       addressProvider
     );
 
-    const { pool } = await sdk.deployer.deploy(config);
-    expect(pool.doppler.address).toBeDefined();
-    expect(pool.doppler.deploymentTx).toBeDefined();
+    const doppler = await sdk.deployer.deploy(config);
+    expect(doppler.address).toBeDefined();
+    expect(doppler.deploymentTx).toBeDefined();
 
-    const slugs = await fetchPositionState(
-      pool.doppler.address,
-      clients.public
-    );
+    const slugs = await fetchPositionState(doppler.address, clients.public);
 
     expect(slugs[0].liquidity).toEqual(BigInt(0));
     expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));

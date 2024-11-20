@@ -1,4 +1,3 @@
-import { DopplerPool } from './entities';
 import { DeploymentConfig, Doppler } from './types';
 import { Token } from '@uniswap/sdk-core';
 import { Clients } from './DopplerSDK';
@@ -54,14 +53,15 @@ export class PoolDeployer {
     this.addressProvider = addressProvider;
   }
 
-  async deploy(config: DeploymentConfig): Promise<{ pool: DopplerPool }> {
-    const chainId = this.addressProvider.getChainId();
+  async deploy(config: DeploymentConfig): Promise<Doppler> {
     const wallet = this.client.wallet;
-    if (!wallet?.account?.address) {
+    if (!wallet?.account?.address || !wallet.chain?.id) {
       throw new Error(
         'No wallet account found. Please connect a wallet first.'
       );
     }
+
+    const chainId = wallet.chain.id;
 
     const {
       airlock,
@@ -69,7 +69,7 @@ export class PoolDeployer {
       governanceFactory,
       dopplerFactory,
       migrator,
-    } = this.addressProvider.getAddresses();
+    } = this.addressProvider.addresses;
 
     const dopplerFactoryData = encodeAbiParameters(
       [
@@ -180,7 +180,6 @@ export class PoolDeployer {
       deploymentTx: createHash,
     };
 
-    const dopplerPool = new DopplerPool(doppler, this.client);
-    return { pool: dopplerPool };
+    return doppler;
   }
 }
