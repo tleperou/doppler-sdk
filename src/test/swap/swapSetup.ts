@@ -16,8 +16,11 @@ import {
   DeployDopplerFactoryDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
 import { randomBytes } from 'crypto';
-import { DopplerConfigParams } from '../../PoolDeployer';
-import { DopplerConfigBuilder } from '../../utils';
+import {
+  deployDoppler,
+  DopplerConfigParams,
+} from '../../actions/deploy/deployDoppler';
+import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { readContract } from 'viem/actions';
 import { Doppler } from '../../types';
@@ -95,12 +98,7 @@ export async function setupTestEnvironment(): Promise<SwapTestEnvironment> {
   };
 
   const addressProvider = new DopplerAddressProvider(31337, addresses);
-  const sdk = new DopplerSDK(
-    { public: publicClient, wallet: walletClient },
-    {
-      addresses,
-    }
-  );
+  const sdk = new DopplerSDK({ publicClient, walletClient }, 31337, addresses);
 
   const block = await publicClient.getBlock();
 
@@ -128,7 +126,7 @@ export async function setupTestEnvironment(): Promise<SwapTestEnvironment> {
     publicClient.chain.id,
     addressProvider
   );
-  const doppler = await sdk.deployer.deploy(config);
+  const doppler = await deployDoppler(sdk.clients, addressProvider, config);
 
   // jump to starting time
   const startingTime = await readContract(publicClient, {
@@ -148,7 +146,7 @@ export async function setupTestEnvironment(): Promise<SwapTestEnvironment> {
 
   return {
     sdk,
-    clients: { public: publicClient, wallet: walletClient, test: testClient },
+    clients: { publicClient, walletClient, testClient },
     addressProvider,
     doppler,
   };
