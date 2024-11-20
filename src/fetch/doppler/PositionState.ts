@@ -1,5 +1,5 @@
-import { DopplerABI } from '../abis/DopplerABI';
-import { PositionState } from '../types';
+import { DopplerABI } from '../../abis/DopplerABI';
+import { PositionState } from '../../types';
 import { Address, Client, Hex } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
 

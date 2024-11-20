@@ -1,10 +1,10 @@
 import { Price, Token } from '@uniswap/sdk-core';
 import { priceToClosestTick, Pool, PoolKey } from '@uniswap/v4-sdk';
-import { DeploymentConfig } from '../types';
+import { DeploymentConfig } from '../../types';
 import { MineParams, mine } from './airlockMiner';
-import { DopplerAddressProvider } from '../AddressProvider';
+import { DopplerAddressProvider } from '../../AddressProvider';
 import { parseEther } from 'viem';
-import { DopplerConfigParams } from '../PoolDeployer';
+import { DopplerConfigParams } from './deployDoppler';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {

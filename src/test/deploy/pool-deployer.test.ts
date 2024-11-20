@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { setupTestEnvironment } from './setup';
 import { parseEther } from 'viem';
-import { DopplerConfigParams } from '../../PoolDeployer';
-import { DopplerConfigBuilder } from '../../utils';
-import { fetchPositionState } from '../../fetch/PositionState';
+import {
+  deployDoppler,
+  DopplerConfigParams,
+} from '../../actions/deploy/deployDoppler';
+import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
+import { fetchPositionState } from '../../fetch/doppler/PositionState';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -15,11 +18,15 @@ describe('Doppler Pool Deployment', () => {
   it('should deploy a new Doppler pool', async () => {
     const { sdk, addressProvider, clients } = testEnv;
 
-    if (!clients.test || !clients.wallet || !clients.wallet.chain) {
+    if (
+      !clients.testClient ||
+      !clients.walletClient ||
+      !clients.walletClient.chain
+    ) {
       throw new Error('Test client not found');
     }
 
-    const { timestamp } = await clients.public.getBlock();
+    const { timestamp } = await clients.publicClient.getBlock();
     const configParams: DopplerConfigParams = {
       name: 'Gud Coin',
       symbol: 'GUD',
@@ -41,15 +48,18 @@ describe('Doppler Pool Deployment', () => {
 
     const config = DopplerConfigBuilder.buildConfig(
       configParams,
-      clients.wallet.chain.id,
+      clients.walletClient.chain.id,
       addressProvider
     );
 
-    const doppler = await sdk.deployer.deploy(config);
+    const doppler = await deployDoppler(sdk.clients, addressProvider, config);
     expect(doppler.address).toBeDefined();
     expect(doppler.deploymentTx).toBeDefined();
 
-    const slugs = await fetchPositionState(doppler.address, clients.public);
+    const slugs = await fetchPositionState(
+      doppler.address,
+      clients.publicClient
+    );
 
     expect(slugs[0].liquidity).toEqual(BigInt(0));
     expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));

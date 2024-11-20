@@ -1,9 +1,10 @@
-import { DopplerABI } from '../abis/DopplerABI';
-import { DopplerState } from '../types';
-import { Address, Client, Hex } from 'viem';
+import { DopplerABI } from '../../abis/DopplerABI';
+import { DopplerState } from '../../types';
+import { Address, Client } from 'viem';
+import { Doppler } from '../../types';
 import { getChainId, readContract } from 'viem/actions';
-import { DopplerAddressProvider } from '../AddressProvider';
-import { StateViewABI } from '../abis/StateViewABI';
+import { DopplerAddressProvider } from '../../AddressProvider';
+import { StateViewABI } from '../../abis/StateViewABI';
 
 export type ViewOverrides = {
   blockNumber?: bigint;
@@ -16,8 +17,7 @@ export type FetchDopplerStateParams = {
 };
 
 export async function fetchDopplerState(
-  dopplerAddress: Address,
-  poolId: Hex,
+  doppler: Doppler,
   addressProvider: DopplerAddressProvider,
   client: Client,
   { chainId, overrides = {} }: FetchDopplerStateParams = {}
@@ -29,7 +29,7 @@ export async function fetchDopplerState(
   const [state, poolState] = await Promise.all([
     readContract(client, {
       ...overrides,
-      address: dopplerAddress,
+      address: doppler.address,
       abi: DopplerABI,
       functionName: 'state',
     }),
@@ -38,7 +38,7 @@ export async function fetchDopplerState(
       address: stateView,
       abi: StateViewABI,
       functionName: 'getSlot0',
-      args: [poolId],
+      args: [doppler.poolId],
     }),
   ]);
 

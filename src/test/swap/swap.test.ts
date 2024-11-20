@@ -1,25 +1,31 @@
 import { describe, expect, it, beforeAll, beforeEach } from 'vitest';
 import { setupTestEnvironment } from './swapSetup';
 import { Address, parseEther } from 'viem';
-import { buyAssetExactIn, buyAssetExactOut } from '../../trade/buyAsset';
-import { sellAssetExactIn, sellAssetExactOut } from '../../trade/sellAsset';
+import {
+  buyAssetExactIn,
+  buyAssetExactOut,
+} from '../../actions/trade/buyAsset';
+import {
+  sellAssetExactIn,
+  sellAssetExactOut,
+} from '../../actions/trade/sellAsset';
 import { writeContract } from 'viem/actions';
 import { DERC20ABI } from '../../abis/DERC20ABI';
 import { readContract } from 'viem/actions';
-import { fetchDopplerState } from '../../fetch/DopplerState';
+import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
 describe('Doppler Swap tests', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
 
   beforeAll(async () => {
     testEnv = await setupTestEnvironment();
     const { clients, addressProvider, doppler } = testEnv;
-    if (!clients.wallet || !clients.wallet.account || !clients.test) {
+    if (!clients.walletClient || !clients.walletClient.account) {
       throw new Error('Required clients not found');
     }
     // max approve
-    await writeContract(clients.wallet, {
-      chain: clients.wallet.chain,
-      account: clients.wallet.account,
+    await writeContract(clients.walletClient, {
+      chain: clients.walletClient.chain,
+      account: clients.walletClient.account,
       address: doppler.assetToken.address as Address,
       abi: DERC20ABI,
       functionName: 'approve',
@@ -31,14 +37,14 @@ describe('Doppler Swap tests', () => {
   });
 
   beforeEach(async () => {
-    await testEnv.clients.test?.mine({
+    await testEnv.clients.testClient?.mine({
       blocks: 1,
     });
   });
 
   it('should buy asset with exact out', async () => {
     const { clients, doppler, addressProvider } = testEnv;
-    if (!clients.test || !clients.wallet) {
+    if (!clients.testClient || !clients.walletClient) {
       throw new Error('Test client not found');
     }
 
@@ -46,13 +52,13 @@ describe('Doppler Swap tests', () => {
       doppler,
       addressProvider,
       parseEther('0.05'),
-      clients.wallet
+      clients.walletClient
     );
-    await clients.public.waitForTransactionReceipt({
+    await clients.publicClient.waitForTransactionReceipt({
       hash: buyExactOutTxHash,
     });
 
-    const receipt = await clients.public.getTransactionReceipt({
+    const receipt = await clients.publicClient.getTransactionReceipt({
       hash: buyExactOutTxHash,
     });
     expect(receipt.status).toBe('success');
@@ -60,7 +66,7 @@ describe('Doppler Swap tests', () => {
 
   it('should buy asset with exact in', async () => {
     const { clients, doppler, addressProvider } = testEnv;
-    if (!clients.test || !clients.wallet) {
+    if (!clients.testClient || !clients.walletClient) {
       throw new Error('Test client not found');
     }
 
@@ -68,13 +74,13 @@ describe('Doppler Swap tests', () => {
       doppler,
       addressProvider,
       parseEther('0.05'),
-      clients.wallet
+      clients.walletClient
     );
-    await clients.public.waitForTransactionReceipt({
+    await clients.publicClient.waitForTransactionReceipt({
       hash: buyExactInTxHash,
     });
 
-    const receipt = await clients.public.getTransactionReceipt({
+    const receipt = await clients.publicClient.getTransactionReceipt({
       hash: buyExactInTxHash,
     });
     expect(receipt.status).toBe('success');
@@ -83,19 +89,19 @@ describe('Doppler Swap tests', () => {
   it('should sell asset with exact in', async () => {
     const { clients, doppler, addressProvider } = testEnv;
     if (
-      !clients.test ||
-      !clients.wallet?.account?.address ||
-      !clients.wallet?.chain
+      !clients.testClient ||
+      !clients.walletClient ||
+      !clients.walletClient.account?.address
     ) {
       throw new Error('Test client not found');
     }
     const tokenAddress = doppler.assetToken.address;
 
-    const balance = await readContract(clients.test, {
+    const balance = await readContract(clients.testClient, {
       address: tokenAddress as Address,
       abi: DERC20ABI,
       functionName: 'balanceOf',
-      args: [clients.wallet.account.address],
+      args: [clients.walletClient.account?.address],
     });
 
     // sell 10% of the balance
@@ -105,13 +111,13 @@ describe('Doppler Swap tests', () => {
       doppler,
       addressProvider,
       amountToSell,
-      clients.wallet
+      clients.walletClient
     );
-    await clients.public.waitForTransactionReceipt({
+    await clients.publicClient.waitForTransactionReceipt({
       hash: sellExactInTxHash,
     });
 
-    const receipt = await clients.public.getTransactionReceipt({
+    const receipt = await clients.publicClient.getTransactionReceipt({
       hash: sellExactInTxHash,
     });
     expect(receipt.status).toBe('success');
@@ -120,23 +126,22 @@ describe('Doppler Swap tests', () => {
   it('Should sell asset with exact out', async () => {
     const { clients, doppler, addressProvider } = testEnv;
     if (
-      !clients.test ||
-      !clients.wallet?.account?.address ||
-      !clients.wallet?.chain
+      !clients.testClient ||
+      !clients.walletClient ||
+      !clients.walletClient.account?.address
     ) {
       throw new Error('Test client not found');
     }
 
     const manager = addressProvider.addresses.poolManager;
-    const managerBalance = await clients.public.getBalance({
+    const managerBalance = await clients.publicClient.getBalance({
       address: manager,
     });
 
     const poolState = await fetchDopplerState(
-      doppler.address,
-      doppler.poolId,
+      doppler,
       addressProvider,
-      clients.public
+      clients.publicClient
     );
 
     // swap for 10% of the manager balance
@@ -147,13 +152,13 @@ describe('Doppler Swap tests', () => {
       doppler,
       addressProvider,
       amountOut,
-      clients.wallet
+      clients.walletClient
     );
-    await clients.public.waitForTransactionReceipt({
+    await clients.publicClient.waitForTransactionReceipt({
       hash: sellExactOutTxHash,
     });
 
-    const receipt = await clients.public.getTransactionReceipt({
+    const receipt = await clients.publicClient.getTransactionReceipt({
       hash: sellExactOutTxHash,
     });
     expect(receipt.status).toBe('success');

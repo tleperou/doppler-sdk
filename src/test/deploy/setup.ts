@@ -89,16 +89,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
   };
   const addressProvider = new DopplerAddressProvider(31337, addresses);
 
-  const sdk = new DopplerSDK(
-    { public: publicClient, wallet: walletClient },
-    {
-      addresses,
-    }
-  );
+  const sdk = new DopplerSDK({ publicClient, walletClient }, 31337, addresses);
 
   return {
     sdk,
-    clients: { public: publicClient, wallet: walletClient, test: testClient },
+    clients: { publicClient, walletClient, testClient },
     addressProvider,
   };
 }
