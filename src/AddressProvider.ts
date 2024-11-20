@@ -26,8 +26,8 @@ export const DOPPLER_ADDRESSES: { [chainId: number]: DopplerAddresses } = {
 };
 
 export class DopplerAddressProvider {
-  private readonly chainId: number;
-  private readonly addresses: DopplerAddresses;
+  public readonly chainId: number;
+  public readonly addresses: DopplerAddresses;
 
   constructor(chainId: number, addresses?: Partial<DopplerAddresses>) {
     this.chainId = chainId;
@@ -41,13 +41,5 @@ export class DopplerAddressProvider {
       ...defaultAddresses,
       ...addresses,
     };
-  }
-
-  public getAddresses(): DopplerAddresses {
-    return this.addresses;
-  }
-
-  public getChainId(): number {
-    return this.chainId;
   }
 }

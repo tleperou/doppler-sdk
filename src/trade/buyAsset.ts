@@ -17,7 +17,7 @@ export async function buyAssetExactIn(
     throw new Error('Account not found');
   }
 
-  const customRouter = addressProvider.getAddresses().customRouter;
+  const customRouter = addressProvider.addresses.customRouter;
 
   try {
     await simulateContract(client, {
@@ -73,7 +73,7 @@ export async function buyAssetExactOut(
 ): Promise<Hex> {
   const chain = client.chain;
   const account = client?.account;
-  const customRouter = addressProvider.getAddresses().customRouter;
+  const customRouter = addressProvider.addresses.customRouter;
 
   if (!account) {
     throw new Error('Account not found');

@@ -20,13 +20,13 @@ import { DopplerConfigParams } from '../../PoolDeployer';
 import { DopplerConfigBuilder } from '../../utils';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { readContract } from 'viem/actions';
-import { DopplerPool } from '../../entities';
+import { Doppler } from '../../types';
 
 interface SwapTestEnvironment {
   sdk: DopplerSDK;
   clients: Clients;
   addressProvider: DopplerAddressProvider;
-  pool: DopplerPool;
+  doppler: Doppler;
 }
 
 export async function setupTestEnvironment(): Promise<SwapTestEnvironment> {
@@ -125,13 +125,14 @@ export async function setupTestEnvironment(): Promise<SwapTestEnvironment> {
 
   const config = DopplerConfigBuilder.buildConfig(
     configParams,
+    publicClient.chain.id,
     addressProvider
   );
-  const { pool } = await sdk.deployer.deploy(config);
+  const doppler = await sdk.deployer.deploy(config);
 
   // jump to starting time
   const startingTime = await readContract(publicClient, {
-    address: pool.doppler.address,
+    address: doppler.address,
     abi: DopplerABI,
     functionName: 'startingTime',
     args: [],
@@ -149,6 +150,6 @@ export async function setupTestEnvironment(): Promise<SwapTestEnvironment> {
     sdk,
     clients: { public: publicClient, wallet: walletClient, test: testClient },
     addressProvider,
-    pool,
+    doppler,
   };
 }

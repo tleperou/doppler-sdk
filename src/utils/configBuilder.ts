@@ -21,6 +21,7 @@ export class DopplerConfigBuilder {
    */
   public static buildConfig(
     params: DopplerConfigParams,
+    chainId: number,
     addressProvider: DopplerAddressProvider
   ): DeploymentConfig {
     this.validateBasicParams(params);
@@ -56,7 +57,7 @@ export class DopplerConfigBuilder {
       dopplerFactory,
       poolManager,
       airlock,
-    } = addressProvider.getAddresses();
+    } = addressProvider.addresses;
 
     const mineParams: MineParams = {
       poolManager,
@@ -84,7 +85,7 @@ export class DopplerConfigBuilder {
     );
 
     const token = new Token(
-      addressProvider.getChainId(),
+      chainId,
       tokenAddress,
       18,
       params.name,
@@ -92,7 +93,7 @@ export class DopplerConfigBuilder {
     );
 
     const eth = new Token(
-      addressProvider.getChainId(),
+      chainId,
       '0x0000000000000000000000000000000000000000',
       18,
       'ETH',

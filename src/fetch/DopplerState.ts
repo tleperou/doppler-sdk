@@ -24,7 +24,7 @@ export async function fetchDopplerState(
 ): Promise<DopplerState> {
   chainId = chainId ?? (await getChainId(client));
 
-  const stateView = addressProvider.getAddresses().stateView;
+  const stateView = addressProvider.addresses.stateView;
 
   const [state, poolState] = await Promise.all([
     readContract(client, {
