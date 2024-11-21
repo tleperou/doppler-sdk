@@ -1,12 +1,13 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { setupTestEnvironment } from './setup';
 import { parseEther } from 'viem';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
 import {
   deployDoppler,
   DopplerConfigParams,
 } from '../../actions/deploy/deployDoppler';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
+import { DopplerSDK } from '../../DopplerSDK';
 import { fetchPositionState } from '../../fetch/doppler/PositionState';
+import { setupTestEnvironment } from './setup';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -16,7 +17,15 @@ describe('Doppler Pool Deployment', () => {
   });
 
   it('should deploy a new Doppler pool', async () => {
-    const { sdk, addressProvider, clients } = testEnv;
+    const { addressProvider, clients } = testEnv;
+    const sdk = new DopplerSDK(
+      {
+        publicClient: clients.publicClient,
+        walletClient: clients.walletClient,
+      },
+      31337,
+      addressProvider.addresses
+    );
 
     if (
       !clients.testClient ||
@@ -56,10 +65,7 @@ describe('Doppler Pool Deployment', () => {
     expect(doppler.address).toBeDefined();
     expect(doppler.deploymentTx).toBeDefined();
 
-    const slugs = await fetchPositionState(
-      doppler.address,
-      clients.publicClient
-    );
+    const slugs = await fetchPositionState(doppler, clients.publicClient);
 
     expect(slugs[0].liquidity).toEqual(BigInt(0));
     expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));

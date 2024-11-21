@@ -1,10 +1,9 @@
-import { DopplerABI } from '../../abis/DopplerABI';
-import { DopplerState } from '../../types';
 import { Address, Client } from 'viem';
-import { Doppler } from '../../types';
 import { getChainId, readContract } from 'viem/actions';
 import { DopplerAddressProvider } from '../../AddressProvider';
+import { DopplerABI } from '../../abis/DopplerABI';
 import { StateViewABI } from '../../abis/StateViewABI';
+import { Doppler, DopplerState } from '../../types';
 
 export type ViewOverrides = {
   blockNumber?: bigint;
@@ -81,4 +80,57 @@ export async function fetchTokensRemaining(
   ]);
 
   return numTokensToSell - state[2];
+}
+
+export const fetchEndingTime = async (hookAddress: Address, client: Client) => {
+  const endingTime = await readContract(client, {
+    address: hookAddress,
+    abi: DopplerABI,
+    functionName: 'endingTime',
+  });
+  return endingTime;
+};
+
+export const fetchTotalEpochs = async (
+  dopplerAddress: Address,
+  client: Client
+) => {
+  const totalEpochs = await readContract(client, {
+    address: dopplerAddress,
+    abi: DopplerABI,
+    functionName: 'totalEpochs',
+  });
+  return totalEpochs;
+};
+
+export async function fetchMaxProceeds(
+  dopplerAddress: Address,
+  client: Client,
+  { chainId, overrides = {} }: FetchDopplerStateParams = {}
+): Promise<bigint> {
+  chainId = chainId ?? (await getChainId(client));
+  const maxProceeds = await readContract(client, {
+    ...overrides,
+    address: dopplerAddress,
+    abi: DopplerABI,
+    functionName: 'maximumProceeds',
+  });
+
+  return maxProceeds;
+}
+
+export async function fetchMinProceeds(
+  dopplerAddress: Address,
+  client: Client,
+  { chainId, overrides = {} }: FetchDopplerStateParams = {}
+): Promise<bigint> {
+  chainId = chainId ?? (await getChainId(client));
+  const minProceeds = await readContract(client, {
+    ...overrides,
+    address: dopplerAddress,
+    abi: DopplerABI,
+    functionName: 'numTokensToSell',
+  });
+
+  return minProceeds;
 }
