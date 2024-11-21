@@ -7,20 +7,13 @@ import {
 } from '../../actions/deploy/deployDoppler';
 import { DopplerAddressProvider } from '../../AddressProvider';
 import { Clients, DopplerSDK } from '../../DopplerSDK';
-import {
-  fetchDopplerState,
-  fetchEndingTime,
-  fetchMaxProceeds,
-  fetchMinProceeds,
-  fetchTotalEpochs,
-} from '../../fetch/doppler/DopplerState';
 import { Doppler } from '../../types';
 import { setupTestEnvironment } from '../utils/setupTestEnv';
+import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
 
 describe('Doppler Pool Deployment', () => {
   let clients: Clients;
   let addressProvider: DopplerAddressProvider;
-  let dopplerSDK: DopplerSDK;
   let doppler: Doppler;
 
   beforeAll(async () => {
@@ -30,15 +23,6 @@ describe('Doppler Pool Deployment', () => {
     } = await setupTestEnvironment();
     clients = testClients;
     addressProvider = testAddressProvider;
-    dopplerSDK = new DopplerSDK(
-      {
-        publicClient: clients.publicClient,
-        walletClient: clients.walletClient,
-      },
-      31337,
-      addressProvider.addresses
-    );
-
     if (
       !clients.testClient ||
       !clients.walletClient ||
@@ -72,7 +56,7 @@ describe('Doppler Pool Deployment', () => {
       clients.walletClient.chain.id,
       addressProvider
     );
-    doppler = await deployDoppler(dopplerSDK.clients, addressProvider, config);
+    doppler = await deployDoppler(clients, addressProvider, config);
   });
 
   describe('Doppler Pool Fetchers', () => {
@@ -81,12 +65,9 @@ describe('Doppler Pool Deployment', () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler,
           addressProvider,
-          dopplerSDK.clients.publicClient
+          clients.publicClient
         );
-        const maxProceeds = await fetchMaxProceeds(
-          doppler.address,
-          dopplerSDK.clients.publicClient
-        );
+        const maxProceeds = doppler.immutables.maximumProceeds;
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
       });
 
@@ -94,20 +75,14 @@ describe('Doppler Pool Deployment', () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler,
           addressProvider,
-          dopplerSDK.clients.publicClient
+          clients.publicClient
         );
-        const minProceeds = await fetchMinProceeds(
-          doppler.address,
-          dopplerSDK.clients.publicClient
-        );
+        const minProceeds = doppler.immutables.minimumProceeds;
         expect(minProceeds - totalProceeds).toEqual(minProceeds);
       });
 
       it('time remaining', async () => {
-        const endingTime = await fetchEndingTime(
-          doppler.hook,
-          dopplerSDK.clients.publicClient
-        );
+        const endingTime = doppler.immutables.endingTime;
         const { timestamp } = await clients.publicClient.getBlock();
         const timeRemaining = endingTime - timestamp;
 
@@ -118,30 +93,24 @@ describe('Doppler Pool Deployment', () => {
         const { lastEpoch } = await fetchDopplerState(
           doppler,
           addressProvider,
-          dopplerSDK.clients.publicClient
+          clients.publicClient
         );
         // TODO: Calculate current Epoch
-        const currentEpoch = BigInt(0);
-        const totalEpochs = await fetchTotalEpochs(
-          doppler.address,
-          dopplerSDK.clients.publicClient
-        );
+        const currentEpoch = 0;
+        const totalEpochs = doppler.immutables.totalEpochs;
         const epochsRemaining = totalEpochs - currentEpoch;
         expect(epochsRemaining).toBeGreaterThanOrEqual(0);
       });
     });
 
-    test('doppler pool with asset tokens purchased', () => {
+    describe('doppler pool with asset tokens purchased', () => {
       it('distance from maxProceeds should be less than maxProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler,
           addressProvider,
-          dopplerSDK.clients.publicClient
+          clients.publicClient
         );
-        const maxProceeds = await fetchMaxProceeds(
-          doppler.address,
-          dopplerSDK.clients.publicClient
-        );
+        const maxProceeds = doppler.immutables.maximumProceeds;
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
       });
 
@@ -149,12 +118,9 @@ describe('Doppler Pool Deployment', () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler,
           addressProvider,
-          dopplerSDK.clients.publicClient
+          clients.publicClient
         );
-        const minProceeds = await fetchMinProceeds(
-          doppler.address,
-          dopplerSDK.clients.publicClient
-        );
+        const minProceeds = doppler.immutables.minimumProceeds;
         expect(minProceeds - totalProceeds).toEqual(minProceeds);
       });
     });

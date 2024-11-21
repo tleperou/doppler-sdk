@@ -5,7 +5,6 @@ import {
   deployDoppler,
   DopplerConfigParams,
 } from '../../actions/deploy/deployDoppler';
-import { DopplerSDK } from '../../DopplerSDK';
 import { fetchPositionState } from '../../fetch/doppler/PositionState';
 import { setupTestEnvironment } from './setup';
 
@@ -17,16 +16,7 @@ describe('Doppler Pool Deployment', () => {
   });
 
   it('should deploy a new Doppler pool', async () => {
-    const { addressProvider, clients } = testEnv;
-    const sdk = new DopplerSDK(
-      {
-        publicClient: clients.publicClient,
-        walletClient: clients.walletClient,
-      },
-      31337,
-      addressProvider.addresses
-    );
-
+    const { sdk, addressProvider, clients } = testEnv;
     if (
       !clients.testClient ||
       !clients.walletClient ||

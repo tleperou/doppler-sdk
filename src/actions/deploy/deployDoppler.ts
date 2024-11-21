@@ -13,6 +13,7 @@ import { DopplerAddressProvider } from '../../AddressProvider';
 import { AirlockABI } from '../../abis/AirlockABI';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { Clients } from '../../DopplerSDK';
+import { fetchDopplerImmutables } from '../../fetch/doppler/DopplerState';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -162,6 +163,11 @@ export async function deployDoppler(
   });
   const { timestamp } = await publicClient.getBlock();
 
+  const immutables = await fetchDopplerImmutables(
+    config.dopplerAddress,
+    publicClient
+  );
+
   const doppler: Doppler = {
     address: config.dopplerAddress,
     assetToken: config.hook.assetToken,
@@ -171,6 +177,7 @@ export async function deployDoppler(
     poolId,
     deployedAt: timestamp,
     deploymentTx: createHash,
+    immutables,
   };
 
   return doppler;
