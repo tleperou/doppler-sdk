@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { setupTestEnvironment } from './setup';
 import { parseEther } from 'viem';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
 import {
   deployDoppler,
   DopplerConfigParams,
 } from '../../actions/deploy/deployDoppler';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
 import { fetchPositionState } from '../../fetch/doppler/PositionState';
+import { setupTestEnvironment } from './setup';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -17,7 +17,6 @@ describe('Doppler Pool Deployment', () => {
 
   it('should deploy a new Doppler pool', async () => {
     const { sdk, addressProvider, clients } = testEnv;
-
     if (
       !clients.testClient ||
       !clients.walletClient ||

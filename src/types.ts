@@ -12,6 +12,22 @@ export interface Doppler {
   poolId: Hex;
   deployedAt: bigint;
   deploymentTx: Hex;
+  immutables: DopplerImmutables;
+}
+
+export interface DopplerImmutables {
+  startingTime: bigint;
+  endingTime: bigint;
+  epochLength: bigint;
+  isToken0: boolean;
+  numTokensToSell: bigint;
+  minimumProceeds: bigint;
+  maximumProceeds: bigint;
+  startingTick: number;
+  endingTick: number;
+  gamma: number;
+  totalEpochs: number;
+  numPDSlugs: number;
 }
 
 export interface DopplerState {
