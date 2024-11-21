@@ -1,13 +1,13 @@
 import { parseEther } from 'viem';
-import { beforeAll, describe, expect, it, test } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
 import {
   deployDoppler,
   DopplerConfigParams,
 } from '../../actions/deploy/deployDoppler';
 import { DopplerAddressProvider } from '../../AddressProvider';
-import { Clients, DopplerSDK } from '../../DopplerSDK';
-import { Doppler } from '../../types';
+import { Clients } from '../../DopplerSDK';
+import { Doppler } from '../../entities/Doppler/Doppler';
 import { setupTestEnvironment } from '../utils/setupTestEnv';
 import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
 
@@ -66,7 +66,7 @@ describe('Doppler Pool Deployment', () => {
           doppler.address,
           clients.publicClient
         );
-        const maxProceeds = doppler.immutables.maximumProceeds;
+        const maxProceeds = doppler.getProceedsDistanceFromMaximum();
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
       });
 
@@ -75,27 +75,17 @@ describe('Doppler Pool Deployment', () => {
           doppler.address,
           clients.publicClient
         );
-        const minProceeds = doppler.immutables.minimumProceeds;
+        const minProceeds = doppler.getProceedsDistanceFromMinimum();
         expect(minProceeds - totalProceeds).toEqual(minProceeds);
       });
 
       it('time remaining', async () => {
-        const endingTime = doppler.immutables.endingTime;
-        const { timestamp } = await clients.publicClient.getBlock();
-        const timeRemaining = endingTime - timestamp;
-
+        const timeRemaining = doppler.getTimeRemaining();
         expect(timeRemaining).toBeGreaterThanOrEqual(0);
       });
 
       it('epochs remaining', async () => {
-        const { lastEpoch } = await fetchDopplerState(
-          doppler.address,
-          clients.publicClient
-        );
-        // TODO: Calculate current Epoch
-        const currentEpoch = 0;
-        const totalEpochs = doppler.immutables.totalEpochs;
-        const epochsRemaining = totalEpochs - currentEpoch;
+        const epochsRemaining = doppler.getEpochsRemaining();
         expect(epochsRemaining).toBeGreaterThanOrEqual(0);
       });
     });
@@ -106,7 +96,7 @@ describe('Doppler Pool Deployment', () => {
           doppler.address,
           clients.publicClient
         );
-        const maxProceeds = doppler.immutables.maximumProceeds;
+        const maxProceeds = doppler.getProceedsDistanceFromMaximum();
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
       });
 
@@ -115,7 +105,7 @@ describe('Doppler Pool Deployment', () => {
           doppler.address,
           clients.publicClient
         );
-        const minProceeds = doppler.immutables.minimumProceeds;
+        const minProceeds = doppler.getProceedsDistanceFromMinimum();
         expect(minProceeds - totalProceeds).toEqual(minProceeds);
       });
     });

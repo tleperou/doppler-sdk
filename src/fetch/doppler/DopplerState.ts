@@ -4,13 +4,12 @@ import {
   decodeAbiParameters,
   PublicClient,
   fromHex,
-  Hex,
 } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { DopplerLensABI, DopplerLensBytecode } from '../../abis/DopplerLens';
 import { encodeFunctionData } from 'viem';
-import { HookState } from '../../entities/Doppler/Hook';
+import { HookState } from '../../entities/Doppler/Doppler';
 import { DopplerImmutables } from '../../types';
 
 export type ViewOverrides = {
@@ -36,13 +35,6 @@ export async function fetchDopplerState(
     abi: DopplerABI,
     functionName: 'state',
   });
-  // readContract(client, {
-  //   ...overrides,
-  //   address: stateView,
-  //   abi: StateViewABI,
-  //   functionName: 'getSlot0',
-  //   args: [poolId],
-  // }),
 
   // Process the fees data
   const feesAccrued = state[5];

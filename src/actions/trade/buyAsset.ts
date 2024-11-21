@@ -2,7 +2,7 @@ import { BaseError, ContractFunctionRevertedError, Client, Hex } from 'viem';
 import { simulateContract, writeContract } from 'viem/actions';
 import { DopplerAddressProvider } from '../../AddressProvider';
 import { CustomRouterABI } from '../../abis/CustomRouter';
-import { Doppler } from '../../types';
+import { Doppler } from '../../entities/Doppler/Doppler';
 
 export async function buyAssetExactIn(
   doppler: Doppler,

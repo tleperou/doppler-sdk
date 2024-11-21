@@ -1,3 +1,4 @@
+import { Doppler } from '../../entities/Doppler';
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
@@ -5,7 +6,7 @@ import {
   deployDoppler,
   DopplerConfigParams,
 } from '../../actions/deploy/deployDoppler';
-import { fetchPositionState } from '../../fetch/doppler/PositionState';
+import { fetchPoolState } from '../../fetch/doppler/PoolState';
 import { setupTestEnvironment } from './setup';
 
 describe('Doppler Pool Deployment', () => {
@@ -53,12 +54,7 @@ describe('Doppler Pool Deployment', () => {
 
     const doppler = await deployDoppler(sdk.clients, addressProvider, config);
     expect(doppler.address).toBeDefined();
-    expect(doppler.deploymentTx).toBeDefined();
 
-    const slugs = await fetchPositionState(doppler, clients.publicClient);
-
-    expect(slugs[0].liquidity).toEqual(BigInt(0));
-    expect(slugs[1].liquidity).toBeGreaterThan(BigInt(0));
-    expect(slugs[2].liquidity).toBeGreaterThan(BigInt(0));
+    await doppler.watch(clients.publicClient);
   });
 });

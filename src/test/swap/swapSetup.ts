@@ -23,7 +23,7 @@ import {
 import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { readContract } from 'viem/actions';
-import { Doppler } from '../../types';
+import { Doppler } from '../../entities/Doppler/Doppler';
 
 interface SwapTestEnvironment {
   sdk: DopplerSDK;
