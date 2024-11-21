@@ -63,8 +63,7 @@ describe('Doppler Pool Deployment', () => {
     describe('fetch values from newly initialized doppler pool', () => {
       it('distance from maxProceeds should equal maxProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
-          doppler,
-          addressProvider,
+          doppler.address,
           clients.publicClient
         );
         const maxProceeds = doppler.immutables.maximumProceeds;
@@ -73,8 +72,7 @@ describe('Doppler Pool Deployment', () => {
 
       it('distance from minProceeds should equal minProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
-          doppler,
-          addressProvider,
+          doppler.address,
           clients.publicClient
         );
         const minProceeds = doppler.immutables.minimumProceeds;
@@ -91,8 +89,7 @@ describe('Doppler Pool Deployment', () => {
 
       it('epochs remaining', async () => {
         const { lastEpoch } = await fetchDopplerState(
-          doppler,
-          addressProvider,
+          doppler.address,
           clients.publicClient
         );
         // TODO: Calculate current Epoch
@@ -106,8 +103,7 @@ describe('Doppler Pool Deployment', () => {
     describe('doppler pool with asset tokens purchased', () => {
       it('distance from maxProceeds should be less than maxProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
-          doppler,
-          addressProvider,
+          doppler.address,
           clients.publicClient
         );
         const maxProceeds = doppler.immutables.maximumProceeds;
@@ -116,8 +112,7 @@ describe('Doppler Pool Deployment', () => {
 
       it('distance from minProceeds should equal minProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
-          doppler,
-          addressProvider,
+          doppler.address,
           clients.publicClient
         );
         const minProceeds = doppler.immutables.minimumProceeds;

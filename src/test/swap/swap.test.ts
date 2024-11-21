@@ -139,8 +139,7 @@ describe('Doppler Swap tests', () => {
     });
 
     const poolState = await fetchDopplerState(
-      doppler,
-      addressProvider,
+      doppler.address,
       clients.publicClient
     );
 
