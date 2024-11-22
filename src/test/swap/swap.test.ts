@@ -4,13 +4,13 @@ import { Address, parseEther } from 'viem';
 import {
   buyAssetExactIn,
   buyAssetExactOut,
-} from '../../actions/trade/buyAsset';
+} from '../../actions/trade/buy/buyAsset';
 import {
   sellAssetExactIn,
   sellAssetExactOut,
-} from '../../actions/trade/sellAsset';
+} from '../../actions/trade/sell/sellAsset';
 import { writeContract } from 'viem/actions';
-import { DERC20ABI } from '../../abis/DERC20ABI';
+import { DERC20ABI } from '../../abis';
 import { readContract } from 'viem/actions';
 import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
 describe('Doppler Swap tests', () => {
@@ -18,7 +18,7 @@ describe('Doppler Swap tests', () => {
 
   beforeAll(async () => {
     testEnv = await setupTestEnvironment();
-    const { clients, addressProvider, doppler } = testEnv;
+    const { clients, addresses, doppler } = testEnv;
     if (!clients.walletClient || !clients.walletClient.account) {
       throw new Error('Required clients not found');
     }
@@ -29,10 +29,7 @@ describe('Doppler Swap tests', () => {
       address: doppler.assetToken.address as Address,
       abi: DERC20ABI,
       functionName: 'approve',
-      args: [
-        addressProvider.addresses.customRouter,
-        BigInt(1) << (BigInt(256) - BigInt(1)),
-      ],
+      args: [addresses.customRouter, BigInt(1) << (BigInt(256) - BigInt(1))],
     });
   });
 
@@ -43,14 +40,14 @@ describe('Doppler Swap tests', () => {
   });
 
   it('should buy asset with exact out', async () => {
-    const { clients, doppler, addressProvider } = testEnv;
+    const { clients, doppler, addresses } = testEnv;
     if (!clients.testClient || !clients.walletClient) {
       throw new Error('Test client not found');
     }
 
     const buyExactOutTxHash = await buyAssetExactOut(
       doppler,
-      addressProvider,
+      addresses,
       parseEther('0.05'),
       clients.walletClient
     );
@@ -65,14 +62,14 @@ describe('Doppler Swap tests', () => {
   });
 
   it('should buy asset with exact in', async () => {
-    const { clients, doppler, addressProvider } = testEnv;
+    const { clients, doppler, addresses } = testEnv;
     if (!clients.testClient || !clients.walletClient) {
       throw new Error('Test client not found');
     }
 
     const buyExactInTxHash = await buyAssetExactIn(
       doppler,
-      addressProvider,
+      addresses,
       parseEther('0.05'),
       clients.walletClient
     );
@@ -87,7 +84,7 @@ describe('Doppler Swap tests', () => {
   });
 
   it('should sell asset with exact in', async () => {
-    const { clients, doppler, addressProvider } = testEnv;
+    const { clients, doppler, addresses } = testEnv;
     if (
       !clients.testClient ||
       !clients.walletClient ||
@@ -109,7 +106,7 @@ describe('Doppler Swap tests', () => {
 
     const sellExactInTxHash = await sellAssetExactIn(
       doppler,
-      addressProvider,
+      addresses,
       amountToSell,
       clients.walletClient
     );
@@ -124,7 +121,7 @@ describe('Doppler Swap tests', () => {
   });
 
   it('Should sell asset with exact out', async () => {
-    const { clients, doppler, addressProvider } = testEnv;
+    const { clients, doppler, addresses } = testEnv;
     if (
       !clients.testClient ||
       !clients.walletClient ||
@@ -133,7 +130,7 @@ describe('Doppler Swap tests', () => {
       throw new Error('Test client not found');
     }
 
-    const manager = addressProvider.addresses.poolManager;
+    const manager = addresses.poolManager;
     const managerBalance = await clients.publicClient.getBalance({
       address: manager,
     });
@@ -149,7 +146,7 @@ describe('Doppler Swap tests', () => {
     expect(amountOut).toBeLessThan(poolState.totalProceeds);
     const sellExactOutTxHash = await sellAssetExactOut(
       doppler,
-      addressProvider,
+      addresses,
       amountOut,
       clients.walletClient
     );

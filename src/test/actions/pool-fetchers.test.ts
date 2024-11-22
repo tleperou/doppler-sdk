@@ -1,38 +1,27 @@
-import { parseEther } from 'viem';
+import { parseEther, PublicClient } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
-import {
-  deployDoppler,
-  DopplerConfigParams,
-} from '../../actions/deploy/deployDoppler';
-import { DopplerAddressProvider } from '../../AddressProvider';
-import { Clients } from '../../DopplerSDK';
-import { Doppler } from '../../entities/Doppler/Doppler';
+import { Doppler } from '../../entities/Doppler';
 import { setupTestEnvironment } from '../utils/setupTestEnv';
 import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
+import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
 
 describe('Doppler Pool Deployment', () => {
-  let clients: Clients;
-  let addressProvider: DopplerAddressProvider;
   let doppler: Doppler;
+  let client: PublicClient;
 
   beforeAll(async () => {
     const {
-      clients: testClients,
-      addressProvider: testAddressProvider,
+      clients: { publicClient, walletClient },
+      addresses,
     } = await setupTestEnvironment();
-    clients = testClients;
-    addressProvider = testAddressProvider;
-    if (
-      !clients.testClient ||
-      !clients.walletClient ||
-      !clients.walletClient.chain
-    ) {
+    if (!publicClient || !walletClient) {
       throw new Error('Test client not found');
     }
 
-    const { timestamp } = await clients.publicClient.getBlock();
-    const configParams: DopplerConfigParams = {
+    client = publicClient;
+
+    const { timestamp } = await publicClient.getBlock();
+    const configParams: DopplerPreDeploymentConfig = {
       name: 'Gud Coin',
       symbol: 'GUD',
       totalSupply: parseEther('1000'),
@@ -51,12 +40,9 @@ describe('Doppler Pool Deployment', () => {
       maxProceeds: parseEther('600'),
     };
 
-    const config = DopplerConfigBuilder.buildConfig(
-      configParams,
-      clients.walletClient.chain.id,
-      addressProvider
-    );
-    doppler = await deployDoppler(clients, addressProvider, config);
+    const deployer = new Deployer({ publicClient, walletClient, addresses });
+    const config = deployer.buildConfig(configParams);
+    doppler = await deployer.deployWithConfig(config);
   });
 
   describe('Doppler Pool Fetchers', () => {
@@ -64,7 +50,7 @@ describe('Doppler Pool Deployment', () => {
       it('distance from maxProceeds should equal maxProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler.address,
-          clients.publicClient
+          client
         );
         const maxProceeds = doppler.getProceedsDistanceFromMaximum();
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
@@ -73,7 +59,7 @@ describe('Doppler Pool Deployment', () => {
       it('distance from minProceeds should equal minProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler.address,
-          clients.publicClient
+          client
         );
         const minProceeds = doppler.getProceedsDistanceFromMinimum();
         expect(minProceeds - totalProceeds).toEqual(minProceeds);
@@ -94,7 +80,7 @@ describe('Doppler Pool Deployment', () => {
       it('distance from maxProceeds should be less than maxProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler.address,
-          clients.publicClient
+          client
         );
         const maxProceeds = doppler.getProceedsDistanceFromMaximum();
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
@@ -103,7 +89,7 @@ describe('Doppler Pool Deployment', () => {
       it('distance from minProceeds should equal minProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler.address,
-          clients.publicClient
+          client
         );
         const minProceeds = doppler.getProceedsDistanceFromMinimum();
         expect(minProceeds - totalProceeds).toEqual(minProceeds);

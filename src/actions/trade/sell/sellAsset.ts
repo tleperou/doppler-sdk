@@ -1,12 +1,19 @@
-import { BaseError, ContractFunctionRevertedError, Client, Hex } from 'viem';
-import { simulateContract, writeContract } from 'viem/actions';
-import { DopplerAddressProvider } from '../../AddressProvider';
-import { CustomRouterABI } from '../../abis/CustomRouter';
-import { Doppler } from '../../entities/Doppler/Doppler';
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  Client,
+  Hex,
+  Address,
+} from 'viem';
+import { readContract, simulateContract, writeContract } from 'viem/actions';
+import { DopplerAddresses } from '../../../types';
+import { CustomRouterABI } from '../../../abis';
+import { Doppler } from '../../../entities/Doppler';
+import { DERC20ABI } from '../../../abis';
 
-export async function buyAssetExactIn(
+export async function sellAssetExactIn(
   doppler: Doppler,
-  addressProvider: DopplerAddressProvider,
+  addresses: DopplerAddresses,
   amountIn: bigint,
   client: Client
 ): Promise<Hex> {
@@ -17,14 +24,13 @@ export async function buyAssetExactIn(
     throw new Error('Account not found');
   }
 
-  const customRouter = addressProvider.addresses.customRouter;
+  const customRouter = addresses.customRouter;
 
   try {
     await simulateContract(client, {
       address: customRouter,
       abi: CustomRouterABI,
-      functionName: 'buyExactIn',
-      value: amountIn,
+      functionName: 'sellExactIn',
       args: [
         {
           ...doppler.poolKey,
@@ -51,8 +57,7 @@ export async function buyAssetExactIn(
     account,
     address: customRouter,
     abi: CustomRouterABI,
-    functionName: 'buyExactIn',
-    value: amountIn,
+    functionName: 'sellExactIn',
     args: [
       {
         ...doppler.poolKey,
@@ -65,24 +70,31 @@ export async function buyAssetExactIn(
   });
 }
 
-export async function buyAssetExactOut(
+export async function sellAssetExactOut(
   doppler: Doppler,
-  addressProvider: DopplerAddressProvider,
+  addresses: DopplerAddresses,
   amountOut: bigint,
   client: Client
 ): Promise<Hex> {
   const chain = client.chain;
   const account = client?.account;
-  const customRouter = addressProvider.addresses.customRouter;
+  const customRouter = addresses.customRouter;
 
   if (!account) {
     throw new Error('Account not found');
   }
 
-  const { result: ethNeeded } = await simulateContract(client, {
+  const balance = await readContract(client, {
+    address: doppler.assetToken.address as Address,
+    abi: DERC20ABI,
+    functionName: 'balanceOf',
+    args: [account.address],
+  });
+
+  const { result: assetNeeded } = await simulateContract(client, {
     address: customRouter,
     abi: CustomRouterABI,
-    functionName: 'computeBuyExactOut',
+    functionName: 'computeSellExactOut',
     args: [
       {
         ...doppler.poolKey,
@@ -94,12 +106,13 @@ export async function buyAssetExactOut(
     ],
   });
 
+  if (balance < assetNeeded) throw new Error('Insufficient balance');
+
   try {
     await simulateContract(client, {
       address: customRouter,
       abi: CustomRouterABI,
-      functionName: 'buyExactOut',
-      value: ethNeeded,
+      functionName: 'sellExactOut',
       args: [
         {
           ...doppler.poolKey,
@@ -127,8 +140,7 @@ export async function buyAssetExactOut(
     account,
     address: customRouter,
     abi: CustomRouterABI,
-    functionName: 'buyExactOut',
-    value: ethNeeded,
+    functionName: 'sellExactOut',
     args: [
       {
         ...doppler.poolKey,

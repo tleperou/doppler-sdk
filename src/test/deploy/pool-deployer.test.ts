@@ -1,13 +1,7 @@
-import { Doppler } from '../../entities/Doppler';
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
-import {
-  deployDoppler,
-  DopplerConfigParams,
-} from '../../actions/deploy/deployDoppler';
-import { fetchPoolState } from '../../fetch/doppler/PoolState';
 import { setupTestEnvironment } from './setup';
+import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -17,17 +11,16 @@ describe('Doppler Pool Deployment', () => {
   });
 
   it('should deploy a new Doppler pool', async () => {
-    const { sdk, addressProvider, clients } = testEnv;
-    if (
-      !clients.testClient ||
-      !clients.walletClient ||
-      !clients.walletClient.chain
-    ) {
+    const {
+      clients: { publicClient, walletClient },
+      addresses,
+    } = testEnv;
+    if (!publicClient || !walletClient || !walletClient.chain) {
       throw new Error('Test client not found');
     }
 
-    const { timestamp } = await clients.publicClient.getBlock();
-    const configParams: DopplerConfigParams = {
+    const { timestamp } = await publicClient.getBlock();
+    const configParams: DopplerPreDeploymentConfig = {
       name: 'Gud Coin',
       symbol: 'GUD',
       totalSupply: parseEther('1000'),
@@ -46,15 +39,10 @@ describe('Doppler Pool Deployment', () => {
       maxProceeds: parseEther('600'),
     };
 
-    const config = DopplerConfigBuilder.buildConfig(
-      configParams,
-      clients.walletClient.chain.id,
-      addressProvider
-    );
+    const deployer = new Deployer({ publicClient, walletClient, addresses });
+    const config = deployer.buildConfig(configParams);
+    const doppler = await deployer.deployWithConfig(config);
 
-    const doppler = await deployDoppler(sdk.clients, addressProvider, config);
     expect(doppler.address).toBeDefined();
-
-    await doppler.watch(clients.publicClient);
   });
 });

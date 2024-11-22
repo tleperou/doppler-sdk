@@ -1,8 +1,8 @@
-import { Address, Client, Hash, Hex, PublicClient } from 'viem';
+import { Address, Client, Hash, Hex } from 'viem';
 import { Token } from '@uniswap/sdk-core';
 import { PoolKey } from '@uniswap/v4-sdk';
-import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
-import { fetchPoolState } from '../../fetch/doppler/PoolState';
+import { fetchDopplerState } from '../fetch/doppler/DopplerState';
+import { fetchPoolState } from '../fetch/doppler/PoolState';
 
 enum AuctionPhase {
   ACTIVE = 'ACTIVE',
@@ -19,7 +19,7 @@ enum AuctionStatus {
 export interface HookConfig {
   startingTime: bigint;
   endingTime: bigint;
-  epochLength: bigint;
+  epochLength: number;
   isToken0: boolean;
   numTokensToSell: bigint;
   minimumProceeds: bigint;
@@ -106,20 +106,6 @@ export class Doppler {
     this.proceedsFromMaximum = this.getProceedsDistanceFromMaximum();
     this.proceedsFromMinimum = this.getProceedsDistanceFromMinimum();
     this.epochsRemaining = this.getEpochsRemaining();
-  }
-
-  // here we can watch and update state + call other functions
-  // eventually we want to listen for the event from the contract
-  // the event will contain all of the new state
-  public watch(client: PublicClient): () => void {
-    const unwatch = client.watchBlocks({
-      onBlock: async block => {
-        await this.getHookState(client);
-        await this.getPoolState(client);
-        this.lastSyncedTimestamp = block.timestamp;
-      },
-    });
-    return unwatch;
   }
 
   public async getPoolState(client: Client): Promise<void> {
