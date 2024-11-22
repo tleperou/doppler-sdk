@@ -6,7 +6,6 @@ import { DOPPLER_ADDRESSES } from '../addresses';
 import {
   DeploymentConfigParams,
   DopplerAddresses,
-  PoolConfig,
   TokenConfig,
 } from '../types';
 import { buildConfig } from '../actions/create/utils/configBuilder';
@@ -44,6 +43,11 @@ export interface DopplerPreDeploymentConfig {
   minProceeds: bigint;
   maxProceeds: bigint;
   numPdSlugs?: number; // uses a default if not set
+}
+
+export interface PoolConfig {
+  tickSpacing: number;
+  fee: number; // In bips (e.g., 3000 for 0.3%)
 }
 
 export interface DopplerDeploymentConfig {

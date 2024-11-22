@@ -1,4 +1,4 @@
-import { Address, Hash, PublicClient, TestClient, WalletClient } from 'viem';
+import { Address, PublicClient, TestClient, WalletClient } from 'viem';
 import { Token } from '@uniswap/sdk-core';
 
 export interface Clients {
@@ -37,9 +37,4 @@ export interface DeploymentConfigParams {
   maxProceeds: bigint;
   numTokensToSell: bigint;
   numPdSlugs: number;
-}
-
-export interface PoolConfig {
-  tickSpacing: number;
-  fee: number; // In bips (e.g., 3000 for 0.3%)
 }
