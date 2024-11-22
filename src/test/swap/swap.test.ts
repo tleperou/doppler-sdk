@@ -148,7 +148,7 @@ describe('Doppler Swap tests', () => {
 
     expect(amountOut).toBeLessThan(poolState.totalProceeds);
     const sellExactOutTxHash = await sellAssetExactOut(
-      doppler.address,
+      doppler,
       addressProvider,
       amountOut,
       clients.walletClient

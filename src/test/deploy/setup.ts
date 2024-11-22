@@ -98,6 +98,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     addressProvider.addresses
   );
 
+  await testClient.mine({
+    blocks: 1,
+  });
+
+
   return {
     sdk,
     clients: { publicClient, walletClient, testClient },
