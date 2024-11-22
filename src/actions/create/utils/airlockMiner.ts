@@ -7,8 +7,8 @@ import {
   getAddress,
   Hex,
 } from 'viem';
-import { DopplerBytecode } from '../../abis/DopplerABI';
-import { DERC20Bytecode } from '../../abis/DERC20ABI';
+import { DopplerBytecode } from '../../../abis/DopplerABI';
+import { DERC20Bytecode } from '../../../abis/DERC20ABI';
 
 const FLAG_MASK = BigInt(0x3fff);
 

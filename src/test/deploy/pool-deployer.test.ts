@@ -1,13 +1,9 @@
-import { Doppler } from '../../entities/Doppler';
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
-import {
-  deployDoppler,
-  DopplerConfigParams,
-} from '../../actions/deploy/deployDoppler';
-import { fetchPoolState } from '../../fetch/doppler/PoolState';
+import { createDoppler } from '../../actions/create/create';
 import { setupTestEnvironment } from './setup';
+import { buildConfig } from '../../actions/create/utils/configBuilder';
+import { DopplerConfigParams } from '../../entities/Deployer';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -17,16 +13,15 @@ describe('Doppler Pool Deployment', () => {
   });
 
   it('should deploy a new Doppler pool', async () => {
-    const { sdk, addressProvider, clients } = testEnv;
-    if (
-      !clients.testClient ||
-      !clients.walletClient ||
-      !clients.walletClient.chain
-    ) {
+    const {
+      clients: { publicClient, walletClient },
+      addresses,
+    } = testEnv;
+    if (!publicClient || !walletClient || !walletClient.chain) {
       throw new Error('Test client not found');
     }
 
-    const { timestamp } = await clients.publicClient.getBlock();
+    const { timestamp } = await publicClient.getBlock();
     const configParams: DopplerConfigParams = {
       name: 'Gud Coin',
       symbol: 'GUD',
@@ -46,15 +41,14 @@ describe('Doppler Pool Deployment', () => {
       maxProceeds: parseEther('600'),
     };
 
-    const config = DopplerConfigBuilder.buildConfig(
-      configParams,
-      clients.walletClient.chain.id,
-      addressProvider
+    const config = buildConfig(configParams, walletClient.chain.id, addresses);
+
+    const doppler = await createDoppler(
+      publicClient,
+      walletClient,
+      addresses,
+      config
     );
-
-    const doppler = await deployDoppler(sdk.clients, addressProvider, config);
     expect(doppler.address).toBeDefined();
-
-    await doppler.watch(clients.publicClient);
   });
 });

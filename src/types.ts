@@ -1,6 +1,30 @@
-import { Address, Hash, Hex } from 'viem';
+import {
+  Address,
+  Hash,
+  Hex,
+  PublicClient,
+  TestClient,
+  WalletClient,
+} from 'viem';
 import { Token } from '@uniswap/sdk-core';
 import { PoolKey } from '@uniswap/v4-sdk';
+
+export interface Clients {
+  publicClient: PublicClient;
+  walletClient?: WalletClient;
+  testClient?: TestClient;
+}
+
+export interface DopplerAddresses {
+  airlock: Address;
+  tokenFactory: Address;
+  dopplerFactory: Address;
+  governanceFactory: Address;
+  migrator: Address;
+  poolManager: Address;
+  stateView: Address;
+  customRouter: Address;
+}
 
 // TODO: Add governance data
 export interface Doppler {

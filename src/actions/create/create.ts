@@ -8,59 +8,34 @@ import {
   getContract,
   toHex,
   Hex,
+  PublicClient,
+  WalletClient,
 } from 'viem';
 import { Pool } from '@uniswap/v4-sdk';
-import { DopplerAddressProvider } from '../../AddressProvider';
+import { DopplerAddresses } from '../../types';
 import { AirlockABI } from '../../abis/AirlockABI';
 import { waitForTransactionReceipt } from 'viem/actions';
-import { Clients } from '../../DopplerSDK';
 import {
   fetchDopplerImmutables,
   fetchDopplerState,
 } from '../../fetch/doppler/DopplerState';
 import { fetchPoolState } from '../../fetch/doppler/PoolState';
 
-// this maps onto the tick range, startingTick -> endingTick
-export interface PriceRange {
-  startPrice: number;
-  endPrice: number;
-}
-
-export interface DopplerConfigParams {
-  // Token details
-  name: string;
-  symbol: string;
-  totalSupply: bigint;
-  numTokensToSell: bigint;
-
-  // Time parameters
-  blockTimestamp: number;
-  startTimeOffset: number; // in days from now
-  duration: number; // in days
-  epochLength: number; // in seconds
-
-  // Price parameters
-  priceRange: PriceRange;
-  tickSpacing: number;
-  fee: number; // In bips
-
-  // Sale parameters
-  minProceeds: bigint;
-  maxProceeds: bigint;
-  numPdSlugs?: number; // uses a default if not set
-}
-
-export async function deployDoppler(
-  clients: Clients,
-  addressProvider: DopplerAddressProvider,
+export async function createDoppler(
+  publicClient: PublicClient,
+  walletClient: WalletClient,
+  addresses: DopplerAddresses,
   config: DeploymentConfig
 ): Promise<Doppler> {
-  const { walletClient, publicClient } = clients;
   if (!walletClient?.account?.address || !walletClient?.chain?.id) {
     throw new Error('No wallet account found. Please connect a wallet first.');
   }
 
   const chainId = walletClient.chain.id;
+
+  if (chainId !== publicClient.chain?.id) {
+    throw new Error('Wallet and public client are not on the same chain');
+  }
 
   const {
     airlock,
@@ -69,7 +44,7 @@ export async function deployDoppler(
     governanceFactory,
     dopplerFactory,
     migrator,
-  } = addressProvider.addresses;
+  } = addresses;
 
   const dopplerFactoryData = encodeAbiParameters(
     [
@@ -164,28 +139,30 @@ export async function deployDoppler(
     account: walletClient.account,
     chain: walletClient.chain,
   });
-  await waitForTransactionReceipt(publicClient, {
+  const { contractAddress } = await waitForTransactionReceipt(publicClient, {
     hash: createHash,
   });
-  const { timestamp } = await publicClient.getBlock();
+
+  if (!contractAddress) {
+    throw new Error('No contract address returned from deployment');
+  }
 
   const dopplerConfig = await fetchDopplerImmutables(
-    config.dopplerAddress,
+    contractAddress,
     publicClient
   );
-  const dopplerState = await fetchDopplerState(
-    config.dopplerAddress,
-    publicClient
-  );
+  const dopplerState = await fetchDopplerState(contractAddress, publicClient);
   const poolState = await fetchPoolState(
-    config.dopplerAddress,
+    contractAddress,
     stateView,
     publicClient,
     poolId
   );
 
+  const { timestamp } = await publicClient.getBlock();
+
   const doppler = new Doppler({
-    address: config.dopplerAddress,
+    address: contractAddress,
     stateView,
     assetToken: config.hook.assetToken,
     quoteToken: config.hook.quoteToken,

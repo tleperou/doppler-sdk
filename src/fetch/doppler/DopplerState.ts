@@ -9,7 +9,7 @@ import { getChainId, readContract } from 'viem/actions';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { DopplerLensABI, DopplerLensBytecode } from '../../abis/DopplerLens';
 import { encodeFunctionData } from 'viem';
-import { HookState } from '../../entities/Doppler/Doppler';
+import { HookState } from '../../entities/Doppler';
 import { DopplerImmutables } from '../../types';
 
 export type ViewOverrides = {

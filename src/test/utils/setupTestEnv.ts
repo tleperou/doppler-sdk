@@ -10,17 +10,15 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
-import { DopplerAddressProvider } from '../../AddressProvider';
-import { Clients, DopplerSDK } from '../../DopplerSDK';
 import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
+import { Clients, DopplerAddresses } from '../../types';
 
 interface TestEnvironment {
-  sdk: DopplerSDK;
   clients: Clients;
-  addressProvider: DopplerAddressProvider;
+  addresses: DopplerAddresses;
 }
 
 export async function setupTestEnvironment(): Promise<TestEnvironment> {
@@ -87,20 +85,9 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     stateView: contractAddresses[6] as Address,
     customRouter: contractAddresses[7] as Address,
   };
-  const addressProvider = new DopplerAddressProvider(31337, addresses);
-
-  const sdk = new DopplerSDK(
-    {
-      publicClient,
-      walletClient,
-    },
-    31337,
-    addressProvider.addresses
-  );
 
   return {
-    sdk,
     clients: { publicClient, walletClient, testClient },
-    addressProvider,
+    addresses,
   };
 }

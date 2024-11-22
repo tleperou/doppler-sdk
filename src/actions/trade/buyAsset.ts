@@ -1,12 +1,12 @@
 import { BaseError, ContractFunctionRevertedError, Client, Hex } from 'viem';
 import { simulateContract, writeContract } from 'viem/actions';
-import { DopplerAddressProvider } from '../../AddressProvider';
+import { DopplerAddresses } from '../../types';
 import { CustomRouterABI } from '../../abis/CustomRouter';
-import { Doppler } from '../../entities/Doppler/Doppler';
+import { Doppler } from '../../entities/Doppler';
 
 export async function buyAssetExactIn(
   doppler: Doppler,
-  addressProvider: DopplerAddressProvider,
+  addresses: DopplerAddresses,
   amountIn: bigint,
   client: Client
 ): Promise<Hex> {
@@ -17,7 +17,7 @@ export async function buyAssetExactIn(
     throw new Error('Account not found');
   }
 
-  const customRouter = addressProvider.addresses.customRouter;
+  const customRouter = addresses.customRouter;
 
   try {
     await simulateContract(client, {
@@ -67,13 +67,13 @@ export async function buyAssetExactIn(
 
 export async function buyAssetExactOut(
   doppler: Doppler,
-  addressProvider: DopplerAddressProvider,
+  addresses: DopplerAddresses,
   amountOut: bigint,
   client: Client
 ): Promise<Hex> {
   const chain = client.chain;
   const account = client?.account;
-  const customRouter = addressProvider.addresses.customRouter;
+  const customRouter = addresses.customRouter;
 
   if (!account) {
     throw new Error('Account not found');

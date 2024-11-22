@@ -19,11 +19,11 @@ import { randomBytes } from 'crypto';
 import {
   deployDoppler,
   DopplerConfigParams,
-} from '../../actions/deploy/deployDoppler';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
+} from '../../actions/create/create';
+import { DopplerConfigBuilder } from '../../actions/create/configBuilder';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { readContract } from 'viem/actions';
-import { Doppler } from '../../entities/Doppler/Doppler';
+import { Doppler } from '../../entities/Doppler';
 
 interface SwapTestEnvironment {
   sdk: DopplerSDK;

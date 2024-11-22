@@ -1,13 +1,13 @@
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { DopplerConfigBuilder } from '../../actions/deploy/configBuilder';
+import { DopplerConfigBuilder } from '../../actions/create/configBuilder';
 import {
   deployDoppler,
   DopplerConfigParams,
-} from '../../actions/deploy/deployDoppler';
+} from '../../actions/create/create';
 import { DopplerAddressProvider } from '../../AddressProvider';
 import { Clients } from '../../DopplerSDK';
-import { Doppler } from '../../entities/Doppler/Doppler';
+import { Doppler } from '../../entities/Doppler';
 import { setupTestEnvironment } from '../utils/setupTestEnv';
 import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
 

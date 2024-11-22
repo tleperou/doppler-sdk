@@ -1,6 +1,6 @@
 import { DopplerABI } from '../../abis/DopplerABI';
 import { StateViewABI, StateViewBytecode } from '../../abis/StateViewABI';
-import { PoolState, Position } from '../../entities/Doppler/Doppler';
+import { PoolState, Position } from '../../entities/Doppler';
 import {
   Hex,
   encodeFunctionData,
