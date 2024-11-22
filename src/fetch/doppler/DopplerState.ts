@@ -9,8 +9,7 @@ import { getChainId, readContract } from 'viem/actions';
 import { DopplerABI } from '../../abis/DopplerABI';
 import { DopplerLensABI, DopplerLensBytecode } from '../../abis/DopplerLens';
 import { encodeFunctionData } from 'viem';
-import { HookState } from '../../entities/Doppler';
-import { DopplerImmutables } from '../../types';
+import { HookState, HookConfig } from '../../entities/Doppler';
 
 export type ViewOverrides = {
   blockNumber?: bigint;
@@ -55,7 +54,7 @@ export async function fetchDopplerState(
 export async function fetchDopplerImmutables(
   dopplerAddress: Address,
   client: PublicClient
-): Promise<DopplerImmutables> {
+): Promise<HookConfig> {
   const { data } = await client.call({
     code: DopplerLensBytecode,
     data: encodeFunctionData({
@@ -87,7 +86,7 @@ export async function fetchDopplerImmutables(
   return {
     startingTime: decoded[0],
     endingTime: decoded[1],
-    epochLength: decoded[2],
+    epochLength: Number(decoded[2]),
     isToken0: decoded[3],
     numTokensToSell: decoded[4],
     minimumProceeds: decoded[5],

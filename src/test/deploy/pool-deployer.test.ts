@@ -1,9 +1,7 @@
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createDoppler } from '../../actions/create/create';
 import { setupTestEnvironment } from './setup';
-import { buildConfig } from '../../actions/create/utils/configBuilder';
-import { DopplerConfigParams } from '../../entities/Deployer';
+import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -22,7 +20,7 @@ describe('Doppler Pool Deployment', () => {
     }
 
     const { timestamp } = await publicClient.getBlock();
-    const configParams: DopplerConfigParams = {
+    const configParams: DopplerPreDeploymentConfig = {
       name: 'Gud Coin',
       symbol: 'GUD',
       totalSupply: parseEther('1000'),
@@ -41,14 +39,10 @@ describe('Doppler Pool Deployment', () => {
       maxProceeds: parseEther('600'),
     };
 
-    const config = buildConfig(configParams, walletClient.chain.id, addresses);
+    const deployer = new Deployer({ publicClient, walletClient, addresses });
+    const config = deployer.buildConfig(configParams);
+    const doppler = await deployer.deployWithConfig(config);
 
-    const doppler = await createDoppler(
-      publicClient,
-      walletClient,
-      addresses,
-      config
-    );
     expect(doppler.address).toBeDefined();
   });
 });

@@ -1,11 +1,11 @@
 import { Price, Token } from '@uniswap/sdk-core';
 import { priceToClosestTick, Pool, PoolKey } from '@uniswap/v4-sdk';
-import { DeploymentConfig } from '../../../types';
 import { MineParams, mine } from './airlockMiner';
 import { DopplerAddresses } from '../../../types';
 import { parseEther } from 'viem';
 import {
-  DopplerConfigParams,
+  DopplerPreDeploymentConfig,
+  DopplerDeploymentConfig,
   DAY_SECONDS,
   DEFAULT_PD_SLUGS,
   MAX_TICK_SPACING,
@@ -16,10 +16,10 @@ import {
  * Validates and builds pool configuration from user-friendly parameters
  */
 export function buildConfig(
-  params: DopplerConfigParams,
+  params: DopplerPreDeploymentConfig,
   chainId: number,
   addresses: DopplerAddresses
-): DeploymentConfig {
+): DopplerDeploymentConfig {
   validateBasicParams(params);
 
   const { startTick, endTick } = computeTicks(
@@ -208,7 +208,7 @@ function priceToSqrtPriceX96(price: Price<Token, Token>): bigint {
 }
 
 // Validates basic parameters
-function validateBasicParams(params: DopplerConfigParams) {
+function validateBasicParams(params: DopplerPreDeploymentConfig) {
   // Validate tick spacing
   if (params.tickSpacing > MAX_TICK_SPACING) {
     throw new Error(`Tick spacing cannot exceed ${MAX_TICK_SPACING}`);

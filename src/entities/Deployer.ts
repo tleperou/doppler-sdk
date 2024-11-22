@@ -1,10 +1,16 @@
 import { WalletClient } from 'viem/_types/clients/createWalletClient';
 import { createDoppler } from '../actions/create/create';
 import { Doppler } from './Doppler';
-import { PublicClient } from 'viem';
+import { Address, Hash, PublicClient } from 'viem';
 import { DOPPLER_ADDRESSES } from '../addresses';
-import { DeploymentConfig } from '../types';
+import {
+  DeploymentConfigParams,
+  DopplerAddresses,
+  PoolConfig,
+  TokenConfig,
+} from '../types';
 import { buildConfig } from '../actions/create/utils/configBuilder';
+import { PoolKey } from '@uniswap/v4-sdk';
 
 export const MAX_TICK_SPACING = 30;
 export const DEFAULT_PD_SLUGS = 5;
@@ -16,7 +22,7 @@ export interface PriceRange {
   endPrice: number;
 }
 
-export interface DopplerConfigParams {
+export interface DopplerPreDeploymentConfig {
   // Token details
   name: string;
   symbol: string;
@@ -39,18 +45,28 @@ export interface DopplerConfigParams {
   maxProceeds: bigint;
   numPdSlugs?: number; // uses a default if not set
 }
+
+export interface DopplerDeploymentConfig {
+  salt: Hash;
+  dopplerAddress: Address;
+  poolKey: PoolKey;
+  token: TokenConfig;
+  hook: DeploymentConfigParams;
+  pool: PoolConfig;
+}
+
+export interface DeployerParams {
+  publicClient: PublicClient;
+  walletClient: WalletClient;
+  addresses?: DopplerAddresses;
+}
+
 export class Deployer {
   public readonly walletClient: WalletClient;
   public readonly publicClient: PublicClient;
   public readonly chainId: number;
-
-  constructor({
-    publicClient,
-    walletClient,
-  }: {
-    publicClient: PublicClient;
-    walletClient: WalletClient;
-  }) {
+  public readonly addresses: DopplerAddresses;
+  constructor({ publicClient, walletClient, addresses }: DeployerParams) {
     this.publicClient = publicClient;
     this.walletClient = walletClient;
 
@@ -65,13 +81,16 @@ export class Deployer {
     }
 
     this.chainId = walletClient.chain.id;
+    this.addresses = addresses ?? DOPPLER_ADDRESSES[walletClient.chain.id];
   }
 
-  public buildConfig(params: DopplerConfigParams): DeploymentConfig {
+  public buildConfig(
+    params: DopplerPreDeploymentConfig
+  ): DopplerDeploymentConfig {
     return buildConfig(params, this.chainId, DOPPLER_ADDRESSES[this.chainId]);
   }
 
-  async deployWithConfig(config: DeploymentConfig): Promise<Doppler> {
+  async deployWithConfig(config: DopplerDeploymentConfig): Promise<Doppler> {
     return await createDoppler(
       this.publicClient,
       this.walletClient,

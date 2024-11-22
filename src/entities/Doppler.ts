@@ -19,7 +19,7 @@ enum AuctionStatus {
 export interface HookConfig {
   startingTime: bigint;
   endingTime: bigint;
-  epochLength: bigint;
+  epochLength: number;
   isToken0: boolean;
   numTokensToSell: bigint;
   minimumProceeds: bigint;

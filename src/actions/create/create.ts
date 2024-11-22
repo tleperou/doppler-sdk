@@ -1,5 +1,5 @@
 import { Doppler } from '../../entities/Doppler';
-import { DeploymentConfig } from '../../types';
+import { DopplerDeploymentConfig } from '../../entities/Deployer';
 import { Token } from '@uniswap/sdk-core';
 import {
   BaseError,
@@ -25,7 +25,7 @@ export async function createDoppler(
   publicClient: PublicClient,
   walletClient: WalletClient,
   addresses: DopplerAddresses,
-  config: DeploymentConfig
+  config: DopplerDeploymentConfig
 ): Promise<Doppler> {
   if (!walletClient?.account?.address || !walletClient?.chain?.id) {
     throw new Error('No wallet account found. Please connect a wallet first.');
@@ -139,30 +139,24 @@ export async function createDoppler(
     account: walletClient.account,
     chain: walletClient.chain,
   });
-  const { contractAddress } = await waitForTransactionReceipt(publicClient, {
+  await waitForTransactionReceipt(publicClient, {
     hash: createHash,
   });
 
-  if (!contractAddress) {
-    throw new Error('No contract address returned from deployment');
-  }
-
-  const dopplerConfig = await fetchDopplerImmutables(
-    contractAddress,
-    publicClient
-  );
-  const dopplerState = await fetchDopplerState(contractAddress, publicClient);
-  const poolState = await fetchPoolState(
-    contractAddress,
-    stateView,
-    publicClient,
-    poolId
-  );
-
-  const { timestamp } = await publicClient.getBlock();
+  const [
+    { timestamp },
+    dopplerConfig,
+    dopplerState,
+    poolState,
+  ] = await Promise.all([
+    publicClient.getBlock(),
+    fetchDopplerImmutables(config.dopplerAddress, publicClient),
+    fetchDopplerState(config.dopplerAddress, publicClient),
+    fetchPoolState(config.dopplerAddress, stateView, publicClient, poolId),
+  ]);
 
   const doppler = new Doppler({
-    address: contractAddress,
+    address: config.dopplerAddress,
     stateView,
     assetToken: config.hook.assetToken,
     quoteToken: config.hook.quoteToken,
