@@ -42,7 +42,6 @@ export async function sellAssetExactIn(
       ],
     });
   } catch (err) {
-    console.log(err);
     if (err instanceof BaseError) {
       const revertError = err.walk(
         err => err instanceof ContractFunctionRevertedError

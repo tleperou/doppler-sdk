@@ -10,7 +10,7 @@ import {
   DEFAULT_PD_SLUGS,
   MAX_TICK_SPACING,
   PriceRange,
-} from '../../../entities';
+} from '../../../entities/Deployer';
 
 /**
  * Validates and builds pool configuration from user-friendly parameters
@@ -187,11 +187,8 @@ function computeOptimalGamma(
 
   // Calculate required tick movement per epoch to cover the range
   const tickDelta = Math.abs(endTick - startTick);
-  const gammaRaw = Math.ceil(tickDelta / totalEpochs);
-
   // Round up to nearest multiple of tick spacing
-  let gamma = Math.ceil(gammaRaw / tickSpacing) * tickSpacing;
-
+  let gamma = Math.ceil(tickDelta / totalEpochs) * tickSpacing;
   // Ensure gamma is at least 1 tick spacing
   gamma = Math.max(tickSpacing, gamma);
 
@@ -200,11 +197,6 @@ function computeOptimalGamma(
   }
 
   return gamma;
-}
-
-// Converts decimal price to sqrt price X96 format
-function priceToSqrtPriceX96(price: Price<Token, Token>): bigint {
-  return BigInt(price.quotient.toString());
 }
 
 // Validates basic parameters

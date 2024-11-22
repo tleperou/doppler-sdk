@@ -91,14 +91,14 @@ export class Deployer {
   public buildConfig(
     params: DopplerPreDeploymentConfig
   ): DopplerDeploymentConfig {
-    return buildConfig(params, this.chainId, DOPPLER_ADDRESSES[this.chainId]);
+    return buildConfig(params, this.chainId, this.addresses);
   }
 
   async deployWithConfig(config: DopplerDeploymentConfig): Promise<Doppler> {
     return await createDoppler(
       this.publicClient,
       this.walletClient,
-      DOPPLER_ADDRESSES[this.chainId],
+      this.addresses,
       config
     );
   }
