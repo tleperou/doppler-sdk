@@ -1,4 +1,5 @@
-import { DeploymentConfig, Doppler } from '../../types';
+import { Doppler } from '../../entities/Doppler';
+import { DeploymentConfig } from '../../types';
 import { Token } from '@uniswap/sdk-core';
 import {
   BaseError,
@@ -13,7 +14,11 @@ import { DopplerAddressProvider } from '../../AddressProvider';
 import { AirlockABI } from '../../abis/AirlockABI';
 import { waitForTransactionReceipt } from 'viem/actions';
 import { Clients } from '../../DopplerSDK';
-import { fetchDopplerImmutables } from '../../fetch/doppler/DopplerState';
+import {
+  fetchDopplerImmutables,
+  fetchDopplerState,
+} from '../../fetch/doppler/DopplerState';
+import { fetchPoolState } from '../../fetch/doppler/PoolState';
 
 // this maps onto the tick range, startingTick -> endingTick
 export interface PriceRange {
@@ -59,6 +64,7 @@ export async function deployDoppler(
 
   const {
     airlock,
+    stateView,
     tokenFactory,
     governanceFactory,
     dopplerFactory,
@@ -163,22 +169,33 @@ export async function deployDoppler(
   });
   const { timestamp } = await publicClient.getBlock();
 
-  const immutables = await fetchDopplerImmutables(
+  const dopplerConfig = await fetchDopplerImmutables(
     config.dopplerAddress,
     publicClient
   );
+  const dopplerState = await fetchDopplerState(
+    config.dopplerAddress,
+    publicClient
+  );
+  const poolState = await fetchPoolState(
+    config.dopplerAddress,
+    stateView,
+    publicClient,
+    poolId
+  );
 
-  const doppler: Doppler = {
+  const doppler = new Doppler({
     address: config.dopplerAddress,
+    stateView,
     assetToken: config.hook.assetToken,
     quoteToken: config.hook.quoteToken,
-    hook: config.dopplerAddress,
     poolKey,
     poolId,
-    deployedAt: timestamp,
-    deploymentTx: createHash,
-    immutables,
-  };
+    config: dopplerConfig,
+    state: dopplerState,
+    timestamp,
+    poolState,
+  });
 
   return doppler;
 }

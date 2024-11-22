@@ -1,7 +1,16 @@
 import { DopplerABI } from '../../abis/DopplerABI';
-import { Doppler, PositionState } from '../../types';
-import { Client, Hex } from 'viem';
-import { getChainId, readContract } from 'viem/actions';
+import { StateViewABI, StateViewBytecode } from '../../abis/StateViewABI';
+import { PoolState, Position } from '../../entities/Doppler/Doppler';
+import {
+  Hex,
+  encodeFunctionData,
+  decodeAbiParameters,
+  fromHex,
+  Address,
+  Client,
+  encodeDeployData,
+} from 'viem';
+import { call, getBlock, getChainId, readContract } from 'viem/actions';
 
 export type ViewOverrides = {
   blockNumber?: bigint;
@@ -13,14 +22,17 @@ export type FetchPositionStateParams = {
   overrides?: ViewOverrides;
 };
 
-export async function fetchPositionState(
-  dopplerAddress: Doppler,
+export async function fetchPoolState(
+  address: Address,
+  stateView: Address,
   client: Client,
+  poolId: Hex,
   { chainId, overrides = {} }: FetchPositionStateParams = {}
-): Promise<PositionState[]> {
+): Promise<PoolState> {
   // Ensure we have the chain ID
   chainId = chainId ?? (await getChainId(client));
-  const { address } = dopplerAddress;
+
+  const { timestamp } = await getBlock(client);
 
   const numPdSlugs = await readContract(client, {
     ...overrides,
@@ -62,14 +74,31 @@ export async function fetchPositionState(
     )
   );
 
-  return [
-    fromRaw(lowerSlugState),
-    fromRaw(upperSlugState),
-    ...pdSlugStates.map(fromRaw),
-  ];
+  const slot0 = await readContract(client, {
+    ...overrides,
+    address: stateView,
+    abi: StateViewABI,
+    functionName: 'getSlot0',
+    args: [poolId],
+  });
+
+  const sqrtPriceX96 = slot0[0];
+  const price = (sqrtPriceX96 * sqrtPriceX96) / BigInt(2 ** 192);
+  const currentTick = slot0[1];
+
+  return {
+    positions: [
+      fromRaw(lowerSlugState),
+      fromRaw(upperSlugState),
+      ...pdSlugStates.map(fromRaw),
+    ],
+    currentTick,
+    currentPrice: price,
+    lastSyncedTimestamp: timestamp,
+  };
 }
 
-function fromRaw(raw: any): PositionState {
+function fromRaw(raw: any): Position {
   const type = raw[3] == 1 ? 'lowerSlug' : raw[3] == 2 ? 'upperSlug' : 'pdSlug';
   return {
     tickLower: raw[0],
