@@ -7,9 +7,9 @@ import {
 } from 'viem';
 import { readContract, simulateContract, writeContract } from 'viem/actions';
 import { DopplerAddresses } from '../../../types';
-import { CustomRouterABI } from '../../../abis/CustomRouter';
+import { CustomRouterABI } from '../../../abis';
 import { Doppler } from '../../../entities/Doppler';
-import { DERC20ABI } from '../../../abis/DERC20ABI';
+import { DERC20ABI } from '../../../abis';
 
 export async function sellAssetExactIn(
   doppler: Doppler,
