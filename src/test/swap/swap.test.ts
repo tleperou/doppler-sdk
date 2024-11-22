@@ -4,13 +4,13 @@ import { Address, parseEther } from 'viem';
 import {
   buyAssetExactIn,
   buyAssetExactOut,
-} from '../../actions/trade/buyAsset';
+} from '../../actions/trade/buy/buyAsset';
 import {
   sellAssetExactIn,
   sellAssetExactOut,
-} from '../../actions/trade/sellAsset';
+} from '../../actions/trade/sell/sellAsset';
 import { writeContract } from 'viem/actions';
-import { DERC20ABI } from '../../abis/DERC20ABI';
+import { DERC20ABI } from '../../abis';
 import { readContract } from 'viem/actions';
 import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
 describe('Doppler Swap tests', () => {

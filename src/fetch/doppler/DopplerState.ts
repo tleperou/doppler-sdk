@@ -6,8 +6,8 @@ import {
   fromHex,
 } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
-import { DopplerABI } from '../../abis/DopplerABI';
-import { DopplerLensABI, DopplerLensBytecode } from '../../abis/DopplerLens';
+import { DopplerABI } from '../../abis';
+import { DopplerLensABI, DopplerLensBytecode } from '../../abis';
 import { encodeFunctionData } from 'viem';
 import { HookState, HookConfig } from '../../entities/Doppler';
 

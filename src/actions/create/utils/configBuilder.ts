@@ -231,10 +231,10 @@ function validateBasicParams(params: DopplerPreDeploymentConfig) {
   }
 }
 
-// Helper to suggest optimal epoch length based on duration
-function suggestEpochLength(durationDays: number): number {
-  if (durationDays > 30) return 2 * 60 * 60; // 2 hours
-  if (durationDays > 7) return 1 * 60 * 60; // 1 hour
-  if (durationDays > 1) return 1 * 60 * 30; // 30 minutes
-  return 1 * 60 * 20; // 20 minutes
-}
+// // Helper to suggest optimal epoch length based on duration
+// function suggestEpochLength(durationDays: number): number {
+//   if (durationDays > 30) return 2 * 60 * 60; // 2 hours
+//   if (durationDays > 7) return 1 * 60 * 60; // 1 hour
+//   if (durationDays > 1) return 1 * 60 * 30; // 30 minutes
+//   return 1 * 60 * 20; // 20 minutes
+// }

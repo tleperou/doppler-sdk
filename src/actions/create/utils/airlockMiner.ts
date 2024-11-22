@@ -7,8 +7,8 @@ import {
   getAddress,
   Hex,
 } from 'viem';
-import { DopplerBytecode } from '../../../abis/DopplerABI';
-import { DERC20Bytecode } from '../../../abis/DERC20ABI';
+import { DopplerBytecode } from '../../../abis';
+import { DERC20Bytecode } from '../../../abis';
 
 const FLAG_MASK = BigInt(0x3fff);
 
@@ -104,7 +104,7 @@ export function mine(
     encodePacked(
       ['bytes', 'bytes'],
       [
-        DERC20Bytecode.object as Hex,
+        DERC20Bytecode as Hex,
         encodeAbiParameters(
           [
             { type: 'string' },

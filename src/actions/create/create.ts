@@ -13,7 +13,7 @@ import {
 } from 'viem';
 import { Pool } from '@uniswap/v4-sdk';
 import { DopplerAddresses } from '../../types';
-import { AirlockABI } from '../../abis/AirlockABI';
+import { AirlockABI } from '../../abis';
 import { waitForTransactionReceipt } from 'viem/actions';
 import {
   fetchDopplerImmutables,
