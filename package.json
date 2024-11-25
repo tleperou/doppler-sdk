@@ -6,13 +6,14 @@
   "license": "MIT",
   "main": "src/index.ts",
   "typings": "dist/index.d.ts",
+  "packageManager": "yarn@1.22.18",
   "files": [
     "lib"
   ],
   "scripts": {
     "start": "tsdx watch",
-    "build": "tsdx build",
     "test": "vitest",
+    "build": "tsc",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "lint": "tsdx lint",
@@ -48,6 +49,7 @@
     "@uniswap/sdk-core": "^5.9.0",
     "@uniswap/v4-sdk": "^1.10.4",
     "ethers": "^5.7.2",
+    "turbo": "^2.3.2",
     "viem": "^2.21.42"
   }
 }
