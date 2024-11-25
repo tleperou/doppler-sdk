@@ -1,6 +1,5 @@
 import { Doppler } from '../../entities/Doppler';
 import { DopplerDeploymentConfig } from '../../entities/Deployer';
-import { Token } from '@uniswap/sdk-core';
 import {
   BaseError,
   ContractFunctionRevertedError,
@@ -10,8 +9,9 @@ import {
   Hex,
   PublicClient,
   WalletClient,
+  keccak256,
+  encodePacked,
 } from 'viem';
-import { Pool } from '@uniswap/v4-sdk';
 import { DopplerAddresses } from '../../types';
 import { AirlockABI } from '../../abis';
 import { waitForTransactionReceipt } from 'viem/actions';
@@ -45,6 +45,29 @@ export async function createDoppler(
     dopplerFactory,
     migrator,
   } = addresses;
+
+  const poolKey = {
+    ...config.poolKey,
+    currency0: config.poolKey.currency0 as Hex,
+    currency1: config.poolKey.currency1 as Hex,
+    hooks: config.poolKey.hooks as Hex,
+  };
+
+  const tokenA =
+    poolKey.currency0.toLowerCase() > poolKey.currency1.toLowerCase()
+      ? poolKey.currency1
+      : poolKey.currency0;
+  const tokenB =
+    poolKey.currency0.toLowerCase() > poolKey.currency1.toLowerCase()
+      ? poolKey.currency0
+      : poolKey.currency1;
+
+  const poolId = keccak256(
+    encodePacked(
+      ['address', 'address', 'uint24', 'uint24', 'address'],
+      [tokenA, tokenB, poolKey.fee, poolKey.tickSpacing, poolKey.hooks]
+    )
+  );
 
   const dopplerFactoryData = encodeAbiParameters(
     [
@@ -80,24 +103,6 @@ export async function createDoppler(
     abi: AirlockABI,
     client: walletClient,
   });
-
-  const poolKey = {
-    ...config.poolKey,
-    currency0: config.poolKey.currency0 as Hex,
-    currency1: config.poolKey.currency1 as Hex,
-    hooks: config.poolKey.hooks as Hex,
-  };
-
-  const currency0 = new Token(chainId, poolKey.currency0, 18);
-  const currency1 = new Token(chainId, poolKey.currency1, 18);
-
-  const poolId = Pool.getPoolId(
-    currency0,
-    currency1,
-    poolKey.fee,
-    poolKey.tickSpacing,
-    poolKey.hooks
-  ) as Hex;
 
   const createArgs = [
     config.token.name,
