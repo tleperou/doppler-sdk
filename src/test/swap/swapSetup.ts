@@ -16,7 +16,7 @@ import {
 import { randomBytes } from 'crypto';
 import { Doppler } from '../../entities/Doppler';
 import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
-import { Clients } from '../../types';
+import { Clients, DopplerAddresses } from '../../types';
 
 interface SwapTestEnvironment {
   addresses: DopplerAddresses;

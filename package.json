@@ -1,4 +1,7 @@
 {
+  "name": "doppler-sdk",
+  "author": "Whetstone Research",
+  "module": "dist/doppler-sdk.esm.js",
   "version": "0.1.0",
   "license": "MIT",
   "main": "dist/index.js",
@@ -6,6 +9,16 @@
   "files": [
     "dist",
     "src"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/doppler-sdk.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/doppler-sdk.esm.js",
+      "limit": "10 KB"
+    }
   ],
   "engines": {
     "node": ">=10"
@@ -33,19 +46,6 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "doppler-sdk",
-  "author": "Aseem Sood",
-  "module": "dist/doppler-sdk.esm.js",
-  "size-limit": [
-    {
-      "path": "dist/doppler-sdk.cjs.production.min.js",
-      "limit": "10 KB"
-    },
-    {
-      "path": "dist/doppler-sdk.esm.js",
-      "limit": "10 KB"
-    }
-  ],
   "devDependencies": {
     "@size-limit/preset-small-lib": "^11.1.6",
     "@vitest/coverage-c8": "^0.33.0",
