@@ -2,7 +2,7 @@ import { parseEther, PublicClient } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { Doppler } from '../../entities/Doppler';
 import { setupTestEnvironment } from '../utils/setupTestEnv';
-import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
+import { fetchDopplerState } from '../../fetch/DopplerState';
 import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
 
 describe('Doppler Pool Deployment', () => {

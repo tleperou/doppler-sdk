@@ -12,7 +12,7 @@ import {
 import { writeContract } from 'viem/actions';
 import { DERC20ABI } from '../../abis';
 import { readContract } from 'viem/actions';
-import { fetchDopplerState } from '../../fetch/doppler/DopplerState';
+import { fetchDopplerState } from '../../fetch/DopplerState';
 describe('Doppler Swap tests', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
 

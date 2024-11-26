@@ -38,3 +38,8 @@ export interface DeploymentConfigParams {
   numTokensToSell: bigint;
   numPdSlugs: number;
 }
+
+export type ViewOverrides = {
+  blockNumber?: bigint;
+  blockTag?: 'latest' | 'earliest' | 'pending' | 'safe' | 'finalized';
+};

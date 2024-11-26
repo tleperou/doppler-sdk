@@ -1,13 +1,9 @@
-import { DopplerABI } from '../../abis';
-import { StateViewABI } from '../../abis';
-import { PoolState, Position } from '../../entities/Doppler';
+import { DopplerABI } from '../abis';
+import { StateViewABI } from '../abis';
+import { PoolState, Position } from '../entities/Doppler';
 import { Hex, Address, Client } from 'viem';
 import { getBlock, getChainId, readContract } from 'viem/actions';
-
-export type ViewOverrides = {
-  blockNumber?: bigint;
-  blockTag?: 'latest' | 'earliest' | 'pending' | 'safe' | 'finalized';
-};
+import { ViewOverrides } from '../types';
 
 export type FetchPositionStateParams = {
   chainId?: number;

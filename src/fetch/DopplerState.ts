@@ -6,15 +6,11 @@ import {
   fromHex,
 } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
-import { DopplerABI } from '../../abis';
-import { DopplerLensABI, DopplerLensBytecode } from '../../abis';
+import { DopplerABI } from '../abis';
+import { DopplerLensABI, DopplerLensBytecode } from '../abis';
 import { encodeFunctionData } from 'viem';
-import { HookState, HookConfig } from '../../entities/Doppler';
-
-export type ViewOverrides = {
-  blockNumber?: bigint;
-  blockTag?: 'latest' | 'earliest' | 'pending' | 'safe' | 'finalized';
-};
+import { HookState, HookConfig } from '../entities/Doppler';
+import { ViewOverrides } from '../types';
 
 export type FetchDopplerStateParams = {
   chainId?: number;

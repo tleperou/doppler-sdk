@@ -18,8 +18,8 @@ import { waitForTransactionReceipt } from 'viem/actions';
 import {
   fetchDopplerImmutables,
   fetchDopplerState,
-} from '../../fetch/doppler/DopplerState';
-import { fetchPoolState } from '../../fetch/doppler/PoolState';
+} from '../../fetch/DopplerState';
+import { fetchPoolState } from '../../fetch/PoolState';
 
 export async function createDoppler(
   publicClient: PublicClient,
