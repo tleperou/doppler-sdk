@@ -20,7 +20,6 @@
     "size": "size-limit",
     "analyze": "size-limit --why"
   },
-  "peerDependencies": {},
   "husky": {
     "hooks": {}
   },
@@ -46,6 +45,9 @@
     "@uniswap/v4-sdk": "^1.10.4",
     "ethers": "^5.7.2",
     "turbo": "^2.3.2",
-    "viem": "^2.21.50"
+    "viem": "^2.21.45"
+  },
+  "peerDependencies": {
+    "viem": "^2.21.45"
   }
 }
