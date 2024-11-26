@@ -30,3 +30,11 @@ export type {
   DopplerDeploymentConfig,
   PriceRange
 } from './entities/Deployer';
+
+export type {
+  Token 
+} from '@uniswap/sdk-core';
+
+export type {
+  PoolKey
+} from '@uniswap/v4-sdk';
