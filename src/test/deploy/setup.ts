@@ -10,11 +10,11 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
+import { Clients, DopplerAddresses } from '../../types';
 import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
-import { Clients, DopplerAddresses } from '../../types';
 
 interface TestEnvironment {
   clients: Clients;
@@ -89,7 +89,6 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
   await testClient.mine({
     blocks: 1,
   });
-
 
   return {
     clients: { publicClient, walletClient, testClient },
