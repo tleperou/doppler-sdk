@@ -1,8 +1,8 @@
-import { Address, Client, Hash, Hex } from 'viem';
+import { fetchDopplerState } from '@/fetch/DopplerState';
+import { fetchPoolState } from '@/fetch/PoolState';
 import { Token } from '@uniswap/sdk-core';
 import { PoolKey } from '@uniswap/v4-sdk';
-import { fetchDopplerState } from '../fetch/DopplerState';
-import { fetchPoolState } from '../fetch/PoolState';
+import { Address, Client, Hash, Hex } from 'viem';
 
 enum AuctionPhase {
   ACTIVE = 'ACTIVE',

@@ -1,15 +1,14 @@
+import { CustomRouterABI, DERC20ABI } from '@/abis';
+import { Doppler } from '@/entities/Doppler';
+import { DopplerAddresses } from '@/types';
 import {
-  BaseError,
-  ContractFunctionRevertedError,
-  Client,
-  Hex,
   Address,
+  BaseError,
+  Client,
+  ContractFunctionRevertedError,
+  Hex,
 } from 'viem';
 import { readContract, simulateContract, writeContract } from 'viem/actions';
-import { DopplerAddresses } from '../../../types';
-import { CustomRouterABI } from '../../../abis';
-import { Doppler } from '../../../entities/Doppler';
-import { DERC20ABI } from '../../../abis';
 
 export async function sellAssetExactIn(
   doppler: Doppler,
@@ -44,7 +43,7 @@ export async function sellAssetExactIn(
   } catch (err) {
     if (err instanceof BaseError) {
       const revertError = err.walk(
-        err => err instanceof ContractFunctionRevertedError
+        (err) => err instanceof ContractFunctionRevertedError
       );
       if (revertError instanceof ContractFunctionRevertedError) {
         throw new Error(revertError.data?.errorName);
@@ -126,7 +125,7 @@ export async function sellAssetExactOut(
   } catch (err) {
     if (err instanceof BaseError) {
       const revertError = err.walk(
-        err => err instanceof ContractFunctionRevertedError
+        (err) => err instanceof ContractFunctionRevertedError
       );
       if (revertError instanceof ContractFunctionRevertedError) {
         const errorName = revertError.data?.errorName ?? '';

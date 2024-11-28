@@ -1,16 +1,15 @@
+import { DopplerABI, DopplerLensABI, DopplerLensBytecode } from '@/abis';
+import { HookConfig, HookState } from '@/entities/Doppler';
+import { ViewOverrides } from '@/types';
 import {
   Address,
   Client,
   decodeAbiParameters,
-  PublicClient,
+  encodeFunctionData,
   fromHex,
+  PublicClient,
 } from 'viem';
 import { getChainId, readContract } from 'viem/actions';
-import { DopplerABI } from '../abis';
-import { DopplerLensABI, DopplerLensBytecode } from '../abis';
-import { encodeFunctionData } from 'viem';
-import { HookState, HookConfig } from '../entities/Doppler';
-import { ViewOverrides } from '../types';
 
 export type FetchDopplerStateParams = {
   chainId?: number;
