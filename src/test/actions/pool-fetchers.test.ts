@@ -1,11 +1,11 @@
 import { parseEther, PublicClient } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { Doppler } from '../../entities/Doppler';
-import { setupTestEnvironment } from '../utils/setupTestEnv';
-import { fetchDopplerState } from '../../fetch/DopplerState';
 import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
+import { Doppler } from '../../entities/Doppler';
+import { fetchDopplerState } from '../../fetch/DopplerState';
+import { setupTestEnvironment } from '../utils/setupTestEnv';
 
-describe('Doppler Pool Deployment', () => {
+describe('Doppler Pool Fetchers', () => {
   let doppler: Doppler;
   let client: PublicClient;
 
@@ -45,9 +45,9 @@ describe('Doppler Pool Deployment', () => {
     doppler = await deployer.deployWithConfig(config);
   });
 
-  describe('Doppler Pool Fetchers', () => {
+  describe('newly deployed Doppler pool', () => {
     describe('fetch values from newly initialized doppler pool', () => {
-      it('distance from maxProceeds should equal maxProceeds', async () => {
+      it('maxProceeds - totalProceeds = maxProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler.address,
           client
@@ -56,7 +56,7 @@ describe('Doppler Pool Deployment', () => {
         expect(maxProceeds - totalProceeds).toEqual(maxProceeds);
       });
 
-      it('distance from minProceeds should equal minProceeds', async () => {
+      it('minProceeds - totalProceeds = minProceeds', async () => {
         const { totalProceeds } = await fetchDopplerState(
           doppler.address,
           client

@@ -1,9 +1,8 @@
-import { DopplerABI } from '../abis';
-import { StateViewABI } from '../abis';
-import { PoolState, Position } from '../entities/Doppler';
-import { Hex, Address, Client } from 'viem';
+import { DopplerABI, StateViewABI } from '@/abis';
+import { PoolState, Position } from '@/entities/Doppler';
+import { ViewOverrides } from '@/types';
+import { Address, Client, Hex } from 'viem';
 import { getBlock, getChainId, readContract } from 'viem/actions';
-import { ViewOverrides } from '../types';
 
 export type FetchPositionStateParams = {
   chainId?: number;
@@ -51,7 +50,7 @@ export async function fetchPoolState(
   });
 
   const pdSlugStates = await Promise.all(
-    getPdSalts(Number(numPdSlugs)).map(salt =>
+    getPdSalts(Number(numPdSlugs)).map((salt) =>
       readContract(client, {
         ...overrides,
         address,
@@ -102,9 +101,11 @@ function getPdSalts(numPdSlugs: number): Hex[] {
     .fill(0)
     .map((_, i) =>
       i < 7
-        ? `0x000000000000000000000000000000000000000000000000000000000000000${i +
-            3}`
-        : `0x00000000000000000000000000000000000000000000000000000000000000${i +
-            3}`
+        ? `0x000000000000000000000000000000000000000000000000000000000000000${
+            i + 3
+          }`
+        : `0x00000000000000000000000000000000000000000000000000000000000000${
+            i + 3
+          }`
     ) as Hex[];
 }

@@ -1,15 +1,15 @@
-import { WalletClient } from 'viem/_types/clients/createWalletClient';
-import { createDoppler } from '../actions/create/create';
-import { Doppler } from './Doppler';
+import { createDoppler } from '@/actions/create/create';
+import { buildConfig } from '@/actions/create/utils/configBuilder';
+import { DOPPLER_ADDRESSES } from '@/addresses';
+import { PoolKey } from '@uniswap/v4-sdk';
 import { Address, Hash, PublicClient } from 'viem';
-import { DOPPLER_ADDRESSES } from '../addresses';
+import { WalletClient } from 'viem/_types/clients/createWalletClient';
 import {
   DeploymentConfigParams,
   DopplerAddresses,
   TokenConfig,
 } from '../types';
-import { buildConfig } from '../actions/create/utils/configBuilder';
-import { PoolKey } from '@uniswap/v4-sdk';
+import { Doppler } from './Doppler';
 
 export const MAX_TICK_SPACING = 30;
 export const DEFAULT_PD_SLUGS = 5;

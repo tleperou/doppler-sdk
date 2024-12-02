@@ -1,8 +1,8 @@
-import { BaseError, ContractFunctionRevertedError, Client, Hex } from 'viem';
+import { CustomRouterABI } from '@/abis';
+import { Doppler } from '@/entities/Doppler';
+import { DopplerAddresses } from '@/types';
+import { BaseError, Client, ContractFunctionRevertedError, Hex } from 'viem';
 import { simulateContract, writeContract } from 'viem/actions';
-import { DopplerAddresses } from '../../../types';
-import { CustomRouterABI } from '../../../abis';
-import { Doppler } from '../../../entities/Doppler';
 
 export async function buyAssetExactIn(
   doppler: Doppler,
@@ -38,7 +38,7 @@ export async function buyAssetExactIn(
   } catch (err) {
     if (err instanceof BaseError) {
       const revertError = err.walk(
-        err => err instanceof ContractFunctionRevertedError
+        (err) => err instanceof ContractFunctionRevertedError
       );
       if (revertError instanceof ContractFunctionRevertedError) {
         throw new Error(revertError.data?.errorName);
@@ -113,7 +113,7 @@ export async function buyAssetExactOut(
   } catch (err) {
     if (err instanceof BaseError) {
       const revertError = err.walk(
-        err => err instanceof ContractFunctionRevertedError
+        (err) => err instanceof ContractFunctionRevertedError
       );
       if (revertError instanceof ContractFunctionRevertedError) {
         const errorName = revertError.data?.errorName ?? '';

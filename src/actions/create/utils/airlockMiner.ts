@@ -1,22 +1,21 @@
+import { DERC20Bytecode, DopplerBytecode } from '@/abis';
 import {
   Address,
-  Hash,
-  keccak256,
   encodeAbiParameters,
   encodePacked,
   getAddress,
+  Hash,
   Hex,
+  keccak256,
 } from 'viem';
-import { DopplerBytecode } from '../../../abis';
-import { DERC20Bytecode } from '../../../abis';
 
 const FLAG_MASK = BigInt(0x3fff);
 
 const flags = BigInt(
   (1 << 13) | // BEFORE_INITIALIZE_FLAG
-  (1 << 12) | // AFTER_INITIALIZE_FLAG
-  (1 << 11) | // BEFORE_ADD_LIQUIDITY_FLAG
-  (1 << 7) | // BEFORE_SWAP_FLAG
+    (1 << 12) | // AFTER_INITIALIZE_FLAG
+    (1 << 11) | // BEFORE_ADD_LIQUIDITY_FLAG
+    (1 << 7) | // BEFORE_SWAP_FLAG
     (1 << 6) // AFTER_SWAP_FLAG
 );
 

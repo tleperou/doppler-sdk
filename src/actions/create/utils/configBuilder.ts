@@ -1,6 +1,4 @@
-import { Price, Token } from '@uniswap/sdk-core';
-import { Pool, PoolKey, priceToClosestTick } from '@uniswap/v4-sdk';
-import { parseEther } from 'viem';
+import { mine, MineParams } from '@/actions/create/utils/airlockMiner';
 import {
   DAY_SECONDS,
   DEFAULT_PD_SLUGS,
@@ -8,9 +6,11 @@ import {
   DopplerPreDeploymentConfig,
   MAX_TICK_SPACING,
   PriceRange,
-} from '../../../entities/Deployer';
-import { DopplerAddresses } from '../../../types';
-import { MineParams, mine } from './airlockMiner';
+} from '@/entities/Deployer';
+import { DopplerAddresses } from '@/types';
+import { Price, Token } from '@uniswap/sdk-core';
+import { Pool, PoolKey, priceToClosestTick } from '@uniswap/v4-sdk';
+import { parseEther } from 'viem';
 
 /**
  * Validates and builds pool configuration from user-friendly parameters
