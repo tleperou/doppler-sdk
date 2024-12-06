@@ -10,7 +10,7 @@ import { Price, Token } from '@uniswap/sdk-core';
 import { priceToClosestTick } from '@uniswap/v4-sdk';
 import { Address, encodeAbiParameters, parseEther, toHex } from 'viem';
 import { ETH_ADDRESS } from '@/constants';
-import { CreateParams, MineParams, mine } from '@/entities';
+import { CreateParams, MineParams, mine } from '@/entities/factory';
 
 /**
  * Validates and builds pool configuration from user-friendly parameters

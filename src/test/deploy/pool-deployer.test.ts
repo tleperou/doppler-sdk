@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { setupTestEnvironment } from './setup';
 import { Drift } from '@delvtech/drift';
 import { viemAdapter } from '@delvtech/drift-viem';
-import { buildConfig, ReadDoppler, ReadWriteFactory } from '@/entities';
+import { ReadDoppler } from '@/entities/doppler';
+import { buildConfig, ReadWriteFactory } from '@/entities/factory';
 import { DopplerPreDeploymentConfig } from '@/types';
 
 describe('Doppler Pool Deployment', () => {

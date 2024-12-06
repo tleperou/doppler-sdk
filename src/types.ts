@@ -1,5 +1,4 @@
 import { Address, Hash, PublicClient, TestClient, WalletClient } from 'viem';
-import { Token } from '@uniswap/sdk-core';
 
 export interface Clients {
   publicClient: PublicClient;
