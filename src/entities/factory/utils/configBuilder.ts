@@ -1,25 +1,24 @@
-import { mine, MineParams } from '@/actions/create/utils/airlockMiner';
 import {
-  DAY_SECONDS,
-  DEFAULT_PD_SLUGS,
-  DopplerDeploymentConfig,
   DopplerPreDeploymentConfig,
-  MAX_TICK_SPACING,
+  PoolConfig,
+  PoolKey,
   PriceRange,
-} from '@/entities/Deployer';
+} from '@/types';
+import { DAY_SECONDS, DEFAULT_PD_SLUGS, MAX_TICK_SPACING } from '@/constants';
 import { DopplerAddresses } from '@/types';
 import { Price, Token } from '@uniswap/sdk-core';
-import { Pool, PoolKey, priceToClosestTick } from '@uniswap/v4-sdk';
-import { parseEther } from 'viem';
+import { priceToClosestTick } from '@uniswap/v4-sdk';
+import { Address, encodeAbiParameters, parseEther, toHex } from 'viem';
+import { ETH_ADDRESS } from '@/constants';
+import { CreateParams, MineParams, mine } from '@/entities';
 
 /**
  * Validates and builds pool configuration from user-friendly parameters
  */
 export function buildConfig(
   params: DopplerPreDeploymentConfig,
-  chainId: number,
   addresses: DopplerAddresses
-): DopplerDeploymentConfig {
+): CreateParams {
   validateBasicParams(params);
 
   const { startTick, endTick } = computeTicks(
@@ -59,7 +58,7 @@ export function buildConfig(
     name: params.name,
     symbol: params.symbol,
     initialSupply: params.totalSupply,
-    numeraire: '0x0000000000000000000000000000000000000000',
+    numeraire: ETH_ADDRESS,
     startingTime: BigInt(startTime),
     endingTime: BigInt(endTime),
     minimumProceeds: params.minProceeds,
@@ -75,58 +74,67 @@ export function buildConfig(
     mineParams
   );
 
-  const token = new Token(
-    chainId,
-    tokenAddress,
-    18,
-    params.name,
-    params.symbol
-  );
+  const poolConfig: PoolConfig = {
+    tickSpacing: params.tickSpacing,
+    fee: params.fee,
+  };
 
-  const eth = new Token(
-    chainId,
-    '0x0000000000000000000000000000000000000000',
-    18,
-    'ETH',
-    'Ether'
-  );
+  const poolKey: PoolKey = {
+    currency0: ETH_ADDRESS,
+    currency1: tokenAddress,
+    ...poolConfig,
+    hooks: dopplerAddress,
+  };
 
-  const poolKey: PoolKey = Pool.getPoolKey(
-    token,
-    eth,
-    params.fee,
-    params.tickSpacing,
-    dopplerAddress
-  );
-
-  return {
-    salt,
-    poolKey,
-    dopplerAddress,
-    token: {
-      name: params.name,
-      symbol: params.symbol,
-      totalSupply: params.totalSupply,
-    },
-    hook: {
-      assetToken: token,
-      quoteToken: eth,
-      startTime: startTime,
-      endTime: endTime,
-      epochLength: params.epochLength,
+  const hookData = encodeAbiParameters(
+    [
+      { name: 'minimumProceeds', type: 'uint256' },
+      { name: 'maximumProceeds', type: 'uint256' },
+      { name: 'startingTime', type: 'uint256' },
+      { name: 'endingTime', type: 'uint256' },
+      { name: 'startTick', type: 'int24' },
+      { name: 'endTick', type: 'int24' },
+      { name: 'epochLength', type: 'uint256' },
+      { name: 'gamma', type: 'int24' },
+      { name: 'isToken0', type: 'bool' },
+      { name: 'numPDSlugs', type: 'uint256' },
+      { name: 'airlock', type: 'address' },
+    ],
+    [
+      params.minProceeds,
+      params.maxProceeds,
+      BigInt(startTime),
+      BigInt(endTime),
       startTick,
       endTick,
+      BigInt(params.epochLength),
       gamma,
-      maxProceeds: params.maxProceeds,
-      minProceeds: params.minProceeds,
-      numTokensToSell: params.numTokensToSell,
-      numPdSlugs: params.numPdSlugs ?? DEFAULT_PD_SLUGS,
-    },
-    pool: {
-      tickSpacing: params.tickSpacing,
-      fee: params.fee,
-    },
+      false,
+      BigInt(params.numPdSlugs ?? DEFAULT_PD_SLUGS),
+      airlock,
+    ]
+  );
+
+  const createArgs: CreateParams = {
+    name: params.name,
+    symbol: params.symbol,
+    initialSupply: params.totalSupply,
+    numTokensToSell: params.numTokensToSell,
+    poolKey,
+    recipients: [] as Address[],
+    amounts: [] as bigint[],
+    tokenFactory,
+    tokenData: toHex(''),
+    governanceFactory: addresses.governanceFactory,
+    governanceData: toHex(''),
+    hookFactory: addresses.dopplerFactory,
+    hookData,
+    migrator: addresses.migrator,
+    pool: poolConfig,
+    salt,
   };
+
+  return createArgs;
 }
 
 // Converts price range to tick range, ensuring alignment with tick spacing
@@ -134,11 +142,7 @@ function computeTicks(
   priceRange: PriceRange,
   tickSpacing: number
 ): { startTick: number; endTick: number } {
-  const quoteToken = new Token(
-    1,
-    '0x0000000000000000000000000000000000000000',
-    18
-  );
+  const quoteToken = new Token(1, ETH_ADDRESS, 18);
   const assetToken = new Token(
     1,
     '0x0000000000000000000000000000000000000001',

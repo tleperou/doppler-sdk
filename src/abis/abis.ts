@@ -1,4 +1,4 @@
-export const AirlockABI = [
+export const airlockAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -242,7 +242,7 @@ export const AirlockABI = [
   { type: 'error', name: 'WrongModuleState', inputs: [] },
 ] as const;
 
-export const CustomRouterABI = [
+export const customRouterAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -860,7 +860,7 @@ export const CustomRouterABI = [
   },
 ] as const;
 
-export const DERC20ABI = [
+export const derc20Abi = [
   {
     type: 'constructor',
     inputs: [
@@ -1370,7 +1370,7 @@ export const DERC20ABI = [
   },
 ] as const;
 
-export const DopplerABI = [
+export const dopplerAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -2019,7 +2019,7 @@ export const DopplerABI = [
   { type: 'error', name: 'Unauthorized', inputs: [] },
 ] as const;
 
-export const DopplerFactoryABI = [
+export const dopplerFactoryAbi = [
   {
     type: 'function',
     name: 'create',
@@ -2038,7 +2038,7 @@ export const DopplerFactoryABI = [
   },
 ] as const;
 
-export const DopplerLensABI = [
+export const dopplerLensAbi = [
   { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
   {
     type: 'function',
@@ -2069,7 +2069,7 @@ export const DopplerLensABI = [
   },
 ] as const;
 
-export const GovernanceFactoryABI = [
+export const governanceFactoryAbi = [
   { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
   {
     type: 'function',
@@ -2096,7 +2096,7 @@ export const GovernanceFactoryABI = [
   },
 ] as const;
 
-export const PoolManagerABI = [
+export const poolManagerAbi = [
   {
     type: 'function',
     name: 'allowance',
@@ -2798,7 +2798,7 @@ export const PoolManagerABI = [
   { type: 'error', name: 'UnauthorizedDynamicLPFeeUpdate', inputs: [] },
 ] as const;
 
-export const StateViewABI = [
+export const stateViewAbi = [
   {
     type: 'constructor',
     inputs: [

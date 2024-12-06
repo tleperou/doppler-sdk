@@ -1,7 +1,10 @@
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { setupTestEnvironment } from './setup';
-import { Deployer, DopplerPreDeploymentConfig } from '../../entities/Deployer';
+import { Drift } from '@delvtech/drift';
+import { viemAdapter } from '@delvtech/drift-viem';
+import { buildConfig, ReadDoppler, ReadWriteFactory } from '@/entities';
+import { DopplerPreDeploymentConfig } from '@/types';
 
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
@@ -18,6 +21,13 @@ describe('Doppler Pool Deployment', () => {
     if (!publicClient || !walletClient || !walletClient.chain) {
       throw new Error('Test client not found');
     }
+
+    const drift = new Drift({
+      adapter: viemAdapter({
+        publicClient,
+        walletClient,
+      }),
+    });
 
     const { timestamp } = await publicClient.getBlock();
     const configParams: DopplerPreDeploymentConfig = {
@@ -39,10 +49,18 @@ describe('Doppler Pool Deployment', () => {
       maxProceeds: parseEther('600'),
     };
 
-    const deployer = new Deployer({ publicClient, walletClient, addresses });
-    const config = deployer.buildConfig(configParams);
-    const doppler = await deployer.deployWithConfig(config);
+    const readWriteFactory = new ReadWriteFactory(addresses.airlock, drift);
+    const config = buildConfig(configParams, addresses);
+    await readWriteFactory.create(config);
 
-    expect(doppler.address).toBeDefined();
+    const doppler = new ReadDoppler(
+      config.poolKey.currency1,
+      addresses.stateView,
+      drift
+    );
+
+    const poolId = await doppler.getPoolId();
+
+    expect(poolId).toBeDefined();
   });
 });
