@@ -2,7 +2,7 @@ import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { setupTestEnvironment } from './setup';
 import { Drift } from '@delvtech/drift';
-import { viemAdapter } from '@delvtech/drift-viem';
+import { viemAdapter, ViemReadWriteAdapter } from '@delvtech/drift-viem';
 import { ReadDoppler } from '@/entities/doppler';
 import { buildConfig, ReadWriteFactory } from '@/entities/factory';
 import { DopplerPreDeploymentConfig } from '@/types';
@@ -19,7 +19,7 @@ describe('Doppler Pool Deployment', () => {
       clients: { publicClient, walletClient },
       addresses,
     } = testEnv;
-    if (!publicClient || !walletClient || !walletClient.chain) {
+    if (!publicClient || !walletClient || !walletClient.account) {
       throw new Error('Test client not found');
     }
 

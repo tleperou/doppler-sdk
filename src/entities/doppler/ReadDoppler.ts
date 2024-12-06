@@ -3,8 +3,8 @@ import { Address } from 'abitype';
 import { dopplerAbi, stateViewAbi } from '@/abis';
 import { encodePacked, Hex, keccak256 } from 'viem';
 import { PoolKey } from '@/types';
-import { ReadDerc20 } from '../tokens/derc20/ReadDerc20';
-import { ReadEth } from '../tokens/eth/ReadEth';
+import { ReadDerc20 } from '../token/derc20/ReadDerc20';
+import { ReadEth } from '../token/eth/ReadEth';
 import { ETH_ADDRESS } from '@/constants';
 
 type DopplerABI = typeof dopplerAbi;
@@ -45,9 +45,9 @@ export class ReadDoppler {
   }
 
   async getPosition(
-    id: Hex
+    salt: Hex
   ): Promise<{ tickLower: number; tickUpper: number }> {
-    return this.doppler.read('positions', { salt: id });
+    return this.doppler.read('positions', { salt });
   }
 
   async getSlot0(id: Hex): Promise<{

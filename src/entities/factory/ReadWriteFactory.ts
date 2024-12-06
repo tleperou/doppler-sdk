@@ -31,7 +31,7 @@ export interface CreateParams {
 export class ReadWriteFactory extends ReadFactory {
   declare airlock: ReadWriteContract<AirlockABI>;
 
-  constructor(address: Address, drift: Drift<ReadWriteAdapter> = new Drift()) {
+  constructor(address: Address, drift: Drift<ReadWriteAdapter>) {
     super(address, drift);
   }
 

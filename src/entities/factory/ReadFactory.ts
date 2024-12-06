@@ -1,5 +1,5 @@
 import { ReadContract, ReadAdapter, Drift, EventFilter } from '@delvtech/drift';
-import { Address } from 'abitype';
+import { Address } from 'viem';
 import { airlockAbi } from '@/abis';
 import { PoolKey } from '@uniswap/v4-sdk';
 
@@ -23,13 +23,13 @@ export class ReadFactory {
     });
   }
 
-  async getModuleState(address: `0x${string}`): Promise<ModuleState> {
+  async getModuleState(address: Address): Promise<ModuleState> {
     return this.airlock.read('getModuleState', {
       0: address,
     });
   }
 
-  async getTokenData(token: `0x${string}`): Promise<{
+  async getTokenData(token: Address): Promise<{
     poolKey: PoolKey;
     timelock: Address;
     governance: Address;
