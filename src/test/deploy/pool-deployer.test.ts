@@ -1,8 +1,8 @@
-import { Hex, parseEther } from 'viem';
+import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { setupTestEnvironment } from './setup';
 import { Drift } from '@delvtech/drift';
-import { viemAdapter, ViemReadWriteAdapter } from '@delvtech/drift-viem';
+import { viemAdapter } from '@delvtech/drift-viem';
 import { ReadDoppler } from '@/entities/doppler';
 import { buildConfig, ReadWriteFactory } from '@/entities/factory';
 import { DopplerPreDeploymentConfig } from '@/types';
@@ -56,7 +56,7 @@ describe('Doppler Pool Deployment', () => {
     const config = buildConfig(configParams, addresses);
     await readWriteFactory.airlock.simulateWrite('create', config);
     try {
-      const txHash = await readWriteFactory.create(config);
+      await readWriteFactory.create(config);
     } catch (e) {
       console.log(e);
     }

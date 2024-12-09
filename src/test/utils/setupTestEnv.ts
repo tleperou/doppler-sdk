@@ -7,8 +7,6 @@ import {
   Hex,
   http,
   parseEther,
-  publicActions,
-  walletActions,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
