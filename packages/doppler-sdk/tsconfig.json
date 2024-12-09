@@ -1,6 +1,6 @@
 {
   // see https://www.typescriptlang.org/tsconfig to better understand tsconfigs
-  "include": ["packages/src/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "coverage"],
   "compilerOptions": {
     "types": ["node"],
@@ -14,9 +14,9 @@
     "sourceMap": true,
     "outDir": "./dist",
     // match output dir to input dir. e.g. dist/index instead of dist/src/index
-    "rootDir": "packages/src",
+    "rootDir": "./src",
     "paths":{
-      "@/*": ["./packages/src/*"]
+      "@/*": ["./src/*"]
     },
     // stricter type-checking for stronger correctness. Recommended by TS
     "strict": true,
