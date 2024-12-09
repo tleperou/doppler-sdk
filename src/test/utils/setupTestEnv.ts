@@ -1,7 +1,9 @@
 import { randomBytes } from 'crypto';
 import {
   Address,
+  createPublicClient,
   createTestClient,
+  createWalletClient,
   Hex,
   http,
   parseEther,
@@ -27,18 +29,16 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     'hex'
   )}` as Address;
 
-  const publicClient = createTestClient({
+  const publicClient = createPublicClient({
     chain: foundry,
-    mode: 'anvil',
     transport: http(),
-  }).extend(publicActions);
+  });
 
-  const walletClient = createTestClient({
+  const walletClient = createWalletClient({
     account: privateKeyToAccount(privateKey),
     chain: foundry,
-    mode: 'anvil',
     transport: http(),
-  }).extend(walletActions);
+  });
 
   const testClient = createTestClient({
     chain: foundry,

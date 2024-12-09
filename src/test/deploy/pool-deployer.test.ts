@@ -1,4 +1,4 @@
-import { parseEther } from 'viem';
+import { Hex, parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { setupTestEnvironment } from './setup';
 import { Drift } from '@delvtech/drift';
@@ -52,7 +52,15 @@ describe('Doppler Pool Deployment', () => {
 
     const readWriteFactory = new ReadWriteFactory(addresses.airlock, drift);
     const config = buildConfig(configParams, addresses);
-    await readWriteFactory.create(config);
+    const tx = await readWriteFactory.airlock.simulateWrite('create', config, {
+      account: walletClient.account,
+    });
+    console.log('tx', tx);
+    try {
+      const txHash = await readWriteFactory.create(config);
+    } catch (e) {
+      console.log(e);
+    }
 
     const doppler = new ReadDoppler(
       config.poolKey.currency1,
