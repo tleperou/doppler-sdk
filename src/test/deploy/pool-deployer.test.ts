@@ -23,6 +23,8 @@ describe('Doppler Pool Deployment', () => {
       throw new Error('Test client not found');
     }
 
+    console.log('walletClient', walletClient.account);
+
     const drift = new Drift({
       adapter: viemAdapter({
         publicClient,
@@ -52,10 +54,7 @@ describe('Doppler Pool Deployment', () => {
 
     const readWriteFactory = new ReadWriteFactory(addresses.airlock, drift);
     const config = buildConfig(configParams, addresses);
-    const tx = await readWriteFactory.airlock.simulateWrite('create', config, {
-      account: walletClient.account,
-    });
-    console.log('tx', tx);
+    await readWriteFactory.airlock.simulateWrite('create', config);
     try {
       const txHash = await readWriteFactory.create(config);
     } catch (e) {
