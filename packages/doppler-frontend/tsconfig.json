@@ -20,8 +20,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@doppler-kit/*": ["../packages/*"]
-    },
+      "doppler-sdk": ["../../packages/doppler-sdk/src"]
+    }
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
