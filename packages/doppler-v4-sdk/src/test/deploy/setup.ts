@@ -2,11 +2,11 @@ import { randomBytes } from 'crypto';
 import {
   Address,
   createTestClient,
+  createWalletClient,
   Hex,
   http,
   parseEther,
   publicActions,
-  walletActions,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
@@ -33,12 +33,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     transport: http(),
   }).extend(publicActions);
 
-  const walletClient = createTestClient({
+  const walletClient = createWalletClient({
     account: privateKeyToAccount(privateKey),
     chain: foundry,
-    mode: 'anvil',
     transport: http(),
-  }).extend(walletActions);
+  });
 
   const testClient = createTestClient({
     chain: foundry,

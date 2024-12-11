@@ -60,8 +60,12 @@ describe('Doppler Pool Deployment', () => {
     );
     console.log('config', config);
     console.log('result', result);
-    // await readWriteFactory.create(config);
-    await readWriteFactory.airlock.write('create', config);
+    console.log('walletClient type', drift.adapter.walletClient);
+    await readWriteFactory.create(config, {
+      onMined: (result) => {
+        console.log('onMined', result);
+      },
+    });
 
     const doppler = new ReadDoppler(
       config.poolKey.currency1,

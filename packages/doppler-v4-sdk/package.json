@@ -1,5 +1,4 @@
-{
-  "name": "doppler-v4-sdk",
+{ "name": "doppler-v4-sdk",
   "author": "Whetstone Research",
   "module": "dist/doppler-v4-kit.esm.js",
   "version": "0.1.0",
@@ -35,7 +34,7 @@
   },
   "dependencies": {
     "@delvtech/drift": "^0.0.1-beta.25",
-    "@delvtech/drift-viem": "^0.1.0-beta.29",
+    "@delvtech/drift-viem": "^0.1.0-beta.30",
     "@types/node": "^22.9.4",
     "@uniswap/sdk-core": "^5.9.0",
     "@uniswap/v4-sdk": "^1.10.4",
