@@ -1,12 +1,11 @@
 {
-  "name": "doppler-sdk",
+  "name": "doppler-v3-sdk",
   "author": "Whetstone Research",
-  "module": "dist/doppler-kit.esm.js",
+  "module": "dist/doppler-v3-kit.esm.js",
   "version": "0.1.0",
   "license": "MIT",
   "main": "src/index.ts",
   "typings": "dist/index.d.ts",
-  "packageManager": "yarn@1.22.18",
   "type": "module",
   "scripts": {
     "start": "tsc watch ./src/**",

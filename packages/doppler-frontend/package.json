@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "5.45.1",
-    "doppler-sdk": "../doppler-sdk",
+    "doppler-v4-sdk": "../doppler-v4-sdk",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "viem": "latest",
