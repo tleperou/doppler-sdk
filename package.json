@@ -5,6 +5,7 @@
   "workspaces": [
     "packages/doppler-frontend",
     "packages/doppler-v3-sdk",
-    "packages/doppler-v4-sdk"
+    "packages/doppler-v4-sdk",
+    "packages/doppler-miniapp"
   ]
 }
