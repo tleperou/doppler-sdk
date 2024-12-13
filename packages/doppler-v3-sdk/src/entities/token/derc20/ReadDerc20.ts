@@ -1,6 +1,6 @@
 import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
 import { Address } from 'abitype';
-import { derc20Abi } from '@/abis';
+import { derc20Abi } from '../../../abis';
 
 export type Derc20ABI = typeof derc20Abi;
 

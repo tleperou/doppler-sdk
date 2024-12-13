@@ -1,5 +1,5 @@
 import { usePublicClient } from "wagmi";
-import { ReadDoppler } from "doppler-sdk";
+import { ReadDoppler } from "doppler-v4-sdk";
 import { Drift } from "@delvtech/drift";
 import { viemAdapter } from "@delvtech/drift-viem";
 import { Address } from "viem";

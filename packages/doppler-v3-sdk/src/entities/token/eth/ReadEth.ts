@@ -1,6 +1,6 @@
 import { ReadAdapter, Drift } from '@delvtech/drift';
 import { Address } from 'abitype';
-import { ETH_ADDRESS } from '@/constants';
+import { ETH_ADDRESS } from '../../../constants';
 
 export class ReadEth {
   drift: Drift<ReadAdapter>;
