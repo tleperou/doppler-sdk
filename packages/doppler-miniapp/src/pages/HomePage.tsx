@@ -7,6 +7,13 @@ import { trimPaddedAddress } from "../utils/address";
 import { config } from "../wagmi";
 import { AirlockABI } from "../abis/AirlockABI";
 import TokenName from "../components/TokenName";
+import { Drift } from "@delvtech/drift";
+import { viemAdapter } from "@delvtech/drift-viem";
+import { ReadFactory } from "doppler-v3-sdk";
+import {
+  useFetchCreatedAssets,
+  usePoolCreationData,
+} from "../hooks/usePoolCreationData";
 
 type TokenData = {
   address: Address;
@@ -39,6 +46,9 @@ function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const publicClient = usePublicClient({ config });
   const { data: blockNumber } = useBlockNumber({ watch: true });
+
+  const { data: assetDatas } = useFetchCreatedAssets(addresses.airlock);
+  console.log("assetDatas", assetDatas);
 
   const fetchDopplers = async () => {
     try {
