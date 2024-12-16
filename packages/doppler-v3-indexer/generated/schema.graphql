@@ -1,0 +1,243 @@
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+scalar BigInt
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Meta {
+  status: JSON
+}
+
+type Query {
+  assets(id: String!): assets
+  assetss(where: assetsFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): assetsPage!
+  modules(id: String!): modules
+  moduless(where: modulesFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): modulesPage!
+  owners(id: String!): owners
+  ownerss(where: ownersFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): ownersPage!
+  _meta: Meta
+}
+
+type assets {
+  id: String!
+  numeraire: String!
+  pool: String!
+  timelock: String!
+  governance: String!
+  liquidityMigrator: String!
+  migrationPool: String!
+  poolInitializer: String!
+  createdAt: String!
+  migratedAt: String
+}
+
+type assetsPage {
+  items: [assets!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input assetsFilter {
+  AND: [assetsFilter]
+  OR: [assetsFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  numeraire: String
+  numeraire_not: String
+  numeraire_in: [String]
+  numeraire_not_in: [String]
+  numeraire_contains: String
+  numeraire_not_contains: String
+  numeraire_starts_with: String
+  numeraire_ends_with: String
+  numeraire_not_starts_with: String
+  numeraire_not_ends_with: String
+  pool: String
+  pool_not: String
+  pool_in: [String]
+  pool_not_in: [String]
+  pool_contains: String
+  pool_not_contains: String
+  pool_starts_with: String
+  pool_ends_with: String
+  pool_not_starts_with: String
+  pool_not_ends_with: String
+  timelock: String
+  timelock_not: String
+  timelock_in: [String]
+  timelock_not_in: [String]
+  timelock_contains: String
+  timelock_not_contains: String
+  timelock_starts_with: String
+  timelock_ends_with: String
+  timelock_not_starts_with: String
+  timelock_not_ends_with: String
+  governance: String
+  governance_not: String
+  governance_in: [String]
+  governance_not_in: [String]
+  governance_contains: String
+  governance_not_contains: String
+  governance_starts_with: String
+  governance_ends_with: String
+  governance_not_starts_with: String
+  governance_not_ends_with: String
+  liquidityMigrator: String
+  liquidityMigrator_not: String
+  liquidityMigrator_in: [String]
+  liquidityMigrator_not_in: [String]
+  liquidityMigrator_contains: String
+  liquidityMigrator_not_contains: String
+  liquidityMigrator_starts_with: String
+  liquidityMigrator_ends_with: String
+  liquidityMigrator_not_starts_with: String
+  liquidityMigrator_not_ends_with: String
+  migrationPool: String
+  migrationPool_not: String
+  migrationPool_in: [String]
+  migrationPool_not_in: [String]
+  migrationPool_contains: String
+  migrationPool_not_contains: String
+  migrationPool_starts_with: String
+  migrationPool_ends_with: String
+  migrationPool_not_starts_with: String
+  migrationPool_not_ends_with: String
+  poolInitializer: String
+  poolInitializer_not: String
+  poolInitializer_in: [String]
+  poolInitializer_not_in: [String]
+  poolInitializer_contains: String
+  poolInitializer_not_contains: String
+  poolInitializer_starts_with: String
+  poolInitializer_ends_with: String
+  poolInitializer_not_starts_with: String
+  poolInitializer_not_ends_with: String
+  createdAt: String
+  createdAt_not: String
+  createdAt_in: [String]
+  createdAt_not_in: [String]
+  createdAt_contains: String
+  createdAt_not_contains: String
+  createdAt_starts_with: String
+  createdAt_ends_with: String
+  createdAt_not_starts_with: String
+  createdAt_not_ends_with: String
+  migratedAt: String
+  migratedAt_not: String
+  migratedAt_in: [String]
+  migratedAt_not_in: [String]
+  migratedAt_contains: String
+  migratedAt_not_contains: String
+  migratedAt_starts_with: String
+  migratedAt_ends_with: String
+  migratedAt_not_starts_with: String
+  migratedAt_not_ends_with: String
+}
+
+type modules {
+  id: String!
+  state: Int!
+  lastUpdated: String!
+}
+
+type modulesPage {
+  items: [modules!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input modulesFilter {
+  AND: [modulesFilter]
+  OR: [modulesFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  state: Int
+  state_not: Int
+  state_in: [Int]
+  state_not_in: [Int]
+  state_gt: Int
+  state_lt: Int
+  state_gte: Int
+  state_lte: Int
+  lastUpdated: String
+  lastUpdated_not: String
+  lastUpdated_in: [String]
+  lastUpdated_not_in: [String]
+  lastUpdated_contains: String
+  lastUpdated_not_contains: String
+  lastUpdated_starts_with: String
+  lastUpdated_ends_with: String
+  lastUpdated_not_starts_with: String
+  lastUpdated_not_ends_with: String
+}
+
+type owners {
+  id: String!
+  address: String!
+  since: String!
+}
+
+type ownersPage {
+  items: [owners!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input ownersFilter {
+  AND: [ownersFilter]
+  OR: [ownersFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  address: String
+  address_not: String
+  address_in: [String]
+  address_not_in: [String]
+  address_contains: String
+  address_not_contains: String
+  address_starts_with: String
+  address_ends_with: String
+  address_not_starts_with: String
+  address_not_ends_with: String
+  since: String
+  since_not: String
+  since_in: [String]
+  since_not_in: [String]
+  since_contains: String
+  since_not_contains: String
+  since_starts_with: String
+  since_ends_with: String
+  since_not_starts_with: String
+  since_not_ends_with: String
+}
