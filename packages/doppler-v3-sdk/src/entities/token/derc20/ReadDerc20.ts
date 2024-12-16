@@ -30,4 +30,8 @@ export class ReadDerc20 {
   async getBalanceOf(account: Address): Promise<bigint> {
     return this.contract.read('balanceOf', { account });
   }
+
+  async getTotalSupply(): Promise<bigint> {
+    return this.contract.read('totalSupply');
+  }
 }
