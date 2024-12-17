@@ -29,17 +29,21 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
   });
 });
 
-// ponder.on("Airlock:Migrate", async ({ event, context }) => {
-//   await context.db.insert(assets).values({
-//     id: event.args.asset,
-//     migratedAt: new Date(Number(event.block.timestamp)),
-//   });
-// });
+ponder.on("Airlock:Migrate", async ({ event, context }) => {
+  const { assets } = context.db;
+
+  await assets.update({
+    id: event.args.asset,
+    migratedAt: new Date(Number(event.block.timestamp)),
+  });
+});
 
 // ponder.on("Airlock:SetModuleState", async ({ event, context }) => {
+//   const { modules } = context.db;
+
 //   await context.db.insert(modules).values({
 //     id: event.args.module,
 //     state: event.args.state,
-//     lastUpdated: event.block.timestamp,
+//     lastUpdated: new Date(Number(event.block.timestamp)),
 //   });
 // });
