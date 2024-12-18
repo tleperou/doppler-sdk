@@ -25,6 +25,7 @@ export interface AssetData {
   timelock: Address;
   governance: Address;
   liquidityMigrator: Address;
+  poolInitializer: Address;
   migrationPool: Address;
 }
 
