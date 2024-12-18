@@ -31,17 +31,13 @@ function DeployDoppler() {
 
   const { writeContract } = useWriteContract();
   const publicClient = usePublicClient();
-  const account = useAccount();
 
-  const { data: weth, error: wethError } = useReadContract({
+  const { data: weth } = useReadContract({
     abi: MigratorABI,
     address: addresses.migrator,
     functionName: "weth",
   });
-  console.log(addresses);
-  console.log(weth);
-  console.log(wethError);
-  console.log(account);
+
   const handleStartTickChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStartTick(e.target.value);
   };
