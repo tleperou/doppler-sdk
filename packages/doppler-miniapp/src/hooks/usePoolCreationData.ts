@@ -58,7 +58,7 @@ const getCreationData = async (airlock: Address) => {
   return assetDatas;
 };
 
-const getPoolData = async (poolCreation: PoolCreationData) => {
+const getPoolCreationData = async (poolCreation: PoolCreationData) => {
   const [assetData, numeraireData] = await Promise.all([
     Promise.all([
       poolCreation.asset.getName(),
@@ -109,7 +109,7 @@ const getPoolData = async (poolCreation: PoolCreationData) => {
   };
 };
 
-export function usePoolDatas(airlock: Address) {
+export function usePoolCreationDatas(airlock: Address) {
   const creationsQuery = useQuery({
     queryKey: ["create-events", airlock],
     queryFn: async () => {
@@ -125,7 +125,7 @@ export function usePoolDatas(airlock: Address) {
     queryFn: async () => {
       const poolDatas = await Promise.all(
         creationsQuery?.data?.map(async (creationData) => {
-          return getPoolData(creationData);
+          return getPoolCreationData(creationData);
         }) ?? []
       );
       return poolDatas;

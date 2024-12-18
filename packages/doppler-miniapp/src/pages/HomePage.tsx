@@ -2,14 +2,14 @@ import { Link } from "react-router-dom";
 import { addresses } from "../addresses";
 import { formatEther } from "viem";
 import TokenName from "../components/TokenName";
-import { usePoolDatas } from "../hooks/usePools";
+import { usePoolCreationDatas } from "../hooks/usePoolCreationData";
 
 function HomePage() {
   const {
     data: poolDatas,
     isLoading: isPoolsLoading,
     error: poolDataError,
-  } = usePoolDatas(addresses.airlock);
+  } = usePoolCreationDatas(addresses.airlock);
 
   return (
     <div className="home-page">
