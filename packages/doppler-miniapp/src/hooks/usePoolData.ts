@@ -1,17 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { Address } from "viem";
-import { ReadUniswapV3Pool } from "doppler-v3-sdk";
+import { AssetData, ReadUniswapV3Pool, Slot0 } from "doppler-v3-sdk";
 import { getDrift } from "../utils/drift";
-import {
-  fetchDopplerAssetData,
-  useDopplerAssetData,
-} from "./useDopplerAssetData";
-import { MarketDetails } from "../types";
-import { fetchDerc20TokenData, useTokenData } from "./useToken";
+import { useAssetData } from "./useMarketDetails";
+import { useTokenData } from "./useToken";
 
-const fetchPositionData = async (marketDetails: MarketDetails) => {
+interface PoolData {
+  slot0: Slot0;
+  positions: Position[];
+}
+
+interface Position {
+  tickLower: number;
+  tickUpper: number;
+  liquidity: bigint;
+}
+
+const fetchPositionData = async (
+  assetData: AssetData | undefined
+): Promise<PoolData> => {
+  if (!assetData) {
+    throw "Asset data not found";
+  }
+
   const drift = getDrift();
-  const { assetData } = marketDetails;
   const pool = new ReadUniswapV3Pool(assetData.pool, drift);
 
   const slot0 = await pool.getSlot0();
@@ -24,79 +36,52 @@ const fetchPositionData = async (marketDetails: MarketDetails) => {
     },
   });
 
-  const positions = mintEvents.map((event) => ({
+  const positions: Position[] = mintEvents.map((event) => ({
     tickLower: event.args?.tickLower ?? 0,
     tickUpper: event.args?.tickUpper ?? 0,
     liquidity: event.args?.amount ?? 0n,
   }));
 
   return {
-    marketDetails,
     slot0,
     positions,
   };
 };
 
-export function usePoolData(airlock: Address, assetAddress: Address) {
-  const {
-    data: assetData,
-    isLoading: assetDataLoading,
-    error: assetDataError,
-  } = useQuery({
-    queryKey: ["doppler-asset-data", assetAddress],
-    queryFn: async () => {
-      return fetchDopplerAssetData(airlock, assetAddress);
-    },
-  });
+export function usePoolData(
+  airlock: Address | undefined,
+  assetAddress: Address | undefined
+) {
+  const assetDataQuery = useAssetData(airlock, assetAddress);
+  const numeraireQuery = useTokenData(assetDataQuery.data?.numeraire);
+  const assetQuery = useTokenData(assetAddress);
 
-  const {
-    data: asset,
-    isLoading: assetLoading,
-    error: assetError,
-  } = useQuery({
-    queryKey: ["token-data", assetAddress],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["pools", assetDataQuery.data?.pool],
     queryFn: async () => {
-      return fetchDerc20TokenData(assetAddress);
-    },
-  });
-
-  const {
-    data: numeraire,
-    isLoading: numeraireLoading,
-    error: numeraireError,
-  } = useQuery({
-    queryKey: ["token-data", assetData?.numeraire],
-    queryFn: async () => {
-      return fetchDerc20TokenData(assetData?.numeraire as Address);
-    },
-    enabled: !!assetData,
-  });
-
-  const {
-    data: poolData,
-    isLoading: poolDataLoading,
-    error: poolDataError,
-  } = useQuery({
-    queryKey: ["pools", assetData?.pool],
-    queryFn: async () => {
-      if (!assetData || !asset || !numeraire) {
+      if (!assetDataQuery.data) {
         throw new Error("Market details not found");
       }
 
-      const poolDatas = await fetchPositionData({
-        assetData,
-        asset,
-        numeraire,
-      });
+      const poolDatas = await fetchPositionData(assetDataQuery.data);
+
       return poolDatas;
     },
-    enabled: !!assetData && !!asset && !!numeraire,
+    enabled:
+      Boolean(assetDataQuery.data) &&
+      Boolean(numeraireQuery.data) &&
+      Boolean(assetQuery.data),
   });
 
   return {
     isLoading:
-      poolDataLoading || assetDataLoading || assetLoading || numeraireLoading,
-    error: poolDataError || assetDataError || assetError || numeraireError,
-    data: poolData,
+      assetDataQuery.isLoading || numeraireQuery.isLoading || isLoading,
+    error: assetDataQuery.error || numeraireQuery.error || error,
+    data: {
+      assetData: assetDataQuery.data,
+      numeraire: numeraireQuery.data,
+      asset: assetQuery.data,
+      ...data,
+    },
   };
 }
