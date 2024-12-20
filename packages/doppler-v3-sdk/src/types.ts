@@ -12,9 +12,7 @@ export interface DopplerAddresses {
   dopplerFactory: Address;
   governanceFactory: Address;
   migrator: Address;
-  poolManager: Address;
-  stateView: Address;
-  customRouter: Address;
+  v3Initializer: Address;
 }
 
 export interface TokenConfig {
