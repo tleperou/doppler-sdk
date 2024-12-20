@@ -168,7 +168,8 @@ function DeployDoppler() {
       );
 
       const isToken0 = Number(asset) < Number(weth);
-      if (!isToken0) {
+      console.log("isToken0", isToken0);
+      if (isToken0) {
         poolInitializerData = encodeAbiParameters(
           [
             { type: "uint24" },

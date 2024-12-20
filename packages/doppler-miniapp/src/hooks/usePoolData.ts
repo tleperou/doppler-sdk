@@ -56,8 +56,8 @@ export function usePoolData(
   const numeraireQuery = useTokenData(assetDataQuery.data?.numeraire);
   const assetQuery = useTokenData(assetAddress);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["pools", assetDataQuery.data?.pool],
+  const positionDataQuery = useQuery({
+    queryKey: ["position-data", assetDataQuery.data?.pool],
     queryFn: async () => {
       if (!assetDataQuery.data) {
         throw new Error("Market details not found");
@@ -75,13 +75,20 @@ export function usePoolData(
 
   return {
     isLoading:
-      assetDataQuery.isLoading || numeraireQuery.isLoading || isLoading,
-    error: assetDataQuery.error || numeraireQuery.error || error,
+      assetDataQuery.isLoading ||
+      assetQuery.isLoading ||
+      numeraireQuery.isLoading ||
+      positionDataQuery.isLoading,
+    error:
+      assetDataQuery.error ||
+      assetQuery.error ||
+      numeraireQuery.error ||
+      positionDataQuery.error,
     data: {
       assetData: assetDataQuery.data,
       numeraire: numeraireQuery.data,
       asset: assetQuery.data,
-      ...data,
+      positionData: positionDataQuery.data,
     },
   };
 }

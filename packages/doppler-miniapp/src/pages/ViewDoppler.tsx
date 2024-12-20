@@ -15,9 +15,7 @@ function ViewDoppler() {
 
   const { data, isLoading } = usePoolData(airlock, id as Address);
 
-  const { asset, numeraire, assetData, ...poolData } = data;
-
-  console.log(isLoading);
+  const { asset, numeraire, assetData, positionData } = data;
 
   return (
     <div className="view-doppler">
@@ -41,8 +39,8 @@ function ViewDoppler() {
         </div>
       ) : (
         <LiquidityChart
-          positions={poolData?.positions ?? []}
-          currentTick={poolData?.slot0?.tick ?? 0}
+          positions={positionData?.positions ?? []}
+          currentTick={positionData?.slot0?.tick ?? 0}
         />
       )}
       <div className="doppler-info">
@@ -64,7 +62,7 @@ function ViewDoppler() {
               </div>
               <div className="stat-item">
                 <label>Current Tick</label>
-                <span>{poolData?.slot0?.tick ?? 0}</span>
+                <span>{positionData?.slot0?.tick ?? 0}</span>
               </div>
             </div>
             <a
