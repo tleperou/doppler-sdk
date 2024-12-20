@@ -14,7 +14,7 @@ function roundToTickSpacing(tick: number): number {
 
 const DEFAULT_START_TICK = 167520;
 const DEFAULT_END_TICK = 200040;
-const DEFAULT_TARGET_TICK = 191520;
+const DEFAULT_TARGET_TICK = DEFAULT_END_TICK - 60;
 
 function DeployDoppler() {
   const account = useAccount();
