@@ -2,7 +2,7 @@ import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
 import { Address } from 'viem';
 import { uniswapV3InitializerAbi } from '../../abis';
 
-interface PoolState {
+export interface PoolState {
   asset: Address;
   numeraire: Address;
   tickLower: number;
