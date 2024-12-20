@@ -1462,7 +1462,7 @@ export const airlockAbi = [
   },
 ] as const;
 
-export const uniswapV3Initializer = [
+export const uniswapV3InitializerAbi = [
   {
     type: 'constructor',
     inputs: [
