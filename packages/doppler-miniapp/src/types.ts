@@ -23,5 +23,4 @@ export interface TokenData {
   symbol: string;
   decimals: number;
   totalSupply?: bigint;
-  poolBalance?: bigint;
 }

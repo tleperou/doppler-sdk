@@ -7,15 +7,19 @@ import { usePoolData } from "../hooks/usePoolData";
 
 function ViewDoppler() {
   const { id } = useParams();
-  const { airlock } = addresses;
+  const { airlock, v3Initializer } = addresses;
 
   if (!id || !/^0x[a-fA-F0-9]{40}$/.test(id)) {
     return <Navigate to="/" />;
   }
 
-  const { data, isLoading } = usePoolData(airlock, id as Address);
+  const { data, isLoading } = usePoolData(
+    airlock,
+    v3Initializer,
+    id as Address
+  );
 
-  const { asset, numeraire, assetData, positionData } = data;
+  const { asset, numeraire, assetData, poolData } = data;
 
   return (
     <div className="view-doppler">
@@ -39,8 +43,8 @@ function ViewDoppler() {
         </div>
       ) : (
         <LiquidityChart
-          positions={positionData?.positions ?? []}
-          currentTick={positionData?.slot0?.tick ?? 0}
+          positions={poolData?.positions ?? []}
+          currentTick={poolData?.slot0?.tick ?? 0}
         />
       )}
       <div className="doppler-info">
@@ -56,13 +60,17 @@ function ViewDoppler() {
                 <span>
                   {(
                     Number(formatEther(asset?.totalSupply ?? 0n)) -
-                    Number(formatEther(asset?.poolBalance ?? 0n))
+                    Number(formatEther(poolData?.poolBalance ?? 0n))
                   ).toFixed(0)}
                 </span>
               </div>
               <div className="stat-item">
                 <label>Current Tick</label>
-                <span>{positionData?.slot0?.tick ?? 0}</span>
+                <span>{poolData?.slot0?.tick ?? 0}</span>
+              </div>
+              <div className="stat-item">
+                <label>Target Tick</label>
+                <span>{poolData?.initializerState?.targetTick ?? 0}</span>
               </div>
             </div>
             <a
