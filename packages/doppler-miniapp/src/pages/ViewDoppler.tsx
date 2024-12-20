@@ -13,20 +13,24 @@ function ViewDoppler() {
     return <Navigate to="/" />;
   }
 
-  const { data: poolData, isLoading } = usePoolData(airlock, id as Address);
+  const { data, isLoading } = usePoolData(airlock, id as Address);
+
+  const { asset, numeraire, assetData, ...poolData } = data;
+
+  console.log(isLoading);
 
   return (
     <div className="view-doppler">
       <h3 className="page-title">
         <TokenName
-          name={poolData?.marketDetails.asset.name ?? ""}
-          symbol={poolData?.marketDetails.asset.symbol ?? ""}
+          name={asset?.name ?? ""}
+          symbol={asset?.symbol ?? ""}
           showSymbol={false}
         />{" "}
         /{" "}
         <TokenName
-          name={poolData?.marketDetails.numeraire.name ?? ""}
-          symbol={poolData?.marketDetails.numeraire.symbol ?? ""}
+          name={numeraire?.name ?? ""}
+          symbol={numeraire?.symbol ?? ""}
           showSymbol={false}
         />
       </h3>
@@ -38,43 +42,33 @@ function ViewDoppler() {
       ) : (
         <LiquidityChart
           positions={poolData?.positions ?? []}
-          currentTick={poolData?.slot0.tick ?? 0}
+          currentTick={poolData?.slot0?.tick ?? 0}
         />
       )}
       <div className="doppler-info">
-        {poolData?.marketDetails && (
+        {assetData && numeraire && (
           <>
             <div className="market-stats">
               <div className="stat-item">
                 <label>Total Supply</label>
-                <span>
-                  {formatEther(poolData.marketDetails.asset.totalSupply ?? 0n)}
-                </span>
+                <span>{formatEther(asset?.totalSupply ?? 0n)}</span>
               </div>
               <div className="stat-item">
                 <label>Tokens Sold</label>
                 <span>
                   {(
-                    Number(
-                      formatEther(
-                        poolData.marketDetails.asset.totalSupply ?? 0n
-                      )
-                    ) -
-                    Number(
-                      formatEther(
-                        poolData.marketDetails.asset.poolBalance ?? 0n
-                      )
-                    )
+                    Number(formatEther(asset?.totalSupply ?? 0n)) -
+                    Number(formatEther(asset?.poolBalance ?? 0n))
                   ).toFixed(0)}
                 </span>
               </div>
               <div className="stat-item">
                 <label>Current Tick</label>
-                <span>{poolData?.slot0.tick ?? 0}</span>
+                <span>{poolData?.slot0?.tick ?? 0}</span>
               </div>
             </div>
             <a
-              href={`https://app.uniswap.org/swap?chain=unichainsepolia&inputCurrency=NATIVE&outputCurrency=${poolData?.marketDetails.asset.token.contract.address}`}
+              href={`https://app.uniswap.org/swap?chain=unichainsepolia&inputCurrency=NATIVE&outputCurrency=${asset?.token.contract.address}`}
               target="_blank"
               rel="noopener noreferrer"
               className="trade-button"

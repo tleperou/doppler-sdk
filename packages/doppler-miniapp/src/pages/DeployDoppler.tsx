@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { addresses } from "../addresses";
-import { encodeAbiParameters, parseEther, Hex, toHex } from "viem";
-import {
-  useWriteContract,
-  useReadContract,
-  useSimulateContract,
-  usePublicClient,
-  useAccount,
-} from "wagmi";
+import { encodeAbiParameters, parseEther, Hex } from "viem";
+import { useWriteContract, useReadContract, usePublicClient } from "wagmi";
 import { AirlockABI } from "../abis/AirlockABI";
 import { MigratorABI } from "../abis/MigratorABI";
 
