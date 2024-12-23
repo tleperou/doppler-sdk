@@ -16,14 +16,11 @@ export interface CreateParams {
   tokenFactoryData: Hex;
   governanceFactory: Address;
   governanceFactoryData: Hex;
-  hookFactory: Address;
-  hookFactoryData: Hex;
-  migrator: Address;
-  migratorData: Hex;
   poolInitializer: Address;
   poolInitializerData: Hex;
   liquidityMigrator: Address;
   liquidityMigratorData: Hex;
+  integrator: Address;
   salt: Hex;
 }
 

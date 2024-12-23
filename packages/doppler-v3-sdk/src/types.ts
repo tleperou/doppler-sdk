@@ -9,9 +9,8 @@ export interface Clients {
 export interface DopplerAddresses {
   airlock: Address;
   tokenFactory: Address;
-  dopplerFactory: Address;
   governanceFactory: Address;
-  migrator: Address;
+  liquidityMigrator: Address;
   v3Initializer: Address;
 }
 

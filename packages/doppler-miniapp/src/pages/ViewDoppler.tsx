@@ -7,17 +7,19 @@ import { usePoolData } from "../hooks/usePoolData";
 
 function ViewDoppler() {
   const { id } = useParams();
-  const { airlock } = addresses;
+  const { airlock, v3Initializer } = addresses;
 
   if (!id || !/^0x[a-fA-F0-9]{40}$/.test(id)) {
     return <Navigate to="/" />;
   }
 
-  const { data, isLoading } = usePoolData(airlock, id as Address);
+  const { data, isLoading } = usePoolData(
+    airlock,
+    v3Initializer,
+    id as Address
+  );
 
-  const { asset, numeraire, assetData, ...poolData } = data;
-
-  console.log(isLoading);
+  const { asset, numeraire, assetData, poolData } = data;
 
   return (
     <div className="view-doppler">
@@ -58,13 +60,17 @@ function ViewDoppler() {
                 <span>
                   {(
                     Number(formatEther(asset?.totalSupply ?? 0n)) -
-                    Number(formatEther(asset?.poolBalance ?? 0n))
+                    Number(formatEther(poolData?.poolBalance ?? 0n))
                   ).toFixed(0)}
                 </span>
               </div>
               <div className="stat-item">
                 <label>Current Tick</label>
                 <span>{poolData?.slot0?.tick ?? 0}</span>
+              </div>
+              <div className="stat-item">
+                <label>Target Tick</label>
+                <span>{poolData?.initializerState?.targetTick ?? 0}</span>
               </div>
             </div>
             <a
