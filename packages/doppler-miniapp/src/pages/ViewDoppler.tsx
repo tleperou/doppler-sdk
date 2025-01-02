@@ -9,6 +9,8 @@ function ViewDoppler() {
   const { id } = useParams();
   const { airlock, v3Initializer } = addresses;
 
+  console.log(airlock);
+
   if (!id || !/^0x[a-fA-F0-9]{40}$/.test(id)) {
     return <Navigate to="/" />;
   }
@@ -21,6 +23,28 @@ function ViewDoppler() {
 
   const { asset, numeraire, assetData, poolData } = data;
 
+<<<<<<< Updated upstream
+=======
+  const handleMigrate = async () => {
+    const drift = getDrift(walletClient);
+    const readWriteFactory = new ReadWriteFactory(airlock, drift);
+
+    console.log(id);
+
+    await readWriteFactory.airlock.simulateWrite("migrate", {
+      asset: id as Address,
+    });
+    await readWriteFactory.migrate(id as Address);
+  };
+
+  const { initializerState, slot0 } = poolData ?? {};
+
+  const migrationEnabled =
+    initializerState?.targetTick &&
+    slot0?.tick &&
+    initializerState.targetTick > slot0.tick;
+
+>>>>>>> Stashed changes
   return (
     <div className="view-doppler">
       <h3 className="page-title">

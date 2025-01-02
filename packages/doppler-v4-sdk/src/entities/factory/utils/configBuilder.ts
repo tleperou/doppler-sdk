@@ -8,7 +8,13 @@ import { DAY_SECONDS, DEFAULT_PD_SLUGS, MAX_TICK_SPACING } from '@/constants';
 import { DopplerAddresses } from '@/types';
 import { Price, Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, tickToPrice, TickMath } from '@uniswap/v3-sdk';
-import { Address, encodeAbiParameters, parseEther, toHex } from 'viem';
+import {
+  Address,
+  encodeAbiParameters,
+  parseEther,
+  toHex,
+  zeroAddress,
+} from 'viem';
 import { ETH_ADDRESS } from '@/constants';
 import { CreateParams, MineParams, mine } from '@/entities/factory';
 import { sortsBefore } from '@uniswap/v4-sdk';
@@ -48,7 +54,8 @@ export function buildConfig(
     throw new Error('Computed gamma must be divisible by tick spacing');
   }
 
-  const { tokenFactory, dopplerFactory, poolManager, airlock } = addresses;
+  const { tokenFactory, uniswapV4Initializer, poolManager, airlock } =
+    addresses;
 
   const mineParams: MineParams = {
     poolManager,
@@ -71,7 +78,7 @@ export function buildConfig(
 
   const [salt, dopplerAddress, tokenAddress] = mine(
     tokenFactory,
-    dopplerFactory,
+    uniswapV4Initializer,
     mineParams
   );
 
@@ -120,17 +127,22 @@ export function buildConfig(
     name: params.name,
     symbol: params.symbol,
     initialSupply: params.totalSupply,
+    numeraire: zeroAddress,
     numTokensToSell: params.numTokensToSell,
     poolKey,
     recipients: [] as Address[],
     amounts: [] as bigint[],
     tokenFactory,
-    tokenData: toHex(''),
+    tokenFactoryData: toHex(''),
     governanceFactory: addresses.governanceFactory,
-    governanceData: toHex(''),
-    hookFactory: addresses.dopplerFactory,
+    governanceFactoryData: toHex(''),
+    hookFactory: addresses.uniswapV4Initializer,
     hookData,
-    migrator: addresses.migrator,
+    liquidityMigrator: addresses.liquidityMigrator,
+    liquidityMigratorData: toHex(''),
+    poolInitializer: addresses.poolManager,
+    poolInitializerData: toHex(''),
+    integrator: zeroAddress,
     pool: poolConfig,
     salt,
   };

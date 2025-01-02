@@ -1,4 +1,5 @@
 import { Address, Hash, PublicClient, TestClient, WalletClient } from 'viem';
+import { PoolKey as UniswapPoolKey } from '@uniswap/v4-sdk';
 
 export interface Clients {
   publicClient: PublicClient;
@@ -9,12 +10,14 @@ export interface Clients {
 export interface DopplerAddresses {
   airlock: Address;
   tokenFactory: Address;
-  dopplerFactory: Address;
+  uniswapV4Initializer: Address;
   governanceFactory: Address;
   migrator: Address;
-  poolManager: Address;
   stateView: Address;
+  quoter: Address;
   customRouter: Address;
+  poolManager: Address;
+  uniswapV3Initializer?: Address;
 }
 
 export interface TokenConfig {
@@ -79,6 +82,17 @@ export interface DopplerPreDeploymentConfig {
   minProceeds: bigint;
   maxProceeds: bigint;
   numPdSlugs?: number; // uses a default if not set
+}
+
+export interface AssetData {
+  numeraire: Address;
+  poolInitializer: Address;
+  timelock: Address;
+  governance: Address;
+  liquidityMigrator: Address;
+  migrationPool: Address;
+  integrator: Address;
+  totalSupply: bigint;
 }
 
 export interface PoolConfig {

@@ -14,16 +14,21 @@ export interface CreateParams {
   symbol: string;
   initialSupply: bigint;
   numTokensToSell: bigint;
+  numeraire: Address;
+  integrator: Address;
   poolKey: PoolKey;
   recipients: Address[];
   amounts: bigint[];
   tokenFactory: Address;
-  tokenData: Hex;
+  tokenFactoryData: Hex;
   governanceFactory: Address;
-  governanceData: Hex;
+  governanceFactoryData: Hex;
   hookFactory: Address;
   hookData: Hex;
-  migrator: Address;
+  liquidityMigrator: Address;
+  liquidityMigratorData: Hex;
+  poolInitializer: Address;
+  poolInitializerData: Hex;
   pool: PoolConfig;
   salt: Hex;
 }
