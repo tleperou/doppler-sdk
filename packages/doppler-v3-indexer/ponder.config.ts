@@ -1,15 +1,17 @@
-import { createConfig } from "ponder";
-import { Address, http } from "viem";
+import { createConfig, factory } from "ponder";
+import { Address, getAbiItem, http } from "viem";
 import { AirlockABI } from "./abis/AirlockABI";
-import { unichainSepolia } from "viem/chains";
+import { UniswapV3PoolABI } from "./abis/UniswapV3PoolABI";
 
 const addresses = {
-  airlock: "0xc95B1d01445b90d1C0C8d285f0143D132f2593cc" as Address,
-  tokenFactory: "0xf00193Fa5c9085436Bd5215D1b49C908A89dCFDf" as Address,
-  uniswapV4Initializer: "0x1DE0912cF8C620774AaA818a0f4e086c865B9d61" as Address,
-  uniswapV3Initializer: "0xA5b67F1cF60095ec9074814f962540702d68917b" as Address,
-  governanceFactory: "0x5f706A9A46BE314AF3001b8ABDD024f6dAEE5145" as Address,
-  migrator: "0x2f1bC69586Cc5300df0Fc917f2A1D2a547043C8B" as Address,
+  airlock: "0x0EC7a97C0Bf6cB52C882E23ae66FBD3a914989f5" as Address,
+  tokenFactory: "0xbFDB42D11705c21B2C5b9358ae2BB1DF6fc4E828" as Address,
+  uniswapV3Initializer: "0x11ab5b5432915C8fcA64d6FeE97CAEbF70c8702B" as Address,
+  governanceFactory: "0x7bdA8541cecb830fd3b29433A59c8c1de2DFE929" as Address,
+  migrator: "0x3b5660fAD6A586c06CBd32a138A423F25cE4a8F9" as Address,
+  stateView: "0xdE04C804dc75E90D8a64e5589092a1D6692EFA45" as Address,
+  quoter: "0xfe6Cf50c4cfe801dd2AEf9c1B3ce24f551944df8" as Address,
+  customRouter: "0x335101dfaeFaA13eded1212Fd120376411d22788" as Address,
 };
 
 export default createConfig({
@@ -20,11 +22,22 @@ export default createConfig({
     },
   },
   contracts: {
-    Airlock: {
+    UniswapV3Pool: {
+      abi: UniswapV3PoolABI,
       network: "unichainSepolia",
+      address: factory({
+        address: addresses.airlock,
+        event: getAbiItem({ abi: AirlockABI, name: "Create" }),
+        parameter: "poolOrHook",
+      }),
+      startBlock: 9072310,
+    },
+
+    Airlock: {
       abi: AirlockABI,
+      network: "unichainSepolia",
       address: addresses.airlock,
-      startBlock: 7178680,
+      startBlock: 9072310,
     },
   },
 });
