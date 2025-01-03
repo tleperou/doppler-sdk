@@ -1,5 +1,11 @@
 import { ponder } from "ponder:registry";
-import { assets, positions, v3Pools } from "../ponder.schema";
+import {
+  assets,
+  users,
+  userAssets,
+  v3Pools,
+  positions,
+} from "../ponder.schema";
 import { AirlockABI } from "../abis/AirlockABI";
 import { UniswapV3PoolABI } from "../abis/UniswapV3PoolABI";
 import { Hex } from "viem";
@@ -75,47 +81,105 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
 });
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
-  const { assets } = context.db;
-
-  await assets.update({
-    id: event.args.asset,
-    data: {
-      migratedAt: new Date(Number(event.block.timestamp)),
-    },
+  const { db } = context;
+  const { asset } = event.args;
+  await db.update(assets, { id: asset }).set({
+    migratedAt: new Date(Number(event.block.timestamp)),
   });
 });
 
 ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
-  const { positions } = context.db;
+  const { db } = context;
   const pool = event.log.address;
   const { tickLower, tickUpper, amount, owner } = event.args;
 
-  await positions.upsert({
-    id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
-    create: {
+  await db
+    .insert(positions)
+    .values({
+      id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
       owner: owner,
       pool: pool,
       tickLower: tickLower,
       tickUpper: tickUpper,
       liquidity: amount,
       createdAt: new Date(Number(event.block.timestamp)),
-    },
-    update: ({ current }) => ({
-      liquidity: current.liquidity + amount,
-    }),
-  });
+    })
+    .onConflictDoUpdate((row) => ({ liquidity: row.liquidity + amount }));
 });
 
 ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
-  const { positions } = context.db;
+  const { db } = context;
   const pool = event.log.address;
   const { tickLower, tickUpper, owner } = event.args;
 
-  await positions.update({
-    id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
-    data: ({ current }) => ({
-      liquidity: current.liquidity - event.args.amount,
-    }),
+  await db
+    .insert(positions)
+    .values({
+      id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
+      owner: owner,
+      pool: pool,
+      tickLower: tickLower,
+      tickUpper: tickUpper,
+      liquidity: event.args.amount,
+      createdAt: new Date(Number(event.block.timestamp)),
+    })
+    .onConflictDoUpdate((row) => ({
+      liquidity: row.liquidity - event.args.amount,
+    }));
+});
+
+ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
+  const { db } = context;
+  const { client } = context;
+  const pool = event.log.address;
+
+  const poolData = await client.readContract({
+    abi: UniswapV3PoolABI,
+    address: pool,
+    functionName: "slot0",
+  });
+
+  const poolDataStruct = {
+    sqrtPrice: poolData[0],
+    tick: poolData[1],
+  };
+
+  const liquidity = await client.readContract({
+    abi: UniswapV3PoolABI,
+    address: pool,
+    functionName: "liquidity",
+  });
+
+  await db
+    .insert(v3Pools)
+    .values({
+      id: pool,
+      ...poolDataStruct,
+      liquidity: liquidity,
+      createdAt: new Date(Number(event.block.timestamp)),
+    })
+    .onConflictDoUpdate((row) => ({
+      liquidity: liquidity,
+      sqrtPrice: poolData[0],
+      tick: poolData[1],
+    }));
+});
+
+ponder.on("DERC20:Transfer", async ({ event, context }) => {
+  const userAddress = event.log.address;
+  const { db } = context;
+  const { address } = event.log;
+
+  await db.insert(users).values({
+    id: event.args.from,
+    address: event.args.from,
+    createdAt: new Date(Number(event.block.timestamp)),
+  });
+
+  await db.insert(userAssets).values({
+    id: `${userAddress}-${address}`,
+    userId: userAddress,
+    assetId: address,
   });
 });
 // ponder.on("Airlock:SetModuleState", async ({ event, context }) => {

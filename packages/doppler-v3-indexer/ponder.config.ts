@@ -2,6 +2,7 @@ import { createConfig, factory } from "ponder";
 import { Address, getAbiItem, http } from "viem";
 import { AirlockABI } from "./abis/AirlockABI";
 import { UniswapV3PoolABI } from "./abis/UniswapV3PoolABI";
+import { DERC20ABI } from "./abis/DERC20ABI";
 
 const addresses = {
   airlock: "0x0EC7a97C0Bf6cB52C882E23ae66FBD3a914989f5" as Address,
@@ -32,7 +33,16 @@ export default createConfig({
       }),
       startBlock: 9072310,
     },
-
+    DERC20: {
+      abi: DERC20ABI,
+      network: "unichainSepolia",
+      address: factory({
+        address: addresses.airlock,
+        event: getAbiItem({ abi: AirlockABI, name: "Create" }),
+        parameter: "asset",
+      }),
+      startBlock: 9072310,
+    },
     Airlock: {
       abi: AirlockABI,
       network: "unichainSepolia",
