@@ -32,7 +32,7 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
     abi: AirlockABI,
     address: Airlock.address,
     functionName: "getAssetData",
-    args: [event.args.asset],
+    args: [asset],
   });
 
   const assetDataStruct: AssetData = {
@@ -49,7 +49,7 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
   };
 
   await context.db.insert(assets).values({
-    id: event.args.asset,
+    id: asset,
     ...assetDataStruct,
     createdAt: new Date(Number(event.block.timestamp)),
     migratedAt: null,
