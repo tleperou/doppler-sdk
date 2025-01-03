@@ -83,6 +83,9 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     poolManager: contractAddresses[5] as Address,
     stateView: contractAddresses[6] as Address,
     customRouter: contractAddresses[7] as Address,
+    uniswapV4Initializer: contractAddresses[7] as Address,
+    liquidityMigrator: contractAddresses[7] as Address,
+    quoter: contractAddresses[7] as Address,
   };
 
   await testClient.mine({

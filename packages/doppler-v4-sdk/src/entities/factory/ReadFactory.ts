@@ -1,4 +1,4 @@
-import { ReadContract, ReadAdapter, Drift, EventFilter } from '@delvtech/drift';
+import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
 import { Address } from 'viem';
 import { airlockAbi } from '@/abis';
 import { AssetData } from '@/types';

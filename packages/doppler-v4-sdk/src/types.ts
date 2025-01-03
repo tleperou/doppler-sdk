@@ -1,5 +1,4 @@
 import { Address, Hash, PublicClient, TestClient, WalletClient } from 'viem';
-import { PoolKey as UniswapPoolKey } from '@uniswap/v4-sdk';
 
 export interface Clients {
   publicClient: PublicClient;
@@ -12,7 +11,7 @@ export interface DopplerAddresses {
   tokenFactory: Address;
   uniswapV4Initializer: Address;
   governanceFactory: Address;
-  migrator: Address;
+  liquidityMigrator: Address;
   stateView: Address;
   quoter: Address;
   customRouter: Address;

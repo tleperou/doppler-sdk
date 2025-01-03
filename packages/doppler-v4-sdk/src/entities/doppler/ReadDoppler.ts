@@ -1,4 +1,4 @@
-import { ReadContract, ReadAdapter, Drift, EventFilter } from '@delvtech/drift';
+import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
 import { Address } from 'abitype';
 import { dopplerAbi, stateViewAbi } from '@/abis';
 import { encodePacked, Hex, keccak256 } from 'viem';

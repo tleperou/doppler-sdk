@@ -73,6 +73,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
 
   // Deploy your contracts here and get their addresses
   // You'll need to deploy: poolManager, airlock, tokenFactory, etc.
+  // TODO: Fix this
   const addresses = {
     airlock: contractAddresses[0] as Address,
     tokenFactory: contractAddresses[1] as Address,
@@ -82,6 +83,9 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     poolManager: contractAddresses[5] as Address,
     stateView: contractAddresses[6] as Address,
     customRouter: contractAddresses[7] as Address,
+    uniswapV4Initializer: contractAddresses[7] as Address,
+    liquidityMigrator: contractAddresses[7] as Address,
+    quoter: contractAddresses[7] as Address,
   };
 
   return {
