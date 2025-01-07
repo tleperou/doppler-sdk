@@ -7,10 +7,11 @@ export interface PoolState {
   numeraire: Address;
   tickLower: number;
   tickUpper: number;
-  targetTick: number;
-  liquidityDelta: bigint;
+  numPositions: number;
   isInitialized: boolean;
   isExited: boolean;
+  maxShareToBeSold: bigint;
+  maxShareToBond: bigint;
 }
 
 export type UniswapV3InitializerABI = typeof uniswapV3InitializerAbi;

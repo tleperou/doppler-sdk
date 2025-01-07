@@ -1385,6 +1385,18 @@ export const airlockAbi = [
         indexed: true,
         internalType: 'address',
       },
+      {
+        name: 'initializer',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+      {
+        name: 'poolOrHook',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
     ],
     anonymous: false,
   },
@@ -1484,6 +1496,32 @@ export const uniswapV3InitializerAbi = [
   },
   {
     type: 'function',
+    name: 'burnPositionsMultiple',
+    inputs: [
+      { name: 'pool', type: 'address', internalType: 'address' },
+      {
+        name: 'newPositions',
+        type: 'tuple[]',
+        internalType: 'struct LpPosition[]',
+        components: [
+          { name: 'tickLower', type: 'int24', internalType: 'int24' },
+          { name: 'tickUpper', type: 'int24', internalType: 'int24' },
+          { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
+          { name: 'id', type: 'uint16', internalType: 'uint16' },
+        ],
+      },
+      { name: 'numPositions', type: 'uint16', internalType: 'uint16' },
+    ],
+    outputs: [
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
+      { name: 'balance0', type: 'uint128', internalType: 'uint128' },
+      { name: 'balance1', type: 'uint128', internalType: 'uint128' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'exitLiquidity',
     inputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
     outputs: [
@@ -1515,10 +1553,11 @@ export const uniswapV3InitializerAbi = [
       { name: 'numeraire', type: 'address', internalType: 'address' },
       { name: 'tickLower', type: 'int24', internalType: 'int24' },
       { name: 'tickUpper', type: 'int24', internalType: 'int24' },
-      { name: 'targetTick', type: 'int24', internalType: 'int24' },
-      { name: 'liquidityDelta', type: 'uint128', internalType: 'uint128' },
+      { name: 'numPositions', type: 'uint16', internalType: 'uint16' },
       { name: 'isInitialized', type: 'bool', internalType: 'bool' },
       { name: 'isExited', type: 'bool', internalType: 'bool' },
+      { name: 'maxShareToBeSold', type: 'uint256', internalType: 'uint256' },
+      { name: 'maxShareToBond', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'view',
   },
@@ -1528,11 +1567,35 @@ export const uniswapV3InitializerAbi = [
     inputs: [
       { name: 'asset', type: 'address', internalType: 'address' },
       { name: 'numeraire', type: 'address', internalType: 'address' },
-      { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
       { name: '', type: 'bytes32', internalType: 'bytes32' },
       { name: 'data', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'mintPositions',
+    inputs: [
+      { name: 'asset', type: 'address', internalType: 'address' },
+      { name: 'numeraire', type: 'address', internalType: 'address' },
+      { name: 'fee', type: 'uint24', internalType: 'uint24' },
+      { name: 'pool', type: 'address', internalType: 'address' },
+      {
+        name: 'newPositions',
+        type: 'tuple[]',
+        internalType: 'struct LpPosition[]',
+        components: [
+          { name: 'tickLower', type: 'int24', internalType: 'int24' },
+          { name: 'tickUpper', type: 'int24', internalType: 'int24' },
+          { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
+          { name: 'id', type: 'uint16', internalType: 'uint16' },
+        ],
+      },
+      { name: 'numPositions', type: 'uint16', internalType: 'uint16' },
+    ],
+    outputs: [],
     stateMutability: 'nonpayable',
   },
   {
@@ -1554,43 +1617,18 @@ export const uniswapV3InitializerAbi = [
       { name: 'currentTick', type: 'int24', internalType: 'int24' },
     ],
   },
-  {
-    type: 'error',
-    name: 'CannotMigrateOutOfRange',
-    inputs: [
-      { name: 'expectedTick', type: 'int24', internalType: 'int24' },
-      { name: 'currentTick', type: 'int24', internalType: 'int24' },
-    ],
-  },
   { type: 'error', name: 'CannotMintZeroLiquidity', inputs: [] },
   {
     type: 'error',
     name: 'InvalidFee',
     inputs: [{ name: 'fee', type: 'uint24', internalType: 'uint24' }],
   },
-  { type: 'error', name: 'InvalidTargetTick', inputs: [] },
   {
     type: 'error',
-    name: 'InvalidTickRange10000',
+    name: 'InvalidTickRange',
     inputs: [
-      { name: 'tickLower', type: 'int24', internalType: 'int24' },
-      { name: 'tickUpper', type: 'int24', internalType: 'int24' },
-    ],
-  },
-  {
-    type: 'error',
-    name: 'InvalidTickRange3000',
-    inputs: [
-      { name: 'tickLower', type: 'int24', internalType: 'int24' },
-      { name: 'tickUpper', type: 'int24', internalType: 'int24' },
-    ],
-  },
-  {
-    type: 'error',
-    name: 'InvalidTickRange500',
-    inputs: [
-      { name: 'tickLower', type: 'int24', internalType: 'int24' },
-      { name: 'tickUpper', type: 'int24', internalType: 'int24' },
+      { name: 'tick', type: 'int24', internalType: 'int24' },
+      { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
     ],
   },
   {
