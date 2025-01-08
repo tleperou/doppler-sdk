@@ -1,43 +1,187 @@
 import { ponder } from "ponder:registry";
-import { assets } from "../ponder.schema";
+import {
+  assets,
+  users,
+  userAssets,
+  v3Pools,
+  positions,
+} from "../ponder.schema";
 import { AirlockABI } from "../abis/AirlockABI";
-import { modules } from "../ponder.schema";
+import { UniswapV3PoolABI } from "../abis/UniswapV3PoolABI";
+import { Hex } from "viem";
+
+interface AssetData {
+  numeraire: Hex;
+  timelock: Hex;
+  governance: Hex;
+  liquidityMigrator: Hex;
+  poolInitializer: Hex;
+  pool: Hex;
+  migrationPool: Hex;
+  numTokensToSell: bigint;
+  totalSupply: bigint;
+  integrator: Hex;
+}
 
 ponder.on("Airlock:Create", async ({ event, context }) => {
   const { client } = context;
   const { Airlock } = context.contracts;
+  const { asset, poolOrHook } = event.args;
 
   const assetData = await client.readContract({
     abi: AirlockABI,
     address: Airlock.address,
     functionName: "getAssetData",
-    args: [event.args.asset],
+    args: [asset],
   });
 
-  // Insert the asset record with all its related data
-  await context.db.insert(assets).values({
-    id: event.args.asset,
-    numeraire: event.args.numeraire,
-    pool: assetData[5],
-    timelock: assetData[6],
-    governance: assetData[4],
+  const assetDataStruct: AssetData = {
+    numeraire: assetData[0],
+    timelock: assetData[1],
+    governance: assetData[2],
     liquidityMigrator: assetData[3],
-    migrationPool: assetData[2],
-    poolInitializer: assetData[1],
+    poolInitializer: assetData[4],
+    pool: assetData[5],
+    migrationPool: assetData[6],
+    numTokensToSell: assetData[7],
+    totalSupply: assetData[8],
+    integrator: assetData[9],
+  };
+
+  await context.db.insert(assets).values({
+    id: asset,
+    ...assetDataStruct,
     createdAt: new Date(Number(event.block.timestamp)),
     migratedAt: null,
+  });
+
+  const poolData = await client.readContract({
+    abi: UniswapV3PoolABI,
+    address: poolOrHook,
+    functionName: "slot0",
+  });
+
+  const liquidity = await client.readContract({
+    abi: UniswapV3PoolABI,
+    address: poolOrHook,
+    functionName: "liquidity",
+  });
+
+  const poolDataStruct = {
+    sqrtPrice: poolData[0],
+    tick: poolData[1],
+  };
+
+  await context.db.insert(v3Pools).values({
+    id: poolOrHook,
+    ...poolDataStruct,
+    liquidity: liquidity,
+    createdAt: new Date(Number(event.block.timestamp)),
   });
 });
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
-  const { assets } = context.db;
-
-  await assets.update({
-    id: event.args.asset,
+  const { db } = context;
+  const { asset } = event.args;
+  await db.update(assets, { id: asset }).set({
     migratedAt: new Date(Number(event.block.timestamp)),
   });
 });
 
+ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
+  const { db } = context;
+  const pool = event.log.address;
+  const { tickLower, tickUpper, amount, owner } = event.args;
+
+  await db
+    .insert(positions)
+    .values({
+      id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
+      owner: owner,
+      pool: pool,
+      tickLower: tickLower,
+      tickUpper: tickUpper,
+      liquidity: amount,
+      createdAt: new Date(Number(event.block.timestamp)),
+    })
+    .onConflictDoUpdate((row) => ({ liquidity: row.liquidity + amount }));
+});
+
+ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
+  const { db } = context;
+  const pool = event.log.address;
+  const { tickLower, tickUpper, owner } = event.args;
+
+  await db
+    .insert(positions)
+    .values({
+      id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
+      owner: owner,
+      pool: pool,
+      tickLower: tickLower,
+      tickUpper: tickUpper,
+      liquidity: event.args.amount,
+      createdAt: new Date(Number(event.block.timestamp)),
+    })
+    .onConflictDoUpdate((row) => ({
+      liquidity: row.liquidity - event.args.amount,
+    }));
+});
+
+ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
+  const { db } = context;
+  const { client } = context;
+  const pool = event.log.address;
+
+  const poolData = await client.readContract({
+    abi: UniswapV3PoolABI,
+    address: pool,
+    functionName: "slot0",
+  });
+
+  const poolDataStruct = {
+    sqrtPrice: poolData[0],
+    tick: poolData[1],
+  };
+
+  const liquidity = await client.readContract({
+    abi: UniswapV3PoolABI,
+    address: pool,
+    functionName: "liquidity",
+  });
+
+  await db
+    .insert(v3Pools)
+    .values({
+      id: pool,
+      ...poolDataStruct,
+      liquidity: liquidity,
+      createdAt: new Date(Number(event.block.timestamp)),
+    })
+    .onConflictDoUpdate((row) => ({
+      liquidity: liquidity,
+      sqrtPrice: poolData[0],
+      tick: poolData[1],
+    }));
+});
+
+ponder.on("DERC20:Transfer", async ({ event, context }) => {
+  const userAddress = event.log.address;
+  const { db } = context;
+  const { address } = event.log;
+
+  await db.insert(users).values({
+    id: event.args.from,
+    address: event.args.from,
+    createdAt: new Date(Number(event.block.timestamp)),
+  });
+
+  await db.insert(userAssets).values({
+    id: `${userAddress}-${address}`,
+    userId: userAddress,
+    assetId: address,
+  });
+});
 // ponder.on("Airlock:SetModuleState", async ({ event, context }) => {
 //   const { modules } = context.db;
 

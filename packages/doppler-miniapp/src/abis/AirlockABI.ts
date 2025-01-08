@@ -196,6 +196,18 @@ export const airlockAbi = [
         indexed: true,
         internalType: "address",
       },
+      {
+        name: "initializer",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+      {
+        name: "poolOrHook",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
     ],
     anonymous: false,
   },

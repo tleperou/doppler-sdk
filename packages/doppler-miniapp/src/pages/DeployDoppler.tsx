@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { addresses } from "../addresses";
-import { encodeAbiParameters, parseEther, Hex, Address } from "viem";
+import {
+  encodeAbiParameters,
+  parseEther,
+  Hex,
+  Address,
+  encodePacked,
+  zeroAddress,
+} from "viem";
 import { useReadContract, useAccount, useWalletClient } from "wagmi";
 import { MigratorABI } from "../abis/MigratorABI";
 import { CreateParams, ReadWriteFactory } from "doppler-v3-sdk";
@@ -14,7 +21,9 @@ function roundToTickSpacing(tick: number): number {
 
 const DEFAULT_START_TICK = 167520;
 const DEFAULT_END_TICK = 200040;
-const DEFAULT_TARGET_TICK = DEFAULT_END_TICK - 60;
+const DEFAULT_NUM_POSITIONS = 10;
+const DEFAULT_MAX_SHARE_TO_BE_SOLD = parseEther("0.2");
+const DEFAULT_MAX_SHARE_TO_BOND = parseEther("0.5");
 
 function DeployDoppler() {
   const account = useAccount();
@@ -25,7 +34,9 @@ function DeployDoppler() {
   const [tokenSymbol, setTokenSymbol] = useState("");
   const [startTick, setStartTick] = useState("");
   const [endTick, setEndTick] = useState("");
-  const [targetTick, setTargetTick] = useState("");
+  const [numPositions, setNumPositions] = useState("");
+  const [maxShareToBeSold, setMaxShareToBeSold] = useState("");
+  const [maxShareToBond, setMaxShareToBond] = useState("");
   const [isDeploying, setIsDeploying] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -51,8 +62,38 @@ function DeployDoppler() {
     setEndTick(e.target.value);
   };
 
-  const handleTargetTickChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTargetTick(e.target.value);
+  const handleNumPositionsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNumPositions(e.target.value);
+  };
+
+  const handleMaxShareToBeSoldChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setMaxShareToBeSold(e.target.value);
+  };
+
+  const handleMaxShareToBondChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setMaxShareToBond(e.target.value);
+  };
+
+  const handleMaxShareToBondBlur = () => {
+    if (maxShareToBond) {
+      setMaxShareToBond(maxShareToBond);
+    }
+  };
+
+  const handleMaxShareToSoldBlur = () => {
+    if (maxShareToBeSold) {
+      setMaxShareToBeSold(maxShareToBeSold);
+    }
+  };
+
+  const handleNumPositionsBlur = () => {
+    if (numPositions) {
+      setNumPositions(numPositions);
+    }
   };
 
   const handleStartTickBlur = () => {
@@ -68,14 +109,6 @@ function DeployDoppler() {
       const value = Number(endTick);
       const roundedValue = roundToTickSpacing(value);
       setEndTick(roundedValue.toString());
-    }
-  };
-
-  const handleTargetTickBlur = () => {
-    if (targetTick) {
-      const value = Number(targetTick);
-      const roundedValue = roundToTickSpacing(value);
-      setTargetTick(roundedValue.toString());
     }
   };
 
@@ -107,7 +140,7 @@ function DeployDoppler() {
     setIsDeploying(true);
     try {
       // Encode the various data fields
-      const tokenFactoryData = encodeAbiParameters(
+      const factoryData = encodeAbiParameters(
         [
           { type: "string" },
           { type: "string" },
@@ -119,6 +152,13 @@ function DeployDoppler() {
         [tokenName, tokenSymbol, 0n, 0n, [], []]
       );
 
+      const [, rest] = factoryData.split("0x");
+
+      const offset =
+        "0000000000000000000000000000000000000000000000000000000000000020";
+
+      const tokenFactoryData = `0x${offset}${rest}` as Hex;
+
       const governanceFactoryData = encodeAbiParameters(
         [{ type: "string" }],
         [tokenName]
@@ -129,13 +169,19 @@ function DeployDoppler() {
           { type: "uint24" },
           { type: "int24" },
           { type: "int24" },
-          { type: "int24" },
+          { type: "uint16" },
+          { type: "uint256" },
+          { type: "uint256" },
         ],
         [
           3000,
           showAdvanced ? Number(startTick) : DEFAULT_START_TICK,
           showAdvanced ? Number(endTick) : DEFAULT_END_TICK,
-          showAdvanced ? Number(targetTick) : DEFAULT_TARGET_TICK,
+          showAdvanced ? Number(numPositions) : DEFAULT_NUM_POSITIONS,
+          showAdvanced
+            ? parseEther(maxShareToBeSold)
+            : DEFAULT_MAX_SHARE_TO_BE_SOLD,
+          showAdvanced ? parseEther(maxShareToBond) : DEFAULT_MAX_SHARE_TO_BOND,
         ]
       );
 
@@ -174,13 +220,21 @@ function DeployDoppler() {
             { type: "uint24" },
             { type: "int24" },
             { type: "int24" },
-            { type: "int24" },
+            { type: "uint16" },
+            { type: "uint256" },
+            { type: "uint256" },
           ],
           [
             3000,
             showAdvanced ? Number(-endTick) : -DEFAULT_END_TICK,
             showAdvanced ? Number(-startTick) : -DEFAULT_START_TICK,
-            showAdvanced ? Number(-targetTick) : -DEFAULT_TARGET_TICK,
+            showAdvanced ? Number(numPositions) : DEFAULT_NUM_POSITIONS,
+            showAdvanced
+              ? parseEther(maxShareToBeSold)
+              : DEFAULT_MAX_SHARE_TO_BE_SOLD,
+            showAdvanced
+              ? parseEther(maxShareToBond)
+              : DEFAULT_MAX_SHARE_TO_BOND,
           ]
         );
         args.poolInitializerData = poolInitializerData;
@@ -313,23 +367,42 @@ function DeployDoppler() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="targetTick">
-                  End Tick (will be rounded to nearest {TICK_SPACING})
-                </label>
+                <label htmlFor="numPositions">Number of Positions</label>
                 <input
                   type="number"
-                  id="targetTick"
-                  value={targetTick}
-                  onChange={handleTargetTickChange}
-                  onBlur={handleTargetTickBlur}
+                  id="numPositions"
+                  value={numPositions}
+                  onChange={handleNumPositionsChange}
+                  onBlur={handleNumPositionsBlur}
                   required
-                  placeholder={`Enter target tick (multiple of ${TICK_SPACING})`}
+                  placeholder={`Enter number of positions`}
                 />
-                {targetTick && Number(targetTick) % TICK_SPACING !== 0 && (
-                  <span className="error-message">
-                    Target tick must be divisible by {TICK_SPACING}
-                  </span>
-                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="maxShareToBeSold">Max Share to Be Sold</label>
+                <input
+                  type="number"
+                  id="maxShareToBeSold"
+                  value={maxShareToBeSold}
+                  onChange={handleMaxShareToBeSoldChange}
+                  onBlur={handleMaxShareToSoldBlur}
+                  required
+                  placeholder={`Enter max share to be sold`}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="maxShareToBond">Max Share to Bond</label>
+                <input
+                  type="number"
+                  id="maxShareToBond"
+                  value={maxShareToBond}
+                  onChange={handleMaxShareToBondChange}
+                  onBlur={handleMaxShareToBondBlur}
+                  required
+                  placeholder={`Enter max share to bond`}
+                />
               </div>
             </>
           )}
@@ -348,7 +421,10 @@ function DeployDoppler() {
               (!startTick ||
                 !endTick ||
                 Number(startTick) % TICK_SPACING !== 0 ||
-                Number(endTick) % TICK_SPACING !== 0))
+                Number(endTick) % TICK_SPACING !== 0 ||
+                !numPositions ||
+                !maxShareToBeSold ||
+                !maxShareToBond))
           }
         >
           {isDeploying ? "Deploying..." : "Deploy Doppler"}
