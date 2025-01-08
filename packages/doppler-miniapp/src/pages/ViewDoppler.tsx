@@ -4,9 +4,13 @@ import { Address, formatEther } from "viem";
 import LiquidityChart from "../components/LiquidityChart";
 import TokenName from "../components/TokenName";
 import { usePoolData } from "../hooks/usePoolData";
+import { getDrift } from "../utils/drift";
+import { ReadWriteFactory } from "doppler-v3-sdk";
+import { useWalletClient } from "wagmi";
 
 function ViewDoppler() {
   const { id } = useParams();
+  const walletClient = useWalletClient();
   const { airlock, v3Initializer } = addresses;
 
   console.log(airlock);
@@ -23,28 +27,25 @@ function ViewDoppler() {
 
   const { asset, numeraire, assetData, poolData } = data;
 
-<<<<<<< Updated upstream
-=======
-  const handleMigrate = async () => {
-    const drift = getDrift(walletClient);
-    const readWriteFactory = new ReadWriteFactory(airlock, drift);
+  // const handleMigrate = async () => {
+  //   const drift = getDrift(walletClient);
+  //   const readWriteFactory = new ReadWriteFactory(airlock, drift);
 
-    console.log(id);
+  //   console.log(id);
 
-    await readWriteFactory.airlock.simulateWrite("migrate", {
-      asset: id as Address,
-    });
-    await readWriteFactory.migrate(id as Address);
-  };
+  //   await readWriteFactory.airlock.simulateWrite("migrate", {
+  //     asset: id as Address,
+  //   });
+  //   await readWriteFactory.migrate(id as Address);
+  // };
 
   const { initializerState, slot0 } = poolData ?? {};
 
-  const migrationEnabled =
-    initializerState?.targetTick &&
-    slot0?.tick &&
-    initializerState.targetTick > slot0.tick;
+  // const migrationEnabled =
+  //   initializerState?.targetTick &&
+  //   slot0?.tick &&
+  //   initializerState.targetTick > slot0.tick;
 
->>>>>>> Stashed changes
   return (
     <div className="view-doppler">
       <h3 className="page-title">
