@@ -1,11 +1,5 @@
 import { ponder } from "ponder:registry";
-import {
-  assets,
-  users,
-  userAssets,
-  v3Pools,
-  positions,
-} from "../ponder.schema";
+import { asset, user, userAsset, v3Pool, position } from "../ponder.schema";
 import { AirlockABI } from "../abis/AirlockABI";
 import { UniswapV3PoolABI } from "../abis/UniswapV3PoolABI";
 import { Hex } from "viem";
@@ -26,13 +20,13 @@ interface AssetData {
 ponder.on("Airlock:Create", async ({ event, context }) => {
   const { client } = context;
   const { Airlock } = context.contracts;
-  const { asset, poolOrHook } = event.args;
+  const { asset: assetId, poolOrHook } = event.args;
 
   const assetData = await client.readContract({
     abi: AirlockABI,
     address: Airlock.address,
     functionName: "getAssetData",
-    args: [asset],
+    args: [assetId],
   });
 
   const assetDataStruct: AssetData = {
@@ -48,12 +42,15 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
     integrator: assetData[9],
   };
 
-  await context.db.insert(assets).values({
-    id: asset,
-    ...assetDataStruct,
-    createdAt: event.block.timestamp,
-    migratedAt: null,
-  });
+  await context.db
+    .insert(asset)
+    .values({
+      id: assetId,
+      ...assetDataStruct,
+      createdAt: event.block.timestamp,
+      migratedAt: null,
+    })
+    .onConflictDoNothing();
 
   const poolData = await client.readContract({
     abi: UniswapV3PoolABI,
@@ -72,7 +69,7 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
     tick: poolData[1],
   };
 
-  await context.db.insert(v3Pools).values({
+  await context.db.insert(v3Pool).values({
     id: poolOrHook,
     ...poolDataStruct,
     liquidity: liquidity,
@@ -82,10 +79,41 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { db } = context;
-  const { asset } = event.args;
-  await db.update(assets, { id: asset }).set({
-    migratedAt: event.block.timestamp,
+  const { asset: assetId } = event.args;
+  const { client } = context;
+  const { Airlock } = context.contracts;
+
+  const assetData = await client.readContract({
+    abi: AirlockABI,
+    address: Airlock.address,
+    functionName: "getAssetData",
+    args: [assetId],
   });
+
+  const assetDataStruct: AssetData = {
+    numeraire: assetData[0],
+    timelock: assetData[1],
+    governance: assetData[2],
+    liquidityMigrator: assetData[3],
+    poolInitializer: assetData[4],
+    pool: assetData[5],
+    migrationPool: assetData[6],
+    numTokensToSell: assetData[7],
+    totalSupply: assetData[8],
+    integrator: assetData[9],
+  };
+
+  await db
+    .insert(asset)
+    .values({
+      id: assetId,
+      ...assetDataStruct,
+      createdAt: event.block.timestamp,
+      migratedAt: event.block.timestamp,
+    })
+    .onConflictDoUpdate((row) => ({
+      migratedAt: event.block.timestamp,
+    }));
 });
 
 ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
@@ -94,7 +122,7 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
   const { tickLower, tickUpper, amount, owner } = event.args;
 
   await db
-    .insert(positions)
+    .insert(position)
     .values({
       id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
       owner: owner,
@@ -113,7 +141,7 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
   const { tickLower, tickUpper, owner } = event.args;
 
   await db
-    .insert(positions)
+    .insert(position)
     .values({
       id: `${owner}-${pool}-${tickLower}-${tickUpper}`,
       owner: owner,
@@ -151,7 +179,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   });
 
   await db
-    .insert(v3Pools)
+    .insert(v3Pool)
     .values({
       id: pool,
       ...poolDataStruct,
@@ -171,7 +199,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { address } = event.log;
 
   await db
-    .insert(users)
+    .insert(user)
     .values({
       id: event.args.from,
       address: event.args.from,
@@ -180,7 +208,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     .onConflictDoNothing();
 
   await db
-    .insert(userAssets)
+    .insert(userAsset)
     .values({
       id: `${userAddress}-${address}`,
       userId: userAddress,

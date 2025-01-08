@@ -1,6 +1,6 @@
 import { onchainTable, primaryKey, relations } from "ponder";
 
-export const assets = onchainTable("asset", (t) => ({
+export const asset = onchainTable("asset", (t) => ({
   id: t.text().primaryKey(),
   numeraire: t.text().notNull(),
   timelock: t.text().notNull(),
@@ -16,7 +16,7 @@ export const assets = onchainTable("asset", (t) => ({
   migratedAt: t.bigint(),
 }));
 
-export const v3Pools = onchainTable("v3_pool", (t) => ({
+export const v3Pool = onchainTable("v3_pool", (t) => ({
   id: t.text().primaryKey(),
   tick: t.integer().notNull(),
   sqrtPrice: t.bigint().notNull(),
@@ -25,12 +25,12 @@ export const v3Pools = onchainTable("v3_pool", (t) => ({
 }));
 
 // assets have one pool
-export const assetRelations = relations(assets, ({ one, many }) => ({
-  pool: one(v3Pools, { fields: [assets.pool], references: [v3Pools.id] }),
-  userAssets: many(userAssets),
+export const assetRelations = relations(asset, ({ one, many }) => ({
+  pool: one(v3Pool, { fields: [asset.pool], references: [v3Pool.id] }),
+  userAssets: many(userAsset),
 }));
 
-export const positions = onchainTable("position", (t) => ({
+export const position = onchainTable("position", (t) => ({
   id: t.text().primaryKey(),
   owner: t.text().notNull(),
   pool: t.text().notNull(),
@@ -41,34 +41,34 @@ export const positions = onchainTable("position", (t) => ({
 }));
 
 // pools have many positions
-export const poolRelations = relations(v3Pools, ({ many }) => ({
-  positions: many(positions),
+export const poolRelations = relations(v3Pool, ({ many }) => ({
+  positions: many(position),
 }));
 
 // positions have one pool
-export const positionRelations = relations(positions, ({ one }) => ({
-  pool: one(v3Pools, { fields: [positions.pool], references: [v3Pools.id] }),
+export const positionRelations = relations(position, ({ one }) => ({
+  pool: one(v3Pool, { fields: [position.pool], references: [v3Pool.id] }),
 }));
 
-export const modules = onchainTable("module", (t) => ({
+export const module = onchainTable("module", (t) => ({
   id: t.text().primaryKey(),
   state: t.integer().notNull(),
   lastUpdated: t.bigint().notNull(),
 }));
 
-export const users = onchainTable("user", (t) => ({
+export const user = onchainTable("user", (t) => ({
   id: t.text().primaryKey(),
   address: t.text().notNull(),
   createdAt: t.bigint().notNull(),
 }));
 
 // users have many assets and positions
-export const userRelations = relations(users, ({ many }) => ({
-  userAssets: many(userAssets),
+export const userRelations = relations(user, ({ many }) => ({
+  userAssets: many(userAsset),
 }));
 
-export const userAssets = onchainTable(
-  "user_assets",
+export const userAsset = onchainTable(
+  "user_asset",
   (t) => ({
     userId: t.text().notNull(),
     assetId: t.text().notNull(),
@@ -78,7 +78,7 @@ export const userAssets = onchainTable(
   })
 );
 
-export const userAssetRelations = relations(userAssets, ({ one }) => ({
-  user: one(users, { fields: [userAssets.userId], references: [users.id] }),
-  asset: one(assets, { fields: [userAssets.assetId], references: [assets.id] }),
+export const userAssetRelations = relations(userAsset, ({ one }) => ({
+  user: one(user, { fields: [userAsset.userId], references: [user.id] }),
+  asset: one(asset, { fields: [userAsset.assetId], references: [asset.id] }),
 }));
