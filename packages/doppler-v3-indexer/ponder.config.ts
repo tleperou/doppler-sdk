@@ -5,21 +5,18 @@ import { UniswapV3PoolABI } from "./abis/UniswapV3PoolABI";
 import { DERC20ABI } from "./abis/DERC20ABI";
 
 const addresses = {
-  airlock: "0x0EC7a97C0Bf6cB52C882E23ae66FBD3a914989f5" as Address,
-  tokenFactory: "0xbFDB42D11705c21B2C5b9358ae2BB1DF6fc4E828" as Address,
-  uniswapV3Initializer: "0x11ab5b5432915C8fcA64d6FeE97CAEbF70c8702B" as Address,
-  governanceFactory: "0x7bdA8541cecb830fd3b29433A59c8c1de2DFE929" as Address,
-  migrator: "0x3b5660fAD6A586c06CBd32a138A423F25cE4a8F9" as Address,
-  stateView: "0xdE04C804dc75E90D8a64e5589092a1D6692EFA45" as Address,
-  quoter: "0xfe6Cf50c4cfe801dd2AEf9c1B3ce24f551944df8" as Address,
-  customRouter: "0x335101dfaeFaA13eded1212Fd120376411d22788" as Address,
+  airlock: "0x53dd5d05b440513F2565E4b372e1cdeDB6C4B0a9" as Address,
+  tokenFactory: "0x92E5c7d5152d9C8A0F193F71ec8f24332Cb58f14" as Address,
+  v3Initializer: "0xd6616FCEb1501efb4f9b2DE0180cFd8766eA7C80" as Address,
+  governanceFactory: "0x541C932232195F30ac2423024c9F298809433618" as Address,
+  liquidityMigrator: "0x5ACf6e39a0A351c32202403BEF0A93215F742FC0" as Address,
 };
 
 export default createConfig({
   networks: {
     unichainSepolia: {
       chainId: 1301,
-      transport: http(process.env.PONDER_RPC_URL_1),
+      transport: http(process.env.PONDER_RPC_UNICHAIN_SEPOLIA),
     },
   },
   contracts: {
@@ -31,7 +28,7 @@ export default createConfig({
         event: getAbiItem({ abi: AirlockABI, name: "Create" }),
         parameter: "poolOrHook",
       }),
-      startBlock: 9072310,
+      startBlock: 9427770,
     },
     DERC20: {
       abi: DERC20ABI,
@@ -41,13 +38,13 @@ export default createConfig({
         event: getAbiItem({ abi: AirlockABI, name: "Create" }),
         parameter: "asset",
       }),
-      startBlock: 9072310,
+      startBlock: 9427770,
     },
     Airlock: {
       abi: AirlockABI,
       network: "unichainSepolia",
       address: addresses.airlock,
-      startBlock: 9072310,
+      startBlock: 9427770,
     },
   },
 });

@@ -51,7 +51,7 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
   await context.db.insert(assets).values({
     id: asset,
     ...assetDataStruct,
-    createdAt: new Date(Number(event.block.timestamp)),
+    createdAt: event.block.timestamp,
     migratedAt: null,
   });
 
@@ -76,7 +76,7 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
     id: poolOrHook,
     ...poolDataStruct,
     liquidity: liquidity,
-    createdAt: new Date(Number(event.block.timestamp)),
+    createdAt: event.block.timestamp,
   });
 });
 
@@ -84,7 +84,7 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { db } = context;
   const { asset } = event.args;
   await db.update(assets, { id: asset }).set({
-    migratedAt: new Date(Number(event.block.timestamp)),
+    migratedAt: event.block.timestamp,
   });
 });
 
@@ -102,7 +102,7 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
       tickLower: tickLower,
       tickUpper: tickUpper,
       liquidity: amount,
-      createdAt: new Date(Number(event.block.timestamp)),
+      createdAt: event.block.timestamp,
     })
     .onConflictDoUpdate((row) => ({ liquidity: row.liquidity + amount }));
 });
@@ -121,7 +121,7 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
       tickLower: tickLower,
       tickUpper: tickUpper,
       liquidity: event.args.amount,
-      createdAt: new Date(Number(event.block.timestamp)),
+      createdAt: event.block.timestamp,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: row.liquidity - event.args.amount,
@@ -156,7 +156,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
       id: pool,
       ...poolDataStruct,
       liquidity: liquidity,
-      createdAt: new Date(Number(event.block.timestamp)),
+      createdAt: event.block.timestamp,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: liquidity,
@@ -166,21 +166,27 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
 });
 
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
-  const userAddress = event.log.address;
+  const userAddress = event.transaction.from;
   const { db } = context;
   const { address } = event.log;
 
-  await db.insert(users).values({
-    id: event.args.from,
-    address: event.args.from,
-    createdAt: new Date(Number(event.block.timestamp)),
-  });
+  await db
+    .insert(users)
+    .values({
+      id: event.args.from,
+      address: event.args.from,
+      createdAt: event.block.timestamp,
+    })
+    .onConflictDoNothing();
 
-  await db.insert(userAssets).values({
-    id: `${userAddress}-${address}`,
-    userId: userAddress,
-    assetId: address,
-  });
+  await db
+    .insert(userAssets)
+    .values({
+      id: `${userAddress}-${address}`,
+      userId: userAddress,
+      assetId: address,
+    })
+    .onConflictDoNothing();
 });
 // ponder.on("Airlock:SetModuleState", async ({ event, context }) => {
 //   const { modules } = context.db;

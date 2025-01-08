@@ -12,8 +12,8 @@ export const assets = onchainTable("asset", (t) => ({
   numTokensToSell: t.bigint().notNull(),
   totalSupply: t.bigint().notNull(),
   integrator: t.text().notNull(),
-  createdAt: t.timestamp().notNull(),
-  migratedAt: t.timestamp(),
+  createdAt: t.bigint().notNull(),
+  migratedAt: t.bigint(),
 }));
 
 export const v3Pools = onchainTable("v3_pool", (t) => ({
@@ -21,7 +21,7 @@ export const v3Pools = onchainTable("v3_pool", (t) => ({
   tick: t.integer().notNull(),
   sqrtPrice: t.bigint().notNull(),
   liquidity: t.bigint().notNull(),
-  createdAt: t.timestamp().notNull(),
+  createdAt: t.bigint().notNull(),
 }));
 
 // assets have one pool
@@ -37,7 +37,7 @@ export const positions = onchainTable("position", (t) => ({
   tickLower: t.integer().notNull(),
   tickUpper: t.integer().notNull(),
   liquidity: t.bigint().notNull(),
-  createdAt: t.timestamp().notNull(),
+  createdAt: t.bigint().notNull(),
 }));
 
 // pools have many positions
@@ -53,13 +53,13 @@ export const positionRelations = relations(positions, ({ one }) => ({
 export const modules = onchainTable("module", (t) => ({
   id: t.text().primaryKey(),
   state: t.integer().notNull(),
-  lastUpdated: t.timestamp().notNull(),
+  lastUpdated: t.bigint().notNull(),
 }));
 
 export const users = onchainTable("user", (t) => ({
   id: t.text().primaryKey(),
   address: t.text().notNull(),
-  createdAt: t.timestamp().notNull(),
+  createdAt: t.bigint().notNull(),
 }));
 
 // users have many assets and positions
@@ -68,9 +68,8 @@ export const userRelations = relations(users, ({ many }) => ({
 }));
 
 export const userAssets = onchainTable(
-  "user_asset",
+  "user_assets",
   (t) => ({
-    id: t.text().primaryKey(),
     userId: t.text().notNull(),
     assetId: t.text().notNull(),
   }),
