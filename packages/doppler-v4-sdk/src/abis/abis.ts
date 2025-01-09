@@ -1714,6 +1714,18 @@ export const airlockAbi = [
         indexed: true,
         internalType: 'address',
       },
+      {
+        name: 'initializer',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+      {
+        name: 'poolOrHook',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
     ],
     anonymous: false,
   },
@@ -2883,80 +2895,6 @@ export const dopplerAbi = [
   { type: 'error', name: 'Unauthorized', inputs: [] },
 ] as const;
 
-export const uniswapV4InitializerAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      { name: 'airlock_', type: 'address', internalType: 'address' },
-      {
-        name: 'poolManager_',
-        type: 'address',
-        internalType: 'contract IPoolManager',
-      },
-      {
-        name: 'deployer_',
-        type: 'address',
-        internalType: 'contract DopplerDeployer',
-      },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'airlock',
-    inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'deployer',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract DopplerDeployer' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'exitLiquidity',
-    inputs: [{ name: 'asset', type: 'address', internalType: 'address' }],
-    outputs: [
-      { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
-      { name: 'token0', type: 'address', internalType: 'address' },
-      { name: 'fees0', type: 'uint128', internalType: 'uint128' },
-      { name: 'balance0', type: 'uint128', internalType: 'uint128' },
-      { name: 'token1', type: 'address', internalType: 'address' },
-      { name: 'fees1', type: 'uint128', internalType: 'uint128' },
-      { name: 'balance1', type: 'uint128', internalType: 'uint128' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'initialize',
-    inputs: [
-      { name: 'asset', type: 'address', internalType: 'address' },
-      { name: 'numeraire', type: 'address', internalType: 'address' },
-      { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
-      { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
-      { name: 'data', type: 'bytes', internalType: 'bytes' },
-    ],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'poolManager',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract IPoolManager' },
-    ],
-    stateMutability: 'view',
-  },
-  { type: 'error', name: 'NotAirlock', inputs: [] },
-] as const;
-
 export const governanceFactoryAbi = [
   {
     type: 'constructor',
@@ -3068,4 +3006,78 @@ export const uniswapRouterAbi = [
     stateMutability: 'nonpayable',
   },
   { type: 'error', name: 'NoSwapOccurred', inputs: [] },
+] as const;
+
+export const uniswapV4InitializerAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'airlock_', type: 'address', internalType: 'address' },
+      {
+        name: 'poolManager_',
+        type: 'address',
+        internalType: 'contract IPoolManager',
+      },
+      {
+        name: 'deployer_',
+        type: 'address',
+        internalType: 'contract DopplerDeployer',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'airlock',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'deployer',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract DopplerDeployer' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'exitLiquidity',
+    inputs: [{ name: 'asset', type: 'address', internalType: 'address' }],
+    outputs: [
+      { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
+      { name: 'token0', type: 'address', internalType: 'address' },
+      { name: 'fees0', type: 'uint128', internalType: 'uint128' },
+      { name: 'balance0', type: 'uint128', internalType: 'uint128' },
+      { name: 'token1', type: 'address', internalType: 'address' },
+      { name: 'fees1', type: 'uint128', internalType: 'uint128' },
+      { name: 'balance1', type: 'uint128', internalType: 'uint128' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'initialize',
+    inputs: [
+      { name: 'asset', type: 'address', internalType: 'address' },
+      { name: 'numeraire', type: 'address', internalType: 'address' },
+      { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
+      { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'data', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'poolManager',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract IPoolManager' },
+    ],
+    stateMutability: 'view',
+  },
+  { type: 'error', name: 'NotAirlock', inputs: [] },
 ] as const;
