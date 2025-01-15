@@ -5,7 +5,7 @@ import {
   PriceRange,
 } from '@/types';
 import { DAY_SECONDS, DEFAULT_PD_SLUGS, MAX_TICK_SPACING } from '@/constants';
-import { DopplerAddresses } from '@/types';
+import { DopplerV4Addresses } from '@/types';
 import { Price, Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, tickToPrice, TickMath } from '@uniswap/v3-sdk';
 import {

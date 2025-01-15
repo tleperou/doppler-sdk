@@ -6,7 +6,7 @@ export interface Clients {
   testClient?: TestClient;
 }
 
-export interface DopplerAddresses {
+export interface DopplerV4Addresses {
   airlock: Address;
   tokenFactory: Address;
   uniswapV4Initializer: Address;
@@ -17,6 +17,7 @@ export interface DopplerAddresses {
   customRouter: Address;
   poolManager: Address;
   uniswapV3Initializer?: Address;
+  dopplerDeployer: Address;
 }
 
 export interface TokenConfig {

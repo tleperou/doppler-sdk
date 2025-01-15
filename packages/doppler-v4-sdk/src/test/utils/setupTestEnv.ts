@@ -14,11 +14,11 @@ import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
-import { Clients, DopplerAddresses } from '../../types';
+import { Clients, DopplerV4Addresses } from '../../types';
 
 interface TestEnvironment {
   clients: Clients;
-  addresses: DopplerAddresses;
+  addresses: DopplerV4Addresses;
 }
 
 export async function setupTestEnvironment(): Promise<TestEnvironment> {
@@ -86,6 +86,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     uniswapV4Initializer: contractAddresses[7] as Address,
     liquidityMigrator: contractAddresses[7] as Address,
     quoter: contractAddresses[7] as Address,
+    dopplerDeployer: contractAddresses[7] as Address,
   };
 
   return {

@@ -10,7 +10,7 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
-import { Clients, DopplerAddresses } from '../../types';
+import { Clients, DopplerV4Addresses } from '../../types';
 import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
@@ -18,7 +18,7 @@ import {
 
 interface TestEnvironment {
   clients: Clients;
-  addresses: DopplerAddresses;
+  addresses: DopplerV4Addresses;
 }
 
 export async function setupTestEnvironment(): Promise<TestEnvironment> {
@@ -86,6 +86,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     uniswapV4Initializer: contractAddresses[7] as Address,
     liquidityMigrator: contractAddresses[7] as Address,
     quoter: contractAddresses[7] as Address,
+    dopplerDeployer: contractAddresses[7] as Address,
   };
 
   await testClient.mine({

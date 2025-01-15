@@ -6,7 +6,7 @@ export interface Clients {
   testClient?: TestClient;
 }
 
-export interface DopplerAddresses {
+export interface DopplerV3Addresses {
   airlock: Address;
   tokenFactory: Address;
   governanceFactory: Address;
@@ -95,5 +95,5 @@ export interface DopplerDeploymentConfig {
 export interface DeployerParams {
   publicClient: PublicClient;
   walletClient: WalletClient;
-  addresses?: DopplerAddresses;
+  addresses?: DopplerV3Addresses;
 }

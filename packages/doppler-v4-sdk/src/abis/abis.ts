@@ -1549,35 +1549,50 @@ export const airlockAbi = [
     type: 'function',
     name: 'create',
     inputs: [
-      { name: 'initialSupply', type: 'uint256', internalType: 'uint256' },
-      { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
-      { name: 'numeraire', type: 'address', internalType: 'address' },
       {
-        name: 'tokenFactory',
-        type: 'address',
-        internalType: 'contract ITokenFactory',
+        name: 'createData',
+        type: 'tuple',
+        internalType: 'struct CreateParams',
+        components: [
+          { name: 'initialSupply', type: 'uint256', internalType: 'uint256' },
+          { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
+          { name: 'numeraire', type: 'address', internalType: 'address' },
+          {
+            name: 'tokenFactory',
+            type: 'address',
+            internalType: 'contract ITokenFactory',
+          },
+          { name: 'tokenFactoryData', type: 'bytes', internalType: 'bytes' },
+          {
+            name: 'governanceFactory',
+            type: 'address',
+            internalType: 'contract IGovernanceFactory',
+          },
+          {
+            name: 'governanceFactoryData',
+            type: 'bytes',
+            internalType: 'bytes',
+          },
+          {
+            name: 'poolInitializer',
+            type: 'address',
+            internalType: 'contract IPoolInitializer',
+          },
+          { name: 'poolInitializerData', type: 'bytes', internalType: 'bytes' },
+          {
+            name: 'liquidityMigrator',
+            type: 'address',
+            internalType: 'contract ILiquidityMigrator',
+          },
+          {
+            name: 'liquidityMigratorData',
+            type: 'bytes',
+            internalType: 'bytes',
+          },
+          { name: 'integrator', type: 'address', internalType: 'address' },
+          { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
+        ],
       },
-      { name: 'tokenFactoryData', type: 'bytes', internalType: 'bytes' },
-      {
-        name: 'governanceFactory',
-        type: 'address',
-        internalType: 'contract IGovernanceFactory',
-      },
-      { name: 'governanceFactoryData', type: 'bytes', internalType: 'bytes' },
-      {
-        name: 'poolInitializer',
-        type: 'address',
-        internalType: 'contract IPoolInitializer',
-      },
-      { name: 'poolInitializerData', type: 'bytes', internalType: 'bytes' },
-      {
-        name: 'liquidityMigrator',
-        type: 'address',
-        internalType: 'contract ILiquidityMigrator',
-      },
-      { name: 'liquidityMigratorData', type: 'bytes', internalType: 'bytes' },
-      { name: 'integrator', type: 'address', internalType: 'address' },
-      { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
     ],
     outputs: [
       { name: 'asset', type: 'address', internalType: 'address' },
@@ -1970,9 +1985,12 @@ export const derc20Abi = [
   },
   {
     type: 'function',
-    name: 'getVestingOf',
+    name: 'getVestingDataOf',
     inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
-    outputs: [{ name: 'amount', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      { name: 'totalAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'releasedAmount', type: 'uint256', internalType: 'uint256' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -2128,7 +2146,14 @@ export const derc20Abi = [
   },
   {
     type: 'function',
-    name: 'vestingEnd',
+    name: 'vestingDuration',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'vestingStart',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
@@ -2251,7 +2276,6 @@ export const derc20Abi = [
     anonymous: false,
   },
   { type: 'error', name: 'ArrayLengthsMismatch', inputs: [] },
-  { type: 'error', name: 'CannotReleaseYet', inputs: [] },
   { type: 'error', name: 'CheckpointUnorderedInsertion', inputs: [] },
   { type: 'error', name: 'ECDSAInvalidSignature', inputs: [] },
   {
@@ -2370,6 +2394,7 @@ export const derc20Abi = [
     inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
   },
   { type: 'error', name: 'PoolLocked', inputs: [] },
+  { type: 'error', name: 'ReleaseAmountInvalid', inputs: [] },
   {
     type: 'error',
     name: 'SafeCastOverflowedUintDowncast',
@@ -2410,7 +2435,7 @@ export const dopplerAbi = [
       { name: '_gamma', type: 'int24', internalType: 'int24' },
       { name: '_isToken0', type: 'bool', internalType: 'bool' },
       { name: '_numPDSlugs', type: 'uint256', internalType: 'uint256' },
-      { name: 'airlock_', type: 'address', internalType: 'address' },
+      { name: 'initializer_', type: 'address', internalType: 'address' },
     ],
     stateMutability: 'nonpayable',
   },
@@ -2580,13 +2605,6 @@ export const dopplerAbi = [
   },
   {
     type: 'function',
-    name: 'airlock',
-    inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'beforeAddLiquidity',
     inputs: [
       { name: 'caller', type: 'address', internalType: 'address' },
@@ -2640,7 +2658,7 @@ export const dopplerAbi = [
       { name: '', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [{ name: '', type: 'bytes4', internalType: 'bytes4' }],
-    stateMutability: 'nonpayable',
+    stateMutability: 'pure',
   },
   {
     type: 'function',
@@ -2783,6 +2801,13 @@ export const dopplerAbi = [
   },
   {
     type: 'function',
+    name: 'initializer',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'insufficientProceeds',
     inputs: [],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
@@ -2799,7 +2824,15 @@ export const dopplerAbi = [
     type: 'function',
     name: 'migrate',
     inputs: [{ name: 'recipient', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
+      { name: 'token0', type: 'address', internalType: 'address' },
+      { name: 'fees0', type: 'uint128', internalType: 'uint128' },
+      { name: 'balance0', type: 'uint128', internalType: 'uint128' },
+      { name: 'token1', type: 'address', internalType: 'address' },
+      { name: 'fees1', type: 'uint128', internalType: 'uint128' },
+      { name: 'balance1', type: 'uint128', internalType: 'uint128' },
+    ],
     stateMutability: 'nonpayable',
   },
   {
@@ -2861,16 +2894,88 @@ export const dopplerAbi = [
     outputs: [{ name: '', type: 'bytes', internalType: 'bytes' }],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'event',
+    name: 'EarlyExit',
+    inputs: [
+      {
+        name: 'epoch',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  { type: 'event', name: 'InsufficientProceeds', inputs: [], anonymous: false },
+  {
+    type: 'event',
+    name: 'Rebalance',
+    inputs: [
+      {
+        name: 'currentTick',
+        type: 'int24',
+        indexed: false,
+        internalType: 'int24',
+      },
+      {
+        name: 'tickLower',
+        type: 'int24',
+        indexed: false,
+        internalType: 'int24',
+      },
+      {
+        name: 'tickUpper',
+        type: 'int24',
+        indexed: false,
+        internalType: 'int24',
+      },
+      {
+        name: 'epoch',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'Swap',
+    inputs: [
+      {
+        name: 'currentTick',
+        type: 'int24',
+        indexed: false,
+        internalType: 'int24',
+      },
+      {
+        name: 'totalProceeds',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'totalTokensSold',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
   { type: 'error', name: 'AlreadyInitialized', inputs: [] },
-  { type: 'error', name: 'BeforeStartTime', inputs: [] },
+  { type: 'error', name: 'CannotAddLiquidity', inputs: [] },
   { type: 'error', name: 'CannotDonate', inputs: [] },
   { type: 'error', name: 'CannotMigrate', inputs: [] },
+  { type: 'error', name: 'CannotSwapBeforeStartTime', inputs: [] },
   { type: 'error', name: 'HookNotImplemented', inputs: [] },
   { type: 'error', name: 'InvalidEpochLength', inputs: [] },
   { type: 'error', name: 'InvalidGamma', inputs: [] },
   { type: 'error', name: 'InvalidNumPDSlugs', inputs: [] },
   { type: 'error', name: 'InvalidPool', inputs: [] },
   { type: 'error', name: 'InvalidProceedLimits', inputs: [] },
+  { type: 'error', name: 'InvalidStartTime', inputs: [] },
   {
     type: 'error',
     name: 'InvalidSwapAfterMaturityInsufficientProceeds',
@@ -2883,16 +2988,14 @@ export const dopplerAbi = [
   },
   { type: 'error', name: 'InvalidTickRange', inputs: [] },
   { type: 'error', name: 'InvalidTickSpacing', inputs: [] },
-  { type: 'error', name: 'InvalidTime', inputs: [] },
   { type: 'error', name: 'InvalidTimeRange', inputs: [] },
   { type: 'error', name: 'LockFailure', inputs: [] },
   { type: 'error', name: 'MaximumProceedsReached', inputs: [] },
   { type: 'error', name: 'NotPoolManager', inputs: [] },
   { type: 'error', name: 'NotSelf', inputs: [] },
-  { type: 'error', name: 'SenderNotAirlock', inputs: [] },
+  { type: 'error', name: 'SenderNotInitializer', inputs: [] },
   { type: 'error', name: 'SenderNotPoolManager', inputs: [] },
   { type: 'error', name: 'SwapBelowRange', inputs: [] },
-  { type: 'error', name: 'Unauthorized', inputs: [] },
 ] as const;
 
 export const governanceFactoryAbi = [
@@ -3008,7 +3111,7 @@ export const uniswapRouterAbi = [
   { type: 'error', name: 'NoSwapOccurred', inputs: [] },
 ] as const;
 
-export const uniswapV4InitializerAbi = [
+export const uniswapV5InitializerAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -3045,7 +3148,7 @@ export const uniswapV4InitializerAbi = [
   {
     type: 'function',
     name: 'exitLiquidity',
-    inputs: [{ name: 'asset', type: 'address', internalType: 'address' }],
+    inputs: [{ name: 'hook', type: 'address', internalType: 'address' }],
     outputs: [
       { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
       { name: 'token0', type: 'address', internalType: 'address' },
@@ -3079,5 +3182,6 @@ export const uniswapV4InitializerAbi = [
     ],
     stateMutability: 'view',
   },
-  { type: 'error', name: 'NotAirlock', inputs: [] },
-] as const;
+  { type: 'error', name: 'InvalidTokenOrder', inputs: [] },
+  { type: 'error', name: 'OnlyAirlock', inputs: [] },
+];

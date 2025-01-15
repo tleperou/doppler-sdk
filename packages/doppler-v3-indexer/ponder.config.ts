@@ -5,11 +5,11 @@ import { UniswapV3PoolABI } from "./abis/UniswapV3PoolABI";
 import { DERC20ABI } from "./abis/DERC20ABI";
 
 const addresses = {
-  airlock: "0x53dd5d05b440513F2565E4b372e1cdeDB6C4B0a9" as Address,
-  tokenFactory: "0x92E5c7d5152d9C8A0F193F71ec8f24332Cb58f14" as Address,
-  v3Initializer: "0xd6616FCEb1501efb4f9b2DE0180cFd8766eA7C80" as Address,
-  governanceFactory: "0x541C932232195F30ac2423024c9F298809433618" as Address,
-  liquidityMigrator: "0x5ACf6e39a0A351c32202403BEF0A93215F742FC0" as Address,
+  airlock: "0x3d067F7091c9743De932CcD808Ee3D01C51F881F" as Address,
+  tokenFactory: "0x8993Cbb0b951ca1472DC09112B9a726aC088b50f" as Address,
+  v3Initializer: "0x5Cf5D175bC74319d4AF42f3026aF6446901559a7" as Address,
+  governanceFactory: "0xD7Bd7A6C5847536486C262c9a47C2903ec41d978" as Address,
+  liquidityMigrator: "0x106dA038525f8D5DA14e8E9094CF2235221659fB" as Address,
 };
 
 export default createConfig({

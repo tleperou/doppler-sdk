@@ -7,6 +7,8 @@ export const derc20Abi = [
       { name: 'initialSupply', type: 'uint256', internalType: 'uint256' },
       { name: 'recipient', type: 'address', internalType: 'address' },
       { name: 'owner_', type: 'address', internalType: 'address' },
+      { name: 'yearlyMintCap_', type: 'uint256', internalType: 'uint256' },
+      { name: 'vestingDuration_', type: 'uint256', internalType: 'uint256' },
       { name: 'recipients_', type: 'address[]', internalType: 'address[]' },
       { name: 'amounts_', type: 'uint256[]', internalType: 'uint256[]' },
     ],
@@ -33,13 +35,6 @@ export const derc20Abi = [
       { name: 'owner', type: 'address', internalType: 'address' },
       { name: 'spender', type: 'address', internalType: 'address' },
     ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'amounts',
-    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
@@ -85,6 +80,20 @@ export const derc20Abi = [
     name: 'clock',
     inputs: [],
     outputs: [{ name: '', type: 'uint48', internalType: 'uint48' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'currentAnnualMint',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'currentYearStart',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -152,6 +161,16 @@ export const derc20Abi = [
       { name: 'timepoint', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getVestingDataOf',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [
+      { name: 'totalAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'releasedAmount', type: 'uint256', internalType: 'uint256' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -244,10 +263,10 @@ export const derc20Abi = [
   },
   {
     type: 'function',
-    name: 'recipients',
-    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'view',
+    name: 'release',
+    inputs: [{ name: 'amount', type: 'uint256', internalType: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -304,6 +323,20 @@ export const derc20Abi = [
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'vestingDuration',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'vestingStart',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -503,6 +536,7 @@ export const derc20Abi = [
     ],
   },
   { type: 'error', name: 'ERC6372InconsistentClock', inputs: [] },
+  { type: 'error', name: 'ExceedsYearlyMintCap', inputs: [] },
   {
     type: 'error',
     name: 'InvalidAccountNonce',
@@ -512,6 +546,22 @@ export const derc20Abi = [
     ],
   },
   { type: 'error', name: 'InvalidShortString', inputs: [] },
+  {
+    type: 'error',
+    name: 'MaxPreMintPerAddressExceeded',
+    inputs: [
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'limit', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'MaxTotalPreMintExceeded',
+    inputs: [
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'limit', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
   { type: 'error', name: 'MintingNotStartedYet', inputs: [] },
   {
     type: 'error',
@@ -524,6 +574,7 @@ export const derc20Abi = [
     inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
   },
   { type: 'error', name: 'PoolLocked', inputs: [] },
+  { type: 'error', name: 'ReleaseAmountInvalid', inputs: [] },
   {
     type: 'error',
     name: 'SafeCastOverflowedUintDowncast',
@@ -1220,35 +1271,50 @@ export const airlockAbi = [
     type: 'function',
     name: 'create',
     inputs: [
-      { name: 'initialSupply', type: 'uint256', internalType: 'uint256' },
-      { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
-      { name: 'numeraire', type: 'address', internalType: 'address' },
       {
-        name: 'tokenFactory',
-        type: 'address',
-        internalType: 'contract ITokenFactory',
+        name: 'createData',
+        type: 'tuple',
+        internalType: 'struct CreateParams',
+        components: [
+          { name: 'initialSupply', type: 'uint256', internalType: 'uint256' },
+          { name: 'numTokensToSell', type: 'uint256', internalType: 'uint256' },
+          { name: 'numeraire', type: 'address', internalType: 'address' },
+          {
+            name: 'tokenFactory',
+            type: 'address',
+            internalType: 'contract ITokenFactory',
+          },
+          { name: 'tokenFactoryData', type: 'bytes', internalType: 'bytes' },
+          {
+            name: 'governanceFactory',
+            type: 'address',
+            internalType: 'contract IGovernanceFactory',
+          },
+          {
+            name: 'governanceFactoryData',
+            type: 'bytes',
+            internalType: 'bytes',
+          },
+          {
+            name: 'poolInitializer',
+            type: 'address',
+            internalType: 'contract IPoolInitializer',
+          },
+          { name: 'poolInitializerData', type: 'bytes', internalType: 'bytes' },
+          {
+            name: 'liquidityMigrator',
+            type: 'address',
+            internalType: 'contract ILiquidityMigrator',
+          },
+          {
+            name: 'liquidityMigratorData',
+            type: 'bytes',
+            internalType: 'bytes',
+          },
+          { name: 'integrator', type: 'address', internalType: 'address' },
+          { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
+        ],
       },
-      { name: 'tokenFactoryData', type: 'bytes', internalType: 'bytes' },
-      {
-        name: 'governanceFactory',
-        type: 'address',
-        internalType: 'contract IGovernanceFactory',
-      },
-      { name: 'governanceFactoryData', type: 'bytes', internalType: 'bytes' },
-      {
-        name: 'poolInitializer',
-        type: 'address',
-        internalType: 'contract IPoolInitializer',
-      },
-      { name: 'poolInitializerData', type: 'bytes', internalType: 'bytes' },
-      {
-        name: 'liquidityMigrator',
-        type: 'address',
-        internalType: 'contract ILiquidityMigrator',
-      },
-      { name: 'liquidityMigratorData', type: 'bytes', internalType: 'bytes' },
-      { name: 'integrator', type: 'address', internalType: 'address' },
-      { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
     ],
     outputs: [
       { name: 'asset', type: 'address', internalType: 'address' },
@@ -1496,32 +1562,6 @@ export const uniswapV3InitializerAbi = [
   },
   {
     type: 'function',
-    name: 'burnPositionsMultiple',
-    inputs: [
-      { name: 'pool', type: 'address', internalType: 'address' },
-      {
-        name: 'newPositions',
-        type: 'tuple[]',
-        internalType: 'struct LpPosition[]',
-        components: [
-          { name: 'tickLower', type: 'int24', internalType: 'int24' },
-          { name: 'tickUpper', type: 'int24', internalType: 'int24' },
-          { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
-          { name: 'id', type: 'uint16', internalType: 'uint16' },
-        ],
-      },
-      { name: 'numPositions', type: 'uint16', internalType: 'uint16' },
-    ],
-    outputs: [
-      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
-      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
-      { name: 'balance0', type: 'uint128', internalType: 'uint128' },
-      { name: 'balance1', type: 'uint128', internalType: 'uint128' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'exitLiquidity',
     inputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
     outputs: [
@@ -1576,30 +1616,6 @@ export const uniswapV3InitializerAbi = [
   },
   {
     type: 'function',
-    name: 'mintPositions',
-    inputs: [
-      { name: 'asset', type: 'address', internalType: 'address' },
-      { name: 'numeraire', type: 'address', internalType: 'address' },
-      { name: 'fee', type: 'uint24', internalType: 'uint24' },
-      { name: 'pool', type: 'address', internalType: 'address' },
-      {
-        name: 'newPositions',
-        type: 'tuple[]',
-        internalType: 'struct LpPosition[]',
-        components: [
-          { name: 'tickLower', type: 'int24', internalType: 'int24' },
-          { name: 'tickUpper', type: 'int24', internalType: 'int24' },
-          { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
-          { name: 'id', type: 'uint16', internalType: 'uint16' },
-        ],
-      },
-      { name: 'numPositions', type: 'uint16', internalType: 'uint16' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'uniswapV3MintCallback',
     inputs: [
       { name: 'amount0Owed', type: 'uint256', internalType: 'uint256' },
@@ -1639,8 +1655,101 @@ export const uniswapV3InitializerAbi = [
       { name: 'tickUpper', type: 'int24', internalType: 'int24' },
     ],
   },
-  { type: 'error', name: 'OnlyAirlock', inputs: [] },
   { type: 'error', name: 'OnlyPool', inputs: [] },
   { type: 'error', name: 'PoolAlreadyExited', inputs: [] },
   { type: 'error', name: 'PoolAlreadyInitialized', inputs: [] },
+  { type: 'error', name: 'SenderNotAirlock', inputs: [] },
+] as const;
+
+export const MigratorABI = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'airlock_', type: 'address', internalType: 'address' },
+      {
+        name: 'factory_',
+        type: 'address',
+        internalType: 'contract IUniswapV2Factory',
+      },
+      {
+        name: 'router',
+        type: 'address',
+        internalType: 'contract IUniswapV2Router02',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'airlock',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'factory',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract IUniswapV2Factory' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getAsset',
+    inputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getPool',
+    inputs: [
+      { name: 'token0', type: 'address', internalType: 'address' },
+      { name: 'token1', type: 'address', internalType: 'address' },
+    ],
+    outputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'initialize',
+    inputs: [
+      { name: 'asset', type: 'address', internalType: 'address' },
+      { name: 'numeraire', type: 'address', internalType: 'address' },
+      { name: '', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'locker',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract UniswapV2Locker' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'migrate',
+    inputs: [
+      { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
+      { name: 'token0', type: 'address', internalType: 'address' },
+      { name: 'token1', type: 'address', internalType: 'address' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+    ],
+    outputs: [{ name: 'liquidity', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'weth',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract WETH' }],
+    stateMutability: 'view',
+  },
+  { type: 'error', name: 'SenderNotAirlock', inputs: [] },
 ] as const;
