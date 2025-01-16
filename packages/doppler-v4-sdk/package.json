@@ -49,9 +49,9 @@
     "@delvtech/drift-viem": "^0.1.0-beta.30",
     "@types/node": "^22.9.4",
     "@uniswap/sdk-core": "^5.9.0",
-    "@uniswap/v4-sdk": "^1.10.4",
-    "ethers": "^5.7.2",
-    "turbo": "^2.3.2",
-    "tsup": "^latest"
+    "ethers": "^5.0.8",
+    "@uniswap/v4-sdk": "^1.15.1",
+    "tsup": "^latest",
+    "turbo": "^2.3.2"
   }
 }
