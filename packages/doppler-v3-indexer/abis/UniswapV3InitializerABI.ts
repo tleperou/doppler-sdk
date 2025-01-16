@@ -20,32 +20,6 @@ export const UniswapV3InitializerABI = [
   },
   {
     type: "function",
-    name: "burnPositionsMultiple",
-    inputs: [
-      { name: "pool", type: "address", internalType: "address" },
-      {
-        name: "newPositions",
-        type: "tuple[]",
-        internalType: "struct LpPosition[]",
-        components: [
-          { name: "tickLower", type: "int24", internalType: "int24" },
-          { name: "tickUpper", type: "int24", internalType: "int24" },
-          { name: "liquidity", type: "uint128", internalType: "uint128" },
-          { name: "id", type: "uint16", internalType: "uint16" },
-        ],
-      },
-      { name: "numPositions", type: "uint16", internalType: "uint16" },
-    ],
-    outputs: [
-      { name: "amount0", type: "uint256", internalType: "uint256" },
-      { name: "amount1", type: "uint256", internalType: "uint256" },
-      { name: "balance0", type: "uint128", internalType: "uint128" },
-      { name: "balance1", type: "uint128", internalType: "uint128" },
-    ],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "exitLiquidity",
     inputs: [{ name: "pool", type: "address", internalType: "address" }],
     outputs: [
@@ -100,30 +74,6 @@ export const UniswapV3InitializerABI = [
   },
   {
     type: "function",
-    name: "mintPositions",
-    inputs: [
-      { name: "asset", type: "address", internalType: "address" },
-      { name: "numeraire", type: "address", internalType: "address" },
-      { name: "fee", type: "uint24", internalType: "uint24" },
-      { name: "pool", type: "address", internalType: "address" },
-      {
-        name: "newPositions",
-        type: "tuple[]",
-        internalType: "struct LpPosition[]",
-        components: [
-          { name: "tickLower", type: "int24", internalType: "int24" },
-          { name: "tickUpper", type: "int24", internalType: "int24" },
-          { name: "liquidity", type: "uint128", internalType: "uint128" },
-          { name: "id", type: "uint16", internalType: "uint16" },
-        ],
-      },
-      { name: "numPositions", type: "uint16", internalType: "uint16" },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "uniswapV3MintCallback",
     inputs: [
       { name: "amount0Owed", type: "uint256", internalType: "uint256" },
@@ -163,8 +113,8 @@ export const UniswapV3InitializerABI = [
       { name: "tickUpper", type: "int24", internalType: "int24" },
     ],
   },
-  { type: "error", name: "OnlyAirlock", inputs: [] },
   { type: "error", name: "OnlyPool", inputs: [] },
   { type: "error", name: "PoolAlreadyExited", inputs: [] },
   { type: "error", name: "PoolAlreadyInitialized", inputs: [] },
+  { type: "error", name: "SenderNotAirlock", inputs: [] },
 ] as const;

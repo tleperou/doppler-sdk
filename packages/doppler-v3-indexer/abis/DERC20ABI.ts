@@ -165,9 +165,12 @@ export const DERC20ABI = [
   },
   {
     type: "function",
-    name: "getVestingOf",
+    name: "getVestingDataOf",
     inputs: [{ name: "account", type: "address", internalType: "address" }],
-    outputs: [{ name: "amount", type: "uint256", internalType: "uint256" }],
+    outputs: [
+      { name: "totalAmount", type: "uint256", internalType: "uint256" },
+      { name: "releasedAmount", type: "uint256", internalType: "uint256" },
+    ],
     stateMutability: "view",
   },
   {
@@ -323,7 +326,14 @@ export const DERC20ABI = [
   },
   {
     type: "function",
-    name: "vestingEnd",
+    name: "vestingDuration",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "vestingStart",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
@@ -446,7 +456,6 @@ export const DERC20ABI = [
     anonymous: false,
   },
   { type: "error", name: "ArrayLengthsMismatch", inputs: [] },
-  { type: "error", name: "CannotReleaseYet", inputs: [] },
   { type: "error", name: "CheckpointUnorderedInsertion", inputs: [] },
   { type: "error", name: "ECDSAInvalidSignature", inputs: [] },
   {
@@ -565,6 +574,7 @@ export const DERC20ABI = [
     inputs: [{ name: "account", type: "address", internalType: "address" }],
   },
   { type: "error", name: "PoolLocked", inputs: [] },
+  { type: "error", name: "ReleaseAmountInvalid", inputs: [] },
   {
     type: "error",
     name: "SafeCastOverflowedUintDowncast",

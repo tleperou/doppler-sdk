@@ -1,22 +1,23 @@
-import {
-  DopplerPreDeploymentConfig,
-  PoolConfig,
-  PoolKey,
-  PriceRange,
-} from '@/types';
+import { DopplerPreDeploymentConfig, PriceRange } from '@/types';
 import { DAY_SECONDS, DEFAULT_PD_SLUGS, MAX_TICK_SPACING } from '@/constants';
-import { DopplerAddresses } from '@/types';
+import { DopplerV4Addresses } from '@/types';
 import { Price, Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, tickToPrice, TickMath } from '@uniswap/v3-sdk';
 import {
-  Address,
   encodeAbiParameters,
   parseEther,
   toHex,
   zeroAddress,
+  Address,
 } from 'viem';
 import { ETH_ADDRESS } from '@/constants';
-import { CreateParams, MineParams, mine } from '@/entities/factory';
+import {
+  CreateParams,
+  MineV4Params,
+  mine,
+  TokenFactoryData,
+  DopplerData,
+} from '@/entities/factory';
 import { sortsBefore } from '@uniswap/v4-sdk';
 
 /**
@@ -24,7 +25,7 @@ import { sortsBefore } from '@uniswap/v4-sdk';
  */
 export function buildConfig(
   params: DopplerPreDeploymentConfig,
-  addresses: DopplerAddresses
+  addresses: DopplerV4Addresses
 ): CreateParams {
   validateBasicParams(params);
 
@@ -54,96 +55,79 @@ export function buildConfig(
     throw new Error('Computed gamma must be divisible by tick spacing');
   }
 
-  const { tokenFactory, uniswapV4Initializer, poolManager, airlock } =
-    addresses;
-
-  const mineParams: MineParams = {
+  const {
+    tokenFactory,
+    dopplerDeployer,
+    v4Initializer,
     poolManager,
-    numTokensToSell: params.numTokensToSell,
-    minTick: startTick,
-    maxTick: endTick,
     airlock,
+    migrator,
+  } = addresses;
+
+  const tokenParams: TokenFactoryData = {
     name: params.name,
     symbol: params.symbol,
     initialSupply: params.totalSupply,
-    numeraire: ETH_ADDRESS,
-    startingTime: BigInt(startTime),
-    endingTime: BigInt(endTime),
+    airlock,
+    yearlyMintCap: 0n,
+    vestingDuration: 0n,
+    recipients: [],
+    amounts: [],
+  };
+
+  const initialPrice = BigInt(
+    TickMath.getSqrtRatioAtTick(startTick).toString()
+  );
+  console.log('startTick', startTick);
+  console.log('initialPrice', initialPrice);
+
+  const dopplerParams: DopplerData = {
+    initialPrice,
     minimumProceeds: params.minProceeds,
     maximumProceeds: params.maxProceeds,
+    startingTime: BigInt(startTime),
+    endingTime: BigInt(endTime),
+    startingTick: startTick,
+    endingTick: endTick,
     epochLength: BigInt(params.epochLength),
     gamma,
+    isToken0: false,
     numPDSlugs: BigInt(params.numPdSlugs ?? DEFAULT_PD_SLUGS),
   };
 
-  const [salt, dopplerAddress, tokenAddress] = mine(
+  const mineParams: MineV4Params = {
+    airlock,
+    poolManager,
+    deployer: dopplerDeployer,
+    initialSupply: params.totalSupply,
+    numTokensToSell: params.numTokensToSell,
+    numeraire: ETH_ADDRESS,
     tokenFactory,
-    uniswapV4Initializer,
-    mineParams
-  );
-
-  const poolConfig: PoolConfig = {
-    tickSpacing: params.tickSpacing,
-    fee: params.fee,
+    tokenFactoryData: tokenParams,
+    poolInitializer: v4Initializer,
+    poolInitializerData: dopplerParams,
   };
 
-  const poolKey: PoolKey = {
-    currency0: ETH_ADDRESS,
-    currency1: tokenAddress,
-    ...poolConfig,
-    hooks: dopplerAddress,
-  };
+  const [salt, , , poolInitializerData, tokenFactoryData] = mine(mineParams);
 
-  const hookData = encodeAbiParameters(
-    [
-      { name: 'minimumProceeds', type: 'uint256' },
-      { name: 'maximumProceeds', type: 'uint256' },
-      { name: 'startingTime', type: 'uint256' },
-      { name: 'endingTime', type: 'uint256' },
-      { name: 'startTick', type: 'int24' },
-      { name: 'endTick', type: 'int24' },
-      { name: 'epochLength', type: 'uint256' },
-      { name: 'gamma', type: 'int24' },
-      { name: 'isToken0', type: 'bool' },
-      { name: 'numPDSlugs', type: 'uint256' },
-      { name: 'airlock', type: 'address' },
-    ],
-    [
-      params.minProceeds,
-      params.maxProceeds,
-      BigInt(startTime),
-      BigInt(endTime),
-      startTick,
-      endTick,
-      BigInt(params.epochLength),
-      gamma,
-      false,
-      BigInt(params.numPdSlugs ?? DEFAULT_PD_SLUGS),
-      airlock,
-    ]
+  const governanceFactoryData = encodeAbiParameters(
+    [{ type: 'string' }],
+    [params.name]
   );
 
   const createArgs: CreateParams = {
-    name: params.name,
-    symbol: params.symbol,
     initialSupply: params.totalSupply,
-    numeraire: zeroAddress,
     numTokensToSell: params.numTokensToSell,
-    poolKey,
-    recipients: [] as Address[],
-    amounts: [] as bigint[],
+    numeraire: ETH_ADDRESS,
     tokenFactory,
-    tokenFactoryData: toHex(''),
+    tokenFactoryData,
     governanceFactory: addresses.governanceFactory,
-    governanceFactoryData: toHex(''),
-    hookFactory: addresses.uniswapV4Initializer,
-    hookData,
-    liquidityMigrator: addresses.liquidityMigrator,
+    governanceFactoryData,
+    poolInitializer: v4Initializer,
+    poolInitializerData,
+    liquidityMigrator: migrator,
     liquidityMigratorData: toHex(''),
-    poolInitializer: addresses.poolManager,
-    poolInitializerData: toHex(''),
-    integrator: zeroAddress,
-    pool: poolConfig,
+    integrator: '0xcD3365F82eDD9750C2Fb287309eD7539cBFB51a9' as Address,
     salt,
   };
 

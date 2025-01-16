@@ -34,6 +34,13 @@ export const MigratorABI = [
   },
   {
     type: "function",
+    name: "getAsset",
+    inputs: [{ name: "pool", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "getPool",
     inputs: [
       { name: "token0", type: "address", internalType: "address" },
@@ -52,6 +59,15 @@ export const MigratorABI = [
     ],
     outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "locker",
+    inputs: [],
+    outputs: [
+      { name: "", type: "address", internalType: "contract UniswapV2Locker" },
+    ],
+    stateMutability: "view",
   },
   {
     type: "function",
