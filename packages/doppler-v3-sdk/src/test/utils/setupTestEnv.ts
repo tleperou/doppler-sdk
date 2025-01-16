@@ -14,11 +14,11 @@ import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
-import { Clients, DopplerAddresses } from '../../types';
+import { Clients, DopplerV3Addresses } from '../../types';
 
 interface TestEnvironment {
   clients: Clients;
-  addresses: DopplerAddresses;
+  addresses: DopplerV3Addresses;
 }
 
 export async function setupTestEnvironment(): Promise<TestEnvironment> {

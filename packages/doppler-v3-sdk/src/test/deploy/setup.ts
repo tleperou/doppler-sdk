@@ -10,7 +10,7 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
-import { Clients, DopplerAddresses } from '../../types';
+import { Clients, DopplerV3Addresses } from '../../types';
 import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
@@ -18,7 +18,7 @@ import {
 
 interface TestEnvironment {
   clients: Clients;
-  addresses: DopplerAddresses;
+  addresses: DopplerV3Addresses;
 }
 
 export async function setupTestEnvironment(): Promise<TestEnvironment> {
