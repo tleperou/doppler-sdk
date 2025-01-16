@@ -28,7 +28,7 @@ export default createConfig({
         event: getAbiItem({ abi: AirlockABI, name: "Create" }),
         parameter: "poolOrHook",
       }),
-      startBlock: 9427770,
+      startBlock: 10111904,
     },
     DERC20: {
       abi: DERC20ABI,
@@ -38,13 +38,13 @@ export default createConfig({
         event: getAbiItem({ abi: AirlockABI, name: "Create" }),
         parameter: "asset",
       }),
-      startBlock: 9427770,
+      startBlock: 10111904,
     },
     Airlock: {
       abi: AirlockABI,
       network: "unichainSepolia",
       address: addresses.airlock,
-      startBlock: 9427770,
+      startBlock: 10111904,
     },
   },
 });

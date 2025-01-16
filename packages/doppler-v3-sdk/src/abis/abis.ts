@@ -1661,34 +1661,120 @@ export const uniswapV3InitializerAbi = [
   { type: 'error', name: 'SenderNotAirlock', inputs: [] },
 ] as const;
 
-export const MigratorABI = [
+export const onchainRouterAbi = [
   {
     type: 'constructor',
     inputs: [
-      { name: 'airlock_', type: 'address', internalType: 'address' },
-      {
-        name: 'factory_',
-        type: 'address',
-        internalType: 'contract IUniswapV2Factory',
-      },
-      {
-        name: 'router',
-        type: 'address',
-        internalType: 'contract IUniswapV2Router02',
-      },
+      { name: '_v2Factory', type: 'address', internalType: 'address' },
+      { name: '_v3Factory', type: 'address', internalType: 'address' },
+      { name: '_weth', type: 'address', internalType: 'address' },
     ],
     stateMutability: 'nonpayable',
   },
   {
     type: 'function',
-    name: 'airlock',
+    name: 'WETH',
     inputs: [],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'factory',
+    name: 'addNewFeeTier',
+    inputs: [{ name: 'feeTier', type: 'uint24', internalType: 'uint24' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'feeTiers',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'uint24', internalType: 'uint24' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'routeExactInput',
+    inputs: [
+      {
+        name: 'params',
+        type: 'tuple',
+        internalType: 'struct SwapParams',
+        components: [
+          { name: 'tokenIn', type: 'address', internalType: 'address' },
+          { name: 'tokenOut', type: 'address', internalType: 'address' },
+          { name: 'amountSpecified', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+    outputs: [
+      {
+        name: 'bestQuote',
+        type: 'tuple',
+        internalType: 'struct Quote',
+        components: [
+          {
+            name: 'path',
+            type: 'tuple[]',
+            internalType: 'struct Pool[]',
+            components: [
+              { name: 'tokenIn', type: 'address', internalType: 'address' },
+              { name: 'tokenOut', type: 'address', internalType: 'address' },
+              { name: 'fee', type: 'uint24', internalType: 'uint24' },
+              { name: 'pool', type: 'address', internalType: 'address' },
+              { name: 'version', type: 'bool', internalType: 'bool' },
+            ],
+          },
+          { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
+          { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'routeExactOutput',
+    inputs: [
+      {
+        name: 'params',
+        type: 'tuple',
+        internalType: 'struct SwapParams',
+        components: [
+          { name: 'tokenIn', type: 'address', internalType: 'address' },
+          { name: 'tokenOut', type: 'address', internalType: 'address' },
+          { name: 'amountSpecified', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+    outputs: [
+      {
+        name: 'bestQuote',
+        type: 'tuple',
+        internalType: 'struct Quote',
+        components: [
+          {
+            name: 'path',
+            type: 'tuple[]',
+            internalType: 'struct Pool[]',
+            components: [
+              { name: 'tokenIn', type: 'address', internalType: 'address' },
+              { name: 'tokenOut', type: 'address', internalType: 'address' },
+              { name: 'fee', type: 'uint24', internalType: 'uint24' },
+              { name: 'pool', type: 'address', internalType: 'address' },
+              { name: 'version', type: 'bool', internalType: 'bool' },
+            ],
+          },
+          { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
+          { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'v2Factory',
     inputs: [],
     outputs: [
       { name: '', type: 'address', internalType: 'contract IUniswapV2Factory' },
@@ -1697,59 +1783,11 @@ export const MigratorABI = [
   },
   {
     type: 'function',
-    name: 'getAsset',
-    inputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getPool',
-    inputs: [
-      { name: 'token0', type: 'address', internalType: 'address' },
-      { name: 'token1', type: 'address', internalType: 'address' },
-    ],
-    outputs: [{ name: 'pool', type: 'address', internalType: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'initialize',
-    inputs: [
-      { name: 'asset', type: 'address', internalType: 'address' },
-      { name: 'numeraire', type: 'address', internalType: 'address' },
-      { name: '', type: 'bytes', internalType: 'bytes' },
-    ],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'locker',
+    name: 'v3Factory',
     inputs: [],
     outputs: [
-      { name: '', type: 'address', internalType: 'contract UniswapV2Locker' },
+      { name: '', type: 'address', internalType: 'contract IUniswapV3Factory' },
     ],
     stateMutability: 'view',
   },
-  {
-    type: 'function',
-    name: 'migrate',
-    inputs: [
-      { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
-      { name: 'token0', type: 'address', internalType: 'address' },
-      { name: 'token1', type: 'address', internalType: 'address' },
-      { name: 'recipient', type: 'address', internalType: 'address' },
-    ],
-    outputs: [{ name: 'liquidity', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'weth',
-    inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'contract WETH' }],
-    stateMutability: 'view',
-  },
-  { type: 'error', name: 'SenderNotAirlock', inputs: [] },
 ] as const;

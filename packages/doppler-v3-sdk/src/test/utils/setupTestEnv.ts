@@ -83,6 +83,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     liquidityMigrator: contractAddresses[4] as Address,
     poolManager: contractAddresses[5] as Address,
     v3Initializer: contractAddresses[6] as Address,
+    onchainRouter: contractAddresses[7] as Address,
   };
 
   return {

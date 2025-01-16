@@ -140,7 +140,7 @@ function DeployDoppler() {
     setIsDeploying(true);
     try {
       // Encode the various data fields
-      const factoryData = encodeAbiParameters(
+      const tokenFactoryData = encodeAbiParameters(
         [
           { type: "string" },
           { type: "string" },
@@ -151,13 +151,6 @@ function DeployDoppler() {
         ],
         [tokenName, tokenSymbol, 0n, 0n, [], []]
       );
-
-      const [, rest] = factoryData.split("0x");
-
-      const offset =
-        "0000000000000000000000000000000000000000000000000000000000000020";
-
-      const tokenFactoryData = `0x${offset}${rest}` as Hex;
 
       const governanceFactoryData = encodeAbiParameters(
         [{ type: "string" }],
@@ -208,10 +201,9 @@ function DeployDoppler() {
       const drift = getDrift(walletClient);
       const readWriteFactory = new ReadWriteFactory(airlock, drift);
 
-      const { asset } = await readWriteFactory.airlock.simulateWrite(
-        "create",
-        args
-      );
+      const { asset } = await readWriteFactory.airlock.simulateWrite("create", {
+        createData: args,
+      });
 
       const isToken0 = Number(asset) < Number(weth);
       if (isToken0) {

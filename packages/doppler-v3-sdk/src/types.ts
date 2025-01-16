@@ -12,6 +12,7 @@ export interface DopplerV3Addresses {
   governanceFactory: Address;
   liquidityMigrator: Address;
   v3Initializer: Address;
+  onchainRouter: Address;
 }
 
 export interface TokenConfig {

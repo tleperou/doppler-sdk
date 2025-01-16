@@ -83,6 +83,7 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     liquidityMigrator: contractAddresses[3] as Address,
     poolManager: contractAddresses[4] as Address,
     v3Initializer: contractAddresses[5] as Address,
+    onchainRouter: contractAddresses[6] as Address,
   };
 
   await testClient.mine({
