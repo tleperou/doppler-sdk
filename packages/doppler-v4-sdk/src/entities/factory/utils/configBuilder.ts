@@ -7,7 +7,6 @@ import {
   encodeAbiParameters,
   parseEther,
   toHex,
-  zeroAddress,
   Address,
 } from 'viem';
 import { ETH_ADDRESS } from '@/constants';
