@@ -72,8 +72,6 @@ export function buildConfig(
   const initialPrice = BigInt(
     TickMath.getSqrtRatioAtTick(startTick).toString()
   );
-  console.log('startTick', startTick);
-  console.log('initialPrice', initialPrice);
 
   const dopplerParams: DopplerData = {
     initialPrice,
@@ -101,7 +99,6 @@ export function buildConfig(
     poolInitializer: v4Initializer,
     poolInitializerData: dopplerParams,
   };
-  console.log('mineParams', mineParams);
 
   const [salt, , , poolInitializerData, tokenFactoryData] = mine(mineParams);
 
