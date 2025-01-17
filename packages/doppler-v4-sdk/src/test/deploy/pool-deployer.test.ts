@@ -46,24 +46,41 @@ describe('Doppler Pool Deployment', () => {
         startPrice: 0.1,
         endPrice: 0.0001,
       },
-      tickSpacing: 30,
-      fee: 300,
+      tickSpacing: 8,
+      fee: 3000,
       minProceeds: parseEther('100'),
       maxProceeds: parseEther('600'),
     };
 
     const readWriteFactory = new ReadWriteFactory(addresses.airlock, drift);
     const config = buildConfig(configParams, addresses);
-    const result = await readWriteFactory.create(config);
-    // console.log('config', config);
-    // console.log('result', result);
-    // console.log('walletClient type', drift.adapter.walletClient);
-    await walletClient.writeContract({
+    console.log('config', config);
+    // const result = await readWriteFactory.airlock.simulateWrite(
+    //   'create',
+    //   {
+    //     createData: config,
+    //   },
+    //   {
+    //     gas: BigInt(20_000_000),
+    //   }
+    // );
+
+    const result = await walletClient.writeContract({
       address: addresses.airlock,
       abi: airlockAbi,
       functionName: 'create',
-      args: [{ createData: config }],
+      args: [config],
+      gas: BigInt(20_000_000),
     });
+    // console.log('config', config);
+    // console.log('result', result);
+    // console.log('walletClient type', drift.adapter.walletClient);
+    // await walletClient.writeContract({
+    //   address: addresses.airlock,
+    //   abi: airlockAbi,
+    //   functionName: 'create',
+    //   args: [{ createData: config }],
+    // });
     // await readWriteFactory.create(config, {
     //   onMined: (result) => {
     //     console.log('onMined', result);
