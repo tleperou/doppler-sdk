@@ -54,18 +54,16 @@ describe('Doppler Pool Deployment', () => {
 
     const readWriteFactory = new ReadWriteFactory(addresses.airlock, drift);
     const config = buildConfig(configParams, addresses);
-    const result = await readWriteFactory.airlock.simulateWrite('create', {
-      createData: config,
-    });
+    const result = await readWriteFactory.create(config);
     // console.log('config', config);
     // console.log('result', result);
     // console.log('walletClient type', drift.adapter.walletClient);
-    // await walletClient.writeContract({
-    //   address: addresses.airlock,
-    //   abi: airlockAbi,
-    //   functionName: 'create',
-    //   args: [config],
-    // });
+    await walletClient.writeContract({
+      address: addresses.airlock,
+      abi: airlockAbi,
+      functionName: 'create',
+      args: [{ createData: config }],
+    });
     // await readWriteFactory.create(config, {
     //   onMined: (result) => {
     //     console.log('onMined', result);
