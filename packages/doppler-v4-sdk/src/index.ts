@@ -4,5 +4,6 @@ export * from './entities/router';
 export * from './entities/token';
 
 export * from './types';
+export * from './abis';
 export * from './addresses';
 export * from './constants';
