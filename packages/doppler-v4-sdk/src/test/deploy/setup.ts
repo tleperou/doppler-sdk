@@ -109,51 +109,6 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     blocks: 1,
   });
 
-  const tfModuleState = await publicClient.readContract({
-    abi: airlockAbi,
-    address: airlock,
-    functionName: 'getModuleState',
-    args: [tokenFactory],
-  });
-
-  const v3piModuleState = await publicClient.readContract({
-    abi: airlockAbi,
-    address: airlock,
-    functionName: 'getModuleState',
-    args: [uniswapV3Initializer],
-  });
-
-  const v4piModuleState = await publicClient.readContract({
-    abi: airlockAbi,
-    address: airlock,
-    functionName: 'getModuleState',
-    args: [uniswapV4Initializer],
-  });
-
-  const gfModuleState = await publicClient.readContract({
-    abi: airlockAbi,
-    address: airlock,
-    functionName: 'getModuleState',
-    args: [governanceFactory],
-  });
-
-  const migratorModuleState = await publicClient.readContract({
-    abi: airlockAbi,
-    address: airlock,
-    functionName: 'getModuleState',
-    args: [uniswapV2LiquidityMigrator],
-  });
-
-  console.log('tfModuleState', tfModuleState, tokenFactory);
-  console.log('v3piModuleState', v3piModuleState, uniswapV3Initializer);
-  console.log('v4piModuleState', v4piModuleState, uniswapV4Initializer);
-  console.log('gfModuleState', gfModuleState, governanceFactory);
-  console.log(
-    'migratorModuleState',
-    migratorModuleState,
-    uniswapV2LiquidityMigrator
-  );
-
   return {
     clients: { publicClient, walletClient, testClient },
     addresses,

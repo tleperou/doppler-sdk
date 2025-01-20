@@ -3,12 +3,7 @@ import { DAY_SECONDS, DEFAULT_PD_SLUGS, MAX_TICK_SPACING } from '@/constants';
 import { DopplerV4Addresses } from '@/types';
 import { Price, Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, tickToPrice, TickMath } from '@uniswap/v3-sdk';
-import {
-  encodeAbiParameters,
-  parseEther,
-  toHex,
-  Address,
-} from 'viem';
+import { encodeAbiParameters, parseEther, toHex, Address } from 'viem';
 import { ETH_ADDRESS } from '@/constants';
 import {
   CreateParams,
@@ -77,8 +72,6 @@ export function buildConfig(
   const initialPrice = BigInt(
     TickMath.getSqrtRatioAtTick(startTick).toString()
   );
-  console.log('startTick', startTick);
-  console.log('initialPrice', initialPrice);
 
   const dopplerParams: DopplerData = {
     initialPrice,

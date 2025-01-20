@@ -220,9 +220,6 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       ((isToken0 && tokenBigInt < numeraireBigInt) ||
         (!isToken0 && tokenBigInt > numeraireBigInt))
     ) {
-      console.log('found salt', salt);
-      console.log('hook', hook);
-      console.log('token', token);
       return [saltBytes, hook, token, poolInitializerData, tokenFactoryData];
     }
   }
