@@ -70,11 +70,9 @@ const insertOrUpdateHourBucket = async ({
   });
 
   const baseTokenDecimalScale = 10 ** baseTokenDecimals;
-  const quoteTokenDecimalScale = 10 ** quoteTokenDecimals;
 
   const ratioX192 = sqrtPriceX96 * sqrtPriceX96;
 
-  // First multiply by decimal scale to avoid losing precision
   const price = assetBefore
     ? (ratioX192 * BigInt(baseTokenDecimalScale)) / Q192
     : (Q192 * BigInt(baseTokenDecimalScale)) / ratioX192;
