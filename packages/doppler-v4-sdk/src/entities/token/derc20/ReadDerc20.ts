@@ -30,4 +30,35 @@ export class ReadDerc20 {
   async getBalanceOf(account: Address): Promise<bigint> {
     return this.contract.read('balanceOf', { account });
   }
+
+  async getVestingData(account: Address): Promise<{
+    totalAmount: bigint;
+    releasedAmount: bigint;
+  }> {
+    return this.contract.read('getVestingDataOf', { account });
+  }
+
+  async getVestingDuration(): Promise<bigint> {
+    return this.contract.read('vestingDuration');
+  }
+
+  async getVestingStart(): Promise<bigint> {
+    return this.contract.read('vestingStart');
+  }
+
+  async getCurrentYearStart(): Promise<bigint> {
+    return this.contract.read('currentYearStart');
+  }
+
+  async getCurrentAnnualMintRate(): Promise<bigint> {
+    return this.contract.read('currentAnnualMint');
+  }
+
+  async getIsPoolUnlocked(): Promise<boolean> {
+    return this.contract.read('isPoolUnlocked');
+  }
+
+  async getMintStartDate(): Promise<bigint> {
+    return this.contract.read('mintStartDate');
+  }
 }
