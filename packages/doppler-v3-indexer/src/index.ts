@@ -10,7 +10,7 @@ import {
 } from "../ponder.schema";
 import { AirlockABI } from "../abis/AirlockABI";
 import { UniswapV3PoolABI } from "../abis/UniswapV3PoolABI";
-import { Address, Hex, zeroAddress } from "viem";
+import { Address, Hex, parseUnits, zeroAddress } from "viem";
 import { DERC20ABI } from "../abis/DERC20ABI";
 
 interface AssetData {
@@ -29,18 +29,18 @@ interface AssetData {
 const secondsInHour = 3600;
 
 const Q96 = BigInt(2) ** BigInt(96);
-const Q192 = Q96 * Q96;
+const Q192 = BigInt(2) ** BigInt(192);
 
 const insertOrUpdateHourBucket = async ({
   poolAddress,
   baseToken,
-  sqrtPrice,
+  sqrtPriceX96,
   timestamp,
   context,
 }: {
   poolAddress: Address;
   baseToken: Address;
-  sqrtPrice: bigint;
+  sqrtPriceX96: bigint;
   timestamp: bigint;
   context: Context;
 }) => {
@@ -52,32 +52,62 @@ const insertOrUpdateHourBucket = async ({
   });
 
   const isToken0 = token0.toLowerCase() === baseToken.toLowerCase();
+
   const assetBefore = isToken0
     ? token0.toLowerCase() < token1.toLowerCase()
     : token1.toLowerCase() < token0.toLowerCase();
 
-  const priceX192 = sqrtPrice * sqrtPrice;
-  const price = assetBefore ? Q192 / priceX192 : priceX192 / Q192;
+  const baseTokenDecimals = await context.client.readContract({
+    abi: DERC20ABI,
+    address: baseToken,
+    functionName: "decimals",
+  });
 
-  await context.db
-    .insert(hourBucket)
-    .values({
-      id: `${poolAddress}-${hourId.toString()}`,
-      open: price,
-      close: price,
-      low: price,
-      high: price,
-      average: price,
-      count: 1,
-    })
-    .onConflictDoUpdate((row) => ({
-      close: price,
-      low: row.low < price ? row.low : price,
-      high: row.high > price ? row.high : price,
-      average:
-        (row.average * BigInt(row.count) + price) / BigInt(row.count + 1),
-      count: row.count + 1,
-    }));
+  const quoteTokenDecimals = await context.client.readContract({
+    abi: DERC20ABI,
+    address: isToken0 ? (token1 as Address) : (token0 as Address),
+    functionName: "decimals",
+  });
+
+  const baseTokenDecimalScale = 10 ** baseTokenDecimals;
+  const quoteTokenDecimalScale = 10 ** quoteTokenDecimals;
+
+  const ratioX192 = sqrtPriceX96 * sqrtPriceX96;
+
+  // First multiply by decimal scale to avoid losing precision
+  const price = assetBefore
+    ? (ratioX192 * BigInt(baseTokenDecimalScale)) / Q192
+    : (Q192 * BigInt(baseTokenDecimalScale)) / ratioX192;
+
+  console.log({
+    sqrtPriceX96,
+    ratioX192,
+    price,
+  });
+
+  try {
+    await context.db
+      .insert(hourBucket)
+      .values({
+        id: `${poolAddress}-${hourId.toString()}`,
+        open: price,
+        close: price,
+        low: price,
+        high: price,
+        average: price,
+        count: 1,
+      })
+      .onConflictDoUpdate((row) => ({
+        close: price,
+        low: row.low < price ? row.low : price,
+        high: row.high > price ? row.high : price,
+        average:
+          (row.average * BigInt(row.count) + price) / BigInt(row.count + 1),
+        count: row.count + 1,
+      }));
+  } catch (e) {
+    console.error("error inserting hour bucket", e);
+  }
 };
 
 const getV3PoolData = async ({
@@ -347,7 +377,7 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
   await insertOrUpdateHourBucket({
     poolAddress: pool,
     baseToken: baseToken as Address,
-    sqrtPrice: slot0Data.sqrtPrice,
+    sqrtPriceX96: slot0Data.sqrtPrice,
     timestamp: event.block.timestamp,
     context,
   });
@@ -406,7 +436,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   await insertOrUpdateHourBucket({
     poolAddress: pool,
     baseToken: baseToken as Address,
-    sqrtPrice: slot0Data.sqrtPrice,
+    sqrtPriceX96: slot0Data.sqrtPrice,
     timestamp: event.block.timestamp,
     context,
   });
