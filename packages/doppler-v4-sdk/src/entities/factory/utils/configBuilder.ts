@@ -67,6 +67,7 @@ export function buildConfig(
     vestingDuration: 0n,
     recipients: [],
     amounts: [],
+    tokenURI: params.tokenURI,
   };
 
   const initialPrice = BigInt(

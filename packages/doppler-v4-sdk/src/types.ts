@@ -13,11 +13,10 @@ export interface DopplerV4Addresses {
   v3Initializer?: Address;
   governanceFactory: Address;
   migrator: Address;
-  stateView: Address;
-  basicRouter: Address;
-  universalRouter: Address;
   poolManager: Address;
   dopplerDeployer: Address;
+  basicRouter: Address;
+  universalRouter: Address;
 }
 
 export interface TokenConfig {
@@ -66,6 +65,7 @@ export interface DopplerPreDeploymentConfig {
   symbol: string;
   totalSupply: bigint;
   numTokensToSell: bigint;
+  tokenURI: string;
 
   // Time parameters
   blockTimestamp: number;
