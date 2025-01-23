@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Address } from "viem";
+import { Address, zeroAddress } from "viem";
 import { ReadDerc20, ReadFactory } from "doppler-v3-sdk";
 import { getDrift } from "../utils/drift";
 
@@ -59,19 +59,23 @@ const getCreationData = async (airlock: Address) => {
 };
 
 const getPoolCreationData = async (poolCreation: PoolCreationData) => {
+  const { numeraire, asset } = poolCreation;
+  const numeraireAddress = numeraire.contract.address;
   const [assetData, numeraireData] = await Promise.all([
     Promise.all([
-      poolCreation.asset.getName(),
-      poolCreation.asset.getSymbol(),
-      poolCreation.asset.getDecimals(),
-      poolCreation.asset.getTotalSupply(),
-      poolCreation.asset.getBalanceOf(poolCreation.pool),
+      asset.getName(),
+      asset.getSymbol(),
+      asset.getDecimals(),
+      asset.getTotalSupply(),
+      asset.getBalanceOf(poolCreation.pool),
     ]),
     Promise.all([
-      poolCreation.numeraire.getName(),
-      poolCreation.numeraire.getSymbol(),
-      poolCreation.numeraire.getDecimals(),
-      poolCreation.numeraire.getBalanceOf(poolCreation.pool),
+      numeraireAddress != zeroAddress ? numeraire.getName() : "Ether",
+      numeraireAddress != zeroAddress ? numeraire.getSymbol() : "WETH",
+      numeraireAddress != zeroAddress ? numeraire.getDecimals() : 18,
+      numeraireAddress != zeroAddress
+        ? numeraire.getBalanceOf(poolCreation.pool)
+        : 0n,
     ]),
   ]);
 

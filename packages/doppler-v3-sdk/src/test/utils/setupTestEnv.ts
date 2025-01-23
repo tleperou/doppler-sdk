@@ -14,7 +14,8 @@ import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
-import { Clients, DopplerV3Addresses } from '../../types';
+import { DopplerV3Addresses } from '../../types';
+import { Clients } from '../types';
 
 interface TestEnvironment {
   clients: Clients;
@@ -88,7 +89,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
   };
 
   return {
-    clients: { publicClient, walletClient, testClient },
+    clients: {
+      publicClient,
+      walletClient,
+      testClient,
+    },
     addresses,
   };
 }
