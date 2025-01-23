@@ -10,7 +10,8 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry } from 'viem/chains';
-import { Clients, DopplerV3Addresses } from '../../types';
+import { DopplerV3Addresses } from '../../types';
+import { Clients } from '../types';
 import {
   DeployDopplerFactoryABI,
   DeployDopplerFactoryDeployedBytecode,

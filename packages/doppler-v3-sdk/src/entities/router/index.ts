@@ -1,1 +1,1 @@
-export * from './ReadRouter';
+export { ReadWriteRouter } from './ReadWriteRouter';

@@ -1,6 +1,6 @@
 import { Address } from 'viem';
 
-export interface DopplerV3Addresses {
+export type DopplerV3Addresses = {
   airlock: Address;
   tokenFactory: Address;
   governanceFactory: Address;
@@ -8,12 +8,12 @@ export interface DopplerV3Addresses {
   v3Initializer: Address;
   universalRouter: Address;
   basicRouter: Address;
-}
+};
 
-export interface PoolKey {
+export type PoolKey = {
   currency0: Address;
   currency1: Address;
   fee: number;
   tickSpacing: number;
   hooks: Address;
-}
+};

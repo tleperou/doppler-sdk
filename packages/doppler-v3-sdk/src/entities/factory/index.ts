@@ -1,2 +1,2 @@
-export * from './ReadFactory';
-export * from './ReadWriteFactory';
+export { ReadFactory } from './ReadFactory';
+export { ReadWriteFactory } from './ReadWriteFactory';

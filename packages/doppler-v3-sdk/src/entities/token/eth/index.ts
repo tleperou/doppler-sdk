@@ -1,1 +1,1 @@
-export * from './ReadEth';
+export { ReadEth } from './ReadEth';

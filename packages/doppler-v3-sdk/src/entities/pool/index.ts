@@ -1,1 +1,1 @@
-export * from './ReadUniswapV3Pool';
+export { ReadUniswapV3Pool } from './ReadUniswapV3Pool';

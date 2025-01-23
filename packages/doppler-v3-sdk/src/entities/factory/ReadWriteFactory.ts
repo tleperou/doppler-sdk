@@ -253,11 +253,16 @@ export class ReadWriteFactory extends ReadFactory {
   public async encodeCreateData(
     params: CreateV3PoolParams
   ): Promise<CreateParams> {
+    const createData = this.encode(params);
+
     if (!params.v3PoolConfig) {
       throw new Error('V3 pool config is undefined');
     }
 
-    const createData = this.encode(params);
+    if (!params.vestingConfig) {
+      throw new Error('Vesting config is undefined');
+    }
+
     const { asset } = await this.simulateCreate(createData);
     const isToken0 = Number(asset) < Number(params.numeraire);
 
