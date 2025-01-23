@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { addresses } from "../addresses";
-import {
-  encodeAbiParameters,
-  parseEther,
-  Hex,
-  Address,
-  encodePacked,
-  zeroAddress,
-} from "viem";
+import { encodeAbiParameters, parseEther, Hex, Address } from "viem";
 import { useReadContract, useAccount, useWalletClient } from "wagmi";
 import { MigratorABI } from "../abis/MigratorABI";
 import { CreateParams, ReadWriteFactory } from "doppler-v3-sdk";
@@ -24,6 +17,8 @@ const DEFAULT_END_TICK = 200040;
 const DEFAULT_NUM_POSITIONS = 10;
 const DEFAULT_MAX_SHARE_TO_BE_SOLD = parseEther("0.2");
 const DEFAULT_MAX_SHARE_TO_BOND = parseEther("0.5");
+const DEFAULT_INITIAL_SUPPLY = parseEther("100000000"); // 1b
+const DEFAULT_NUM_TOKENS_TO_SELL = parseEther("100000000"); // 100m
 
 function DeployDoppler() {
   const account = useAccount();
@@ -183,8 +178,12 @@ function DeployDoppler() {
       if (!weth) throw new Error("WETH address not loaded");
 
       const args: CreateParams = {
-        initialSupply: parseEther(initialSupply),
-        numTokensToSell: parseEther(numTokensToSell),
+        initialSupply: showAdvanced
+          ? parseEther(initialSupply)
+          : DEFAULT_INITIAL_SUPPLY,
+        numTokensToSell: showAdvanced
+          ? parseEther(numTokensToSell)
+          : DEFAULT_NUM_TOKENS_TO_SELL,
         numeraire: weth,
         tokenFactory,
         tokenFactoryData,
@@ -269,144 +268,142 @@ function DeployDoppler() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="initialSupply">
-            Initial Supply (in tokens)
-            <button
-              type="button"
-              className="inline-default-button"
-              onClick={() => {
-                setInitialSupply("1000000000");
-                setNumTokensToSell("1000000000");
-              }}
-            >
-              use default
-            </button>
+          <label className="advanced-toggle">
+            <input
+              type="checkbox"
+              checked={showAdvanced}
+              onChange={(e) => setShowAdvanced(e.target.checked)}
+            />
+            Show Advanced Options
           </label>
-          <input
-            type="number"
-            id="initialSupply"
-            value={initialSupply}
-            onChange={(e) => setInitialSupply(e.target.value)}
-            required
-            placeholder="Enter initial token supply"
-            min="0"
-          />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="numTokensToSell">Number of Tokens to Sell</label>
-          <input
-            type="number"
-            id="numTokensToSell"
-            value={numTokensToSell}
-            onChange={(e) => setNumTokensToSell(e.target.value)}
-            required
-            placeholder="Enter number of tokens to sell"
-            min="0"
-          />
-
-          <div className="form-group">
-            <label className="advanced-toggle">
+        {showAdvanced && (
+          <>
+            <div className="form-group">
+              <label htmlFor="initialSupply">
+                Initial Supply (in tokens)
+                <button
+                  type="button"
+                  className="inline-default-button"
+                  onClick={() => {
+                    setInitialSupply("1000000000");
+                    setNumTokensToSell("1000000000");
+                  }}
+                >
+                  use default
+                </button>
+              </label>
               <input
-                type="checkbox"
-                checked={showAdvanced}
-                onChange={(e) => setShowAdvanced(e.target.checked)}
+                type="number"
+                id="initialSupply"
+                value={initialSupply}
+                onChange={(e) => setInitialSupply(e.target.value)}
+                required
+                placeholder="Enter initial token supply"
+                min="0"
               />
-              Show Advanced Options
-            </label>
-          </div>
+            </div>
 
-          {showAdvanced && (
-            <>
-              <div className="form-group">
-                <label htmlFor="startTick">
-                  Start Tick (will be rounded to nearest {TICK_SPACING})
-                </label>
-                <input
-                  type="number"
-                  id="startTick"
-                  value={startTick}
-                  onChange={handleStartTickChange}
-                  onBlur={handleStartTickBlur}
-                  required
-                  placeholder={`Enter start tick (multiple of ${TICK_SPACING})`}
-                />
-                {startTick && Number(startTick) % TICK_SPACING !== 0 && (
-                  <span className="error-message">
-                    Start tick must be divisible by {TICK_SPACING}
-                  </span>
-                )}
-              </div>
+            <div className="form-group">
+              <label htmlFor="numTokensToSell">Number of Tokens to Sell</label>
+              <input
+                type="number"
+                id="numTokensToSell"
+                value={numTokensToSell}
+                onChange={(e) => setNumTokensToSell(e.target.value)}
+                required
+                placeholder="Enter number of tokens to sell"
+                min="0"
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="endTick">
-                  End Tick (will be rounded to nearest {TICK_SPACING})
-                </label>
-                <input
-                  type="number"
-                  id="endTick"
-                  value={endTick}
-                  onChange={handleEndTickChange}
-                  onBlur={handleEndTickBlur}
-                  required
-                  placeholder={`Enter end tick (multiple of ${TICK_SPACING})`}
-                />
-                {endTick && Number(endTick) % TICK_SPACING !== 0 && (
-                  <span className="error-message">
-                    End tick must be divisible by {TICK_SPACING}
-                  </span>
-                )}
-              </div>
+            <div className="form-group">
+              <label htmlFor="startTick">
+                Start Tick (will be rounded to nearest {TICK_SPACING})
+              </label>
+              <input
+                type="number"
+                id="startTick"
+                value={startTick}
+                onChange={handleStartTickChange}
+                onBlur={handleStartTickBlur}
+                required
+                placeholder={`Enter start tick (multiple of ${TICK_SPACING})`}
+              />
+              {startTick && Number(startTick) % TICK_SPACING !== 0 && (
+                <span className="error-message">
+                  Start tick must be divisible by {TICK_SPACING}
+                </span>
+              )}
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="numPositions">Number of Positions</label>
-                <input
-                  type="number"
-                  id="numPositions"
-                  value={numPositions}
-                  onChange={handleNumPositionsChange}
-                  onBlur={handleNumPositionsBlur}
-                  required
-                  placeholder={`Enter number of positions`}
-                />
-              </div>
+            <div className="form-group">
+              <label htmlFor="endTick">
+                End Tick (will be rounded to nearest {TICK_SPACING})
+              </label>
+              <input
+                type="number"
+                id="endTick"
+                value={endTick}
+                onChange={handleEndTickChange}
+                onBlur={handleEndTickBlur}
+                required
+                placeholder={`Enter end tick (multiple of ${TICK_SPACING})`}
+              />
+              {endTick && Number(endTick) % TICK_SPACING !== 0 && (
+                <span className="error-message">
+                  End tick must be divisible by {TICK_SPACING}
+                </span>
+              )}
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="maxShareToBeSold">Max Share to Be Sold</label>
-                <input
-                  type="number"
-                  id="maxShareToBeSold"
-                  value={maxShareToBeSold}
-                  onChange={handleMaxShareToBeSoldChange}
-                  onBlur={handleMaxShareToSoldBlur}
-                  required
-                  placeholder={`Enter max share to be sold`}
-                />
-              </div>
+            <div className="form-group">
+              <label htmlFor="numPositions">Number of Positions</label>
+              <input
+                type="number"
+                id="numPositions"
+                value={numPositions}
+                onChange={handleNumPositionsChange}
+                onBlur={handleNumPositionsBlur}
+                required
+                placeholder={`Enter number of positions`}
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="maxShareToBond">Max Share to Bond</label>
-                <input
-                  type="number"
-                  id="maxShareToBond"
-                  value={maxShareToBond}
-                  onChange={handleMaxShareToBondChange}
-                  onBlur={handleMaxShareToBondBlur}
-                  required
-                  placeholder={`Enter max share to bond`}
-                />
-              </div>
-            </>
-          )}
-        </div>
+            <div className="form-group">
+              <label htmlFor="maxShareToBeSold">Max Share to Be Sold</label>
+              <input
+                type="number"
+                id="maxShareToBeSold"
+                value={maxShareToBeSold}
+                onChange={handleMaxShareToBeSoldChange}
+                onBlur={handleMaxShareToSoldBlur}
+                required
+                placeholder={`Enter max share to be sold`}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="maxShareToBond">Max Share to Bond</label>
+              <input
+                type="number"
+                id="maxShareToBond"
+                value={maxShareToBond}
+                onChange={handleMaxShareToBondChange}
+                onBlur={handleMaxShareToBondBlur}
+                required
+                placeholder={`Enter max share to bond`}
+              />
+            </div>
+          </>
+        )}
 
         <button
           type="submit"
           className="deploy-button"
           disabled={
             isDeploying ||
-            !initialSupply ||
-            !numTokensToSell ||
             !tokenName ||
             !tokenSymbol ||
             (showAdvanced &&
@@ -416,6 +413,8 @@ function DeployDoppler() {
                 Number(endTick) % TICK_SPACING !== 0 ||
                 !numPositions ||
                 !maxShareToBeSold ||
+                !initialSupply ||
+                !numTokensToSell ||
                 !maxShareToBond))
           }
         >
