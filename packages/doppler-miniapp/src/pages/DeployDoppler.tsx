@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { addresses } from "../addresses";
-import { encodeAbiParameters, parseEther, Hex, Address } from "viem";
+import { Address } from "viem";
 import { useReadContract, useAccount, useWalletClient } from "wagmi";
 import { MigratorABI } from "../abis/MigratorABI";
-import { CreateParams, ReadWriteFactory } from "doppler-v3-sdk";
+import { ReadWriteFactory, CreateV3PoolParams } from "doppler-v3-sdk";
 import { getDrift } from "../utils/drift";
 
 const TICK_SPACING = 60;
@@ -11,14 +11,6 @@ const TICK_SPACING = 60;
 function roundToTickSpacing(tick: number): number {
   return Math.round(tick / TICK_SPACING) * TICK_SPACING;
 }
-
-const DEFAULT_START_TICK = 167520;
-const DEFAULT_END_TICK = 200040;
-const DEFAULT_NUM_POSITIONS = 10;
-const DEFAULT_MAX_SHARE_TO_BE_SOLD = parseEther("0.2");
-const DEFAULT_MAX_SHARE_TO_BOND = parseEther("0.5");
-const DEFAULT_INITIAL_SUPPLY = parseEther("100000000"); // 1b
-const DEFAULT_NUM_TOKENS_TO_SELL = parseEther("100000000"); // 100m
 
 function DeployDoppler() {
   const account = useAccount();
@@ -107,131 +99,38 @@ function DeployDoppler() {
     }
   };
 
-  const generateRandomSalt = () => {
-    const array = new Uint8Array(32);
-    for (let i = 0; i < 32; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
-    // XOR addr with the random bytes
-    if (account.address) {
-      const addressBytes = account.address.slice(2).padStart(40, "0");
-      // XOR first 20 bytes with the address
-      for (let i = 0; i < 20; i++) {
-        const addressByte = parseInt(
-          addressBytes.slice(i * 2, (i + 1) * 2),
-          16
-        );
-        array[i] ^= addressByte;
-      }
-    }
-    return `0x${Array.from(array)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")}`;
-  };
-
   const handleDeploy = async (e: React.FormEvent) => {
     if (!walletClient) throw new Error("Wallet client not found");
     e.preventDefault();
     setIsDeploying(true);
     try {
-      // Encode the various data fields
-      const tokenFactoryData = encodeAbiParameters(
-        [
-          { type: "string" },
-          { type: "string" },
-          { type: "uint256" },
-          { type: "uint256" },
-          { type: "address[]" },
-          { type: "uint256[]" },
-        ],
-        [tokenName, tokenSymbol, 0n, 0n, [], []]
-      );
-
-      const governanceFactoryData = encodeAbiParameters(
-        [{ type: "string" }],
-        [tokenName]
-      );
-
-      let poolInitializerData = encodeAbiParameters(
-        [
-          { type: "uint24" },
-          { type: "int24" },
-          { type: "int24" },
-          { type: "uint16" },
-          { type: "uint256" },
-          { type: "uint256" },
-        ],
-        [
-          3000,
-          showAdvanced ? Number(startTick) : DEFAULT_START_TICK,
-          showAdvanced ? Number(endTick) : DEFAULT_END_TICK,
-          showAdvanced ? Number(numPositions) : DEFAULT_NUM_POSITIONS,
-          showAdvanced
-            ? parseEther(maxShareToBeSold)
-            : DEFAULT_MAX_SHARE_TO_BE_SOLD,
-          showAdvanced ? parseEther(maxShareToBond) : DEFAULT_MAX_SHARE_TO_BOND,
-        ]
-      );
-
-      // Generate a random salt
-      const salt = generateRandomSalt();
       if (!weth) throw new Error("WETH address not loaded");
 
-      const args: CreateParams = {
-        initialSupply: showAdvanced
-          ? parseEther(initialSupply)
-          : DEFAULT_INITIAL_SUPPLY,
-        numTokensToSell: showAdvanced
-          ? parseEther(numTokensToSell)
-          : DEFAULT_NUM_TOKENS_TO_SELL,
-        numeraire: weth,
-        tokenFactory,
-        tokenFactoryData,
-        governanceFactory,
-        governanceFactoryData,
-        poolInitializer: v3Initializer,
-        poolInitializerData,
-        liquidityMigrator,
-        liquidityMigratorData: "0x",
+      const drift = getDrift(walletClient);
+      const createV3PoolParams: CreateV3PoolParams = {
         integrator: account.address as Address,
-        salt: salt as Hex,
+        userAddress: account.address as Address,
+        numeraire: weth,
+        contracts: {
+          tokenFactory,
+          governanceFactory,
+          poolInitializer: v3Initializer,
+          liquidityMigrator,
+        },
+        tokenConfig: {
+          name: tokenName,
+          symbol: tokenSymbol,
+          tokenURI: `https://pure.xyz/token/${tokenName}`,
+        },
+        v3PoolConfig: "default",
+        vestingConfig: "default",
+        saleConfig: "default",
       };
 
-      const drift = getDrift(walletClient);
       const readWriteFactory = new ReadWriteFactory(airlock, drift);
-
-      const { asset } = await readWriteFactory.airlock.simulateWrite("create", {
-        createData: args,
-      });
-
-      const isToken0 = Number(asset) < Number(weth);
-      if (isToken0) {
-        poolInitializerData = encodeAbiParameters(
-          [
-            { type: "uint24" },
-            { type: "int24" },
-            { type: "int24" },
-            { type: "uint16" },
-            { type: "uint256" },
-            { type: "uint256" },
-          ],
-          [
-            3000,
-            showAdvanced ? Number(-endTick) : -DEFAULT_END_TICK,
-            showAdvanced ? Number(-startTick) : -DEFAULT_START_TICK,
-            showAdvanced ? Number(numPositions) : DEFAULT_NUM_POSITIONS,
-            showAdvanced
-              ? parseEther(maxShareToBeSold)
-              : DEFAULT_MAX_SHARE_TO_BE_SOLD,
-            showAdvanced
-              ? parseEther(maxShareToBond)
-              : DEFAULT_MAX_SHARE_TO_BOND,
-          ]
-        );
-        args.poolInitializerData = poolInitializerData;
-      }
-
-      await readWriteFactory.create(args);
+      const createData =
+        await readWriteFactory.encodeCreateData(createV3PoolParams);
+      await readWriteFactory.create(createData);
     } catch (error) {
       console.error("Deployment failed:", error);
     } finally {
