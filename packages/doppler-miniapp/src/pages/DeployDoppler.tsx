@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { addresses } from "../addresses";
-import { Address } from "viem";
 import { useReadContract, useAccount, useWalletClient } from "wagmi";
 import { MigratorABI } from "../abis/MigratorABI";
 import { ReadWriteFactory, CreateV3PoolParams } from "doppler-v3-sdk";
@@ -105,16 +104,16 @@ function DeployDoppler() {
     setIsDeploying(true);
     try {
       if (!weth) throw new Error("WETH address not loaded");
+      if (!account.address) throw new Error("Account address not found");
 
-      const drift = getDrift(walletClient);
       const createV3PoolParams: CreateV3PoolParams = {
-        integrator: account.address as Address,
-        userAddress: account.address as Address,
+        integrator: account.address,
+        userAddress: account.address,
         numeraire: weth,
         contracts: {
           tokenFactory,
           governanceFactory,
-          poolInitializer: v3Initializer,
+          v3Initializer,
           liquidityMigrator,
         },
         tokenConfig: {
@@ -127,10 +126,10 @@ function DeployDoppler() {
         saleConfig: "default",
       };
 
-      const readWriteFactory = new ReadWriteFactory(airlock, drift);
-      const createData =
-        await readWriteFactory.encodeCreateData(createV3PoolParams);
-      await readWriteFactory.create(createData);
+      const drift = getDrift(walletClient);
+      const rwFactory = new ReadWriteFactory(airlock, drift);
+      const createData = await rwFactory.encodeCreateData(createV3PoolParams);
+      await rwFactory.create(createData);
     } catch (error) {
       console.error("Deployment failed:", error);
     } finally {
