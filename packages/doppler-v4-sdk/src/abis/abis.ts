@@ -1,621 +1,3 @@
-export const customRouterAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      {
-        name: 'swapRouter_',
-        type: 'address',
-        internalType: 'contract PoolSwapTest',
-      },
-      { name: 'quoter_', type: 'address', internalType: 'contract Quoter' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'IS_TEST',
-    inputs: [],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'buy',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'int256', internalType: 'int256' },
-    ],
-    outputs: [
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-    ],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'buyExactIn',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: 'bought', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'buyExactOut',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: 'spent', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'computeBuyExactOut',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'computeSellExactOut',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'excludeArtifacts',
-    inputs: [],
-    outputs: [
-      {
-        name: 'excludedArtifacts_',
-        type: 'string[]',
-        internalType: 'string[]',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'excludeContracts',
-    inputs: [],
-    outputs: [
-      {
-        name: 'excludedContracts_',
-        type: 'address[]',
-        internalType: 'address[]',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'excludeSelectors',
-    inputs: [],
-    outputs: [
-      {
-        name: 'excludedSelectors_',
-        type: 'tuple[]',
-        internalType: 'struct StdInvariant.FuzzSelector[]',
-        components: [
-          { name: 'addr', type: 'address', internalType: 'address' },
-          { name: 'selectors', type: 'bytes4[]', internalType: 'bytes4[]' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'excludeSenders',
-    inputs: [],
-    outputs: [
-      {
-        name: 'excludedSenders_',
-        type: 'address[]',
-        internalType: 'address[]',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'failed',
-    inputs: [],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'mintAndBuy',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'int256', internalType: 'int256' },
-    ],
-    outputs: [
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'quoter',
-    inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'contract Quoter' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'sell',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'int256', internalType: 'int256' },
-    ],
-    outputs: [
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'sellExactIn',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: 'received', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'sellExactOut',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: 'sold', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'swapRouter',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract PoolSwapTest' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'targetArtifactSelectors',
-    inputs: [],
-    outputs: [
-      {
-        name: 'targetedArtifactSelectors_',
-        type: 'tuple[]',
-        internalType: 'struct StdInvariant.FuzzArtifactSelector[]',
-        components: [
-          { name: 'artifact', type: 'string', internalType: 'string' },
-          { name: 'selectors', type: 'bytes4[]', internalType: 'bytes4[]' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'targetArtifacts',
-    inputs: [],
-    outputs: [
-      {
-        name: 'targetedArtifacts_',
-        type: 'string[]',
-        internalType: 'string[]',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'targetContracts',
-    inputs: [],
-    outputs: [
-      {
-        name: 'targetedContracts_',
-        type: 'address[]',
-        internalType: 'address[]',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'targetInterfaces',
-    inputs: [],
-    outputs: [
-      {
-        name: 'targetedInterfaces_',
-        type: 'tuple[]',
-        internalType: 'struct StdInvariant.FuzzInterface[]',
-        components: [
-          { name: 'addr', type: 'address', internalType: 'address' },
-          { name: 'artifacts', type: 'string[]', internalType: 'string[]' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'targetSelectors',
-    inputs: [],
-    outputs: [
-      {
-        name: 'targetedSelectors_',
-        type: 'tuple[]',
-        internalType: 'struct StdInvariant.FuzzSelector[]',
-        components: [
-          { name: 'addr', type: 'address', internalType: 'address' },
-          { name: 'selectors', type: 'bytes4[]', internalType: 'bytes4[]' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'targetSenders',
-    inputs: [],
-    outputs: [
-      {
-        name: 'targetedSenders_',
-        type: 'address[]',
-        internalType: 'address[]',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'event',
-    name: 'log',
-    inputs: [
-      { name: '', type: 'string', indexed: false, internalType: 'string' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_address',
-    inputs: [
-      { name: '', type: 'address', indexed: false, internalType: 'address' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_array',
-    inputs: [
-      {
-        name: 'val',
-        type: 'uint256[]',
-        indexed: false,
-        internalType: 'uint256[]',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_array',
-    inputs: [
-      {
-        name: 'val',
-        type: 'int256[]',
-        indexed: false,
-        internalType: 'int256[]',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_array',
-    inputs: [
-      {
-        name: 'val',
-        type: 'address[]',
-        indexed: false,
-        internalType: 'address[]',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_bytes',
-    inputs: [
-      { name: '', type: 'bytes', indexed: false, internalType: 'bytes' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_bytes32',
-    inputs: [
-      { name: '', type: 'bytes32', indexed: false, internalType: 'bytes32' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_int',
-    inputs: [
-      { name: '', type: 'int256', indexed: false, internalType: 'int256' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_address',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'address', indexed: false, internalType: 'address' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_array',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      {
-        name: 'val',
-        type: 'uint256[]',
-        indexed: false,
-        internalType: 'uint256[]',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_array',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      {
-        name: 'val',
-        type: 'int256[]',
-        indexed: false,
-        internalType: 'int256[]',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_array',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      {
-        name: 'val',
-        type: 'address[]',
-        indexed: false,
-        internalType: 'address[]',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_bytes',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'bytes', indexed: false, internalType: 'bytes' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_bytes32',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'bytes32', indexed: false, internalType: 'bytes32' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_decimal_int',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'int256', indexed: false, internalType: 'int256' },
-      {
-        name: 'decimals',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_decimal_uint',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'uint256', indexed: false, internalType: 'uint256' },
-      {
-        name: 'decimals',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_int',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'int256', indexed: false, internalType: 'int256' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_string',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'string', indexed: false, internalType: 'string' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_named_uint',
-    inputs: [
-      { name: 'key', type: 'string', indexed: false, internalType: 'string' },
-      { name: 'val', type: 'uint256', indexed: false, internalType: 'uint256' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_string',
-    inputs: [
-      { name: '', type: 'string', indexed: false, internalType: 'string' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'log_uint',
-    inputs: [
-      { name: '', type: 'uint256', indexed: false, internalType: 'uint256' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'logs',
-    inputs: [
-      { name: '', type: 'bytes', indexed: false, internalType: 'bytes' },
-    ],
-    anonymous: false,
-  },
-] as const;
-
 export const poolManagerAbi = [
   {
     type: 'function',
@@ -1831,6 +1213,7 @@ export const derc20Abi = [
       { name: 'vestingDuration_', type: 'uint256', internalType: 'uint256' },
       { name: 'recipients_', type: 'address[]', internalType: 'address[]' },
       { name: 'amounts_', type: 'uint256[]', internalType: 'uint256[]' },
+      { name: 'tokenURI_', type: 'string', internalType: 'string' },
     ],
     stateMutability: 'nonpayable',
   },
@@ -2098,6 +1481,13 @@ export const derc20Abi = [
   {
     type: 'function',
     name: 'symbol',
+    inputs: [],
+    outputs: [{ name: '', type: 'string', internalType: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'tokenURI',
     inputs: [],
     outputs: [{ name: '', type: 'string', internalType: 'string' }],
     stateMutability: 'view',
@@ -3036,81 +2426,6 @@ export const governanceFactoryAbi = [
   { type: 'error', name: 'NotAirlock', inputs: [] },
 ] as const;
 
-export const uniswapRouterAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      {
-        name: '_manager',
-        type: 'address',
-        internalType: 'contract IPoolManager',
-      },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'manager',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract IPoolManager' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'swap',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      {
-        name: 'params',
-        type: 'tuple',
-        internalType: 'struct IPoolManager.SwapParams',
-        components: [
-          { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
-          { name: 'amountSpecified', type: 'int256', internalType: 'int256' },
-          {
-            name: 'sqrtPriceLimitX96',
-            type: 'uint160',
-            internalType: 'uint160',
-          },
-        ],
-      },
-      {
-        name: 'testSettings',
-        type: 'tuple',
-        internalType: 'struct PoolSwapTest.TestSettings',
-        components: [
-          { name: 'takeClaims', type: 'bool', internalType: 'bool' },
-          { name: 'settleUsingBurn', type: 'bool', internalType: 'bool' },
-        ],
-      },
-      { name: 'hookData', type: 'bytes', internalType: 'bytes' },
-    ],
-    outputs: [{ name: 'delta', type: 'int256', internalType: 'BalanceDelta' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'unlockCallback',
-    inputs: [{ name: 'rawData', type: 'bytes', internalType: 'bytes' }],
-    outputs: [{ name: '', type: 'bytes', internalType: 'bytes' }],
-    stateMutability: 'nonpayable',
-  },
-  { type: 'error', name: 'NoSwapOccurred', inputs: [] },
-] as const;
-
 export const uniswapV5InitializerAbi = [
   {
     type: 'constructor',
@@ -3185,3 +2500,98 @@ export const uniswapV5InitializerAbi = [
   { type: 'error', name: 'InvalidTokenOrder', inputs: [] },
   { type: 'error', name: 'OnlyAirlock', inputs: [] },
 ];
+
+export const basicRouterAbi = [
+  {
+    type: 'constructor',
+    inputs: [{ name: '_router', type: 'address', internalType: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'exactInputSingleV3',
+    inputs: [
+      { name: 'pool', type: 'address', internalType: 'address' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
+      { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
+      { name: 'amountOutMinimum', type: 'uint256', internalType: 'uint256' },
+      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'exactInputSingleV4',
+    inputs: [
+      {
+        name: 'key',
+        type: 'tuple',
+        internalType: 'struct PoolKey',
+        components: [
+          { name: 'currency0', type: 'address', internalType: 'Currency' },
+          { name: 'currency1', type: 'address', internalType: 'Currency' },
+          { name: 'fee', type: 'uint24', internalType: 'uint24' },
+          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
+          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
+        ],
+      },
+      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
+      { name: 'amountIn', type: 'uint128', internalType: 'uint128' },
+      { name: 'amountOutMinimum', type: 'uint128', internalType: 'uint128' },
+      { name: 'hookData', type: 'bytes', internalType: 'bytes' },
+      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'exactOutputSingleV3',
+    inputs: [
+      { name: 'pool', type: 'address', internalType: 'address' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
+      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+      { name: 'amountInMaximum', type: 'uint256', internalType: 'uint256' },
+      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'exactOutputSingleV4',
+    inputs: [
+      {
+        name: 'key',
+        type: 'tuple',
+        internalType: 'struct PoolKey',
+        components: [
+          { name: 'currency0', type: 'address', internalType: 'Currency' },
+          { name: 'currency1', type: 'address', internalType: 'Currency' },
+          { name: 'fee', type: 'uint24', internalType: 'uint24' },
+          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
+          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
+        ],
+      },
+      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
+      { name: 'amountOut', type: 'uint128', internalType: 'uint128' },
+      { name: 'amountInMaximum', type: 'uint128', internalType: 'uint128' },
+      { name: 'hookData', type: 'bytes', internalType: 'bytes' },
+      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'router',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract IUniversalRouter' },
+    ],
+    stateMutability: 'view',
+  },
+] as const;

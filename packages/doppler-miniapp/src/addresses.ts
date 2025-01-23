@@ -6,4 +6,6 @@ export const addresses: DopplerV3Addresses = {
   v3Initializer: DOPPLER_V3_ADDRESSES[1301].v3Initializer,
   governanceFactory: DOPPLER_V3_ADDRESSES[1301].governanceFactory,
   liquidityMigrator: DOPPLER_V3_ADDRESSES[1301].liquidityMigrator,
+  universalRouter: DOPPLER_V3_ADDRESSES[1301].universalRouter,
+  basicRouter: DOPPLER_V3_ADDRESSES[1301].basicRouter,
 };
