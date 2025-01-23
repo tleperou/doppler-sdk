@@ -3,36 +3,36 @@ import { basicRouterAbi } from '@/abis';
 import { Address, Hex } from 'viem';
 import { PoolKey } from '@/types';
 
-interface TradeParams {
+export type TradeParams = {
   pool: Address;
   recipient: Address;
   zeroForOne: boolean;
   deadline: bigint;
-}
+};
 
-interface ExactInSingleV3Params extends TradeParams {
+export type ExactInSingleV3Params = TradeParams & {
   amountIn: bigint;
   amountOutMinimum: bigint;
-}
+};
 
-interface ExactOutSingleV3Params extends TradeParams {
+export type ExactOutSingleV3Params = TradeParams & {
   amountOut: bigint;
   amountInMaximum: bigint;
-}
+};
 
-interface ExactInSingleV4Params extends TradeParams {
+export type ExactInSingleV4Params = TradeParams & {
   amountIn: bigint;
   amountOutMinimum: bigint;
   key: PoolKey;
   hookData: Hex;
-}
+};
 
-interface ExactOutSingleV4Params extends TradeParams {
+export type ExactOutSingleV4Params = TradeParams & {
   amountOut: bigint;
   amountInMaximum: bigint;
   key: PoolKey;
   hookData: Hex;
-}
+};
 
 type BasicRouterABI = typeof basicRouterAbi;
 

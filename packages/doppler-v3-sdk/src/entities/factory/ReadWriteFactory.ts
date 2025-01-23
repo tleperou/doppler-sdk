@@ -8,6 +8,23 @@ import {
 import { ReadFactory, AirlockABI } from './ReadFactory';
 import { Address, encodeAbiParameters, Hex, parseEther } from 'viem';
 
+const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
+
+const DEFAULT_START_TICK = 167520;
+const DEFAULT_END_TICK = 200040;
+const DEFAULT_NUM_POSITIONS = 10;
+const DEFAULT_FEE = 3000; // 0.3% fee tier
+
+const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
+const DEFAULT_INITIAL_SUPPLY_INT = 1_000_000_000;
+const DEFAULT_NUM_TOKENS_TO_SELL_INT = 900_000_000;
+const DEFAULT_YEARLY_MINT_CAP_INT = 100_000_000;
+
+// Leave these as strings so that we know they are less than 1
+// note: must satisfy maxShareToBeSold + maxShareToBond <= 1
+const DEFAULT_MAX_SHARE_TO_BE_SOLD = '0.2';
+const DEFAULT_MAX_SHARE_TO_BE_BOND = '0.5';
+
 export interface CreateParams {
   initialSupply: bigint;
   numTokensToSell: bigint;
@@ -33,6 +50,11 @@ export interface V3PoolConfig {
   fee: number;
 }
 
+export interface SaleConfig {
+  initialSupply: bigint;
+  numTokensToSell: bigint;
+}
+
 export interface VestingConfig {
   yearlyMintCap: bigint;
   vestingDuration: bigint;
@@ -53,32 +75,15 @@ export interface InitializerContractDependencies {
   liquidityMigrator: Address;
 }
 
-export const defaultV3PoolConfig: V3PoolConfig = {
-  startTick: 167520,
-  endTick: 200040,
-  numPositions: 10,
-  maxShareToBeSold: parseEther('0.2'),
-  maxShareToBond: parseEther('0.5'),
-  fee: 3000,
-};
-
-export const defaultVestingConfig: VestingConfig = {
-  yearlyMintCap: parseEther('100000000'),
-  vestingDuration: BigInt(365 * 24 * 60 * 60), // 1 year
-  recipients: [],
-  amounts: [],
-};
-
 export interface CreateV3PoolParams {
+  integrator: Address;
   userAddress: Address; // used to generate salt
   numeraire: Address;
   contracts: InitializerContractDependencies;
-  initialSupply: bigint;
-  numTokensToSell: bigint;
   tokenConfig: TokenConfig;
-  v3PoolConfig?: V3PoolConfig;
-  vestingConfig?: VestingConfig;
-  integrator: Address;
+  saleConfig: SaleConfig | 'default';
+  v3PoolConfig: V3PoolConfig | 'default';
+  vestingConfig: VestingConfig | 'default';
 }
 
 export interface SimulateCreateResult {
@@ -89,27 +94,81 @@ export interface SimulateCreateResult {
   migrationPool: Hex;
 }
 
-interface DefaultConfigOptions {
-  useDefaultVesting: boolean;
-  useDefaultV3PoolConfig: boolean;
+interface DefaultConfigs {
+  defaultV3PoolConfig?: V3PoolConfig;
+  defaultVestingConfig?: VestingConfig;
+  defaultSaleConfig?: SaleConfig;
 }
 
 export class ReadWriteFactory extends ReadFactory {
   declare airlock: ReadWriteContract<AirlockABI>;
+  declare defaultV3PoolConfig: V3PoolConfig;
+  declare defaultVestingConfig: VestingConfig;
+  declare defaultSaleConfig: SaleConfig;
 
-  constructor(address: Address, drift: Drift<ReadWriteAdapter>) {
+  constructor(
+    address: Address,
+    drift: Drift<ReadWriteAdapter>,
+    defaultConfigs?: DefaultConfigs
+  ) {
     super(address, drift);
+
+    this.defaultV3PoolConfig = defaultConfigs?.defaultV3PoolConfig ?? {
+      startTick: DEFAULT_START_TICK,
+      endTick: DEFAULT_END_TICK,
+      numPositions: DEFAULT_NUM_POSITIONS,
+      maxShareToBeSold: parseEther(DEFAULT_MAX_SHARE_TO_BE_SOLD),
+      maxShareToBond: parseEther(DEFAULT_MAX_SHARE_TO_BE_BOND),
+      fee: DEFAULT_FEE,
+    };
+
+    this.defaultVestingConfig = defaultConfigs?.defaultVestingConfig ?? {
+      yearlyMintCap: parseEther(DEFAULT_YEARLY_MINT_CAP_INT.toString()),
+      vestingDuration: DEFAULT_VESTING_DURATION,
+      recipients: [],
+      amounts: [],
+    };
+
+    this.defaultSaleConfig = defaultConfigs?.defaultSaleConfig ?? {
+      initialSupply: parseEther(DEFAULT_INITIAL_SUPPLY_INT.toString()),
+      numTokensToSell: parseEther(DEFAULT_NUM_TOKENS_TO_SELL_INT.toString()),
+    };
+  }
+
+  private resolveConfig<T extends object>(
+    config: T | 'default',
+    defaults: T
+  ): T {
+    if (config === 'default') {
+      return { ...defaults };
+    }
+    return { ...config };
+  }
+
+  private resolveVestingConfig(
+    config: VestingConfig | 'default',
+    userAddress: Address
+  ): VestingConfig {
+    const base = config === 'default' ? this.defaultVestingConfig : config;
+
+    return {
+      ...base,
+      recipients: config === 'default' ? [userAddress] : [...base.recipients],
+      amounts: config === 'default' ? [base.yearlyMintCap] : [...base.amounts],
+    };
   }
 
   private generateRandomSalt = (account: Address) => {
     const array = new Uint8Array(32);
-    for (let i = 0; i < 32; i++) {
-      array[i] = Math.floor(Math.random() * 256);
+
+    if (typeof window !== 'undefined' && window.crypto) {
+      window.crypto.getRandomValues(array);
+    } else {
+      array.set(require('crypto').randomBytes(32));
     }
-    // XOR addr with the random bytes
+
     if (account) {
       const addressBytes = account.slice(2).padStart(40, '0');
-      // XOR first 20 bytes with the address
       for (let i = 0; i < 20; i++) {
         const addressByte = parseInt(
           addressBytes.slice(i * 2, (i + 1) * 2),
@@ -123,12 +182,7 @@ export class ReadWriteFactory extends ReadFactory {
       .join('')}`;
   };
 
-  private encodePoolInitializerData(config: CreateV3PoolParams): Hex {
-    const { v3PoolConfig } = config;
-
-    if (!v3PoolConfig) {
-      throw new Error('V3 pool config is undefined');
-    }
+  private encodePoolInitializerData(v3PoolConfig: V3PoolConfig): Hex {
     return encodeAbiParameters(
       [
         { type: 'uint24' },
@@ -149,13 +203,10 @@ export class ReadWriteFactory extends ReadFactory {
     );
   }
 
-  private encodeTokenFactoryData(config: CreateV3PoolParams): Hex {
-    const { tokenConfig, vestingConfig } = config;
-
-    if (!vestingConfig) {
-      throw new Error('Vesting config is undefined');
-    }
-
+  private encodeTokenFactoryData(
+    tokenConfig: TokenConfig,
+    vestingConfig: VestingConfig
+  ): Hex {
     return encodeAbiParameters(
       [
         { type: 'string' },
@@ -178,50 +229,49 @@ export class ReadWriteFactory extends ReadFactory {
     );
   }
 
-  private encodeGovernanceFactoryData(config: CreateV3PoolParams): Hex {
-    const { tokenConfig } = config;
+  private encodeGovernanceFactoryData(tokenConfig: TokenConfig): Hex {
     return encodeAbiParameters([{ type: 'string' }], [tokenConfig.name]);
   }
 
-  private encode(
-    params: CreateV3PoolParams,
-    options?: DefaultConfigOptions
-  ): CreateParams {
-    const {
-      userAddress,
-      initialSupply,
-      numTokensToSell,
-      numeraire,
-      integrator,
-      contracts,
-    } = params;
+  private encode(params: CreateV3PoolParams): {
+    createParams: CreateParams;
+    v3PoolConfig: V3PoolConfig;
+  } {
+    const { userAddress, numeraire, integrator, contracts, tokenConfig } =
+      params;
 
     if (!userAddress) {
       throw new Error('User address is required. Is a wallet connected?');
     }
 
-    if (options?.useDefaultV3PoolConfig || !params?.v3PoolConfig) {
-      params.v3PoolConfig = defaultV3PoolConfig;
-    }
+    const vestingConfig = this.resolveVestingConfig(
+      params.vestingConfig,
+      userAddress
+    );
 
-    if (options?.useDefaultVesting || !params?.vestingConfig) {
-      params.vestingConfig = defaultVestingConfig;
-      params.vestingConfig.recipients = [userAddress];
-      params.vestingConfig.amounts = [params.vestingConfig.yearlyMintCap];
-    }
+    const v3PoolConfig = this.resolveConfig(
+      params.v3PoolConfig,
+      this.defaultV3PoolConfig
+    );
 
-    if (
-      params?.v3PoolConfig?.startTick < 0 ||
-      params?.v3PoolConfig?.endTick < 0 ||
-      params?.v3PoolConfig?.startTick > params?.v3PoolConfig?.endTick
-    ) {
-      throw new Error('Invalid pool configuration');
+    const saleConfig = this.resolveConfig(
+      params.saleConfig,
+      this.defaultSaleConfig
+    );
+
+    if (v3PoolConfig.startTick > v3PoolConfig.endTick) {
+      throw new Error(
+        'Invalid start and end ticks. Start tick must be less than end tick.'
+      );
     }
 
     const salt = this.generateRandomSalt(userAddress) as Hex;
-    const governanceFactoryData = this.encodeGovernanceFactoryData(params);
-    const tokenFactoryData = this.encodeTokenFactoryData(params);
-    const poolInitializerData = this.encodePoolInitializerData(params);
+    const governanceFactoryData = this.encodeGovernanceFactoryData(tokenConfig);
+    const tokenFactoryData = this.encodeTokenFactoryData(
+      tokenConfig,
+      vestingConfig
+    );
+    const poolInitializerData = this.encodePoolInitializerData(v3PoolConfig);
     const liquidityMigratorData = '0x' as Hex;
 
     const {
@@ -230,6 +280,8 @@ export class ReadWriteFactory extends ReadFactory {
       poolInitializer,
       liquidityMigrator,
     } = contracts;
+
+    const { initialSupply, numTokensToSell } = saleConfig;
 
     const args: CreateParams = {
       initialSupply,
@@ -247,33 +299,28 @@ export class ReadWriteFactory extends ReadFactory {
       salt,
     };
 
-    return args;
+    return {
+      createParams: args,
+      v3PoolConfig,
+    };
   }
 
   public async encodeCreateData(
     params: CreateV3PoolParams
   ): Promise<CreateParams> {
-    const createData = this.encode(params);
-
-    if (!params.v3PoolConfig) {
-      throw new Error('V3 pool config is undefined');
-    }
-
-    if (!params.vestingConfig) {
-      throw new Error('Vesting config is undefined');
-    }
-
-    const { asset } = await this.simulateCreate(createData);
+    const { createParams, v3PoolConfig } = this.encode(params);
+    const { asset } = await this.simulateCreate(createParams);
     const isToken0 = Number(asset) < Number(params.numeraire);
 
     if (isToken0) {
       // invert the ticks
-      params.v3PoolConfig.startTick = -params.v3PoolConfig.startTick;
-      params.v3PoolConfig.endTick = -params.v3PoolConfig.endTick;
-      createData.poolInitializerData = this.encodePoolInitializerData(params);
+      v3PoolConfig.startTick = -v3PoolConfig.startTick;
+      v3PoolConfig.endTick = -v3PoolConfig.endTick;
+      createParams.poolInitializerData =
+        this.encodePoolInitializerData(v3PoolConfig);
     }
 
-    return createData;
+    return createParams;
   }
 
   public async create(
@@ -287,5 +334,14 @@ export class ReadWriteFactory extends ReadFactory {
     params: CreateParams
   ): Promise<SimulateCreateResult> {
     return this.airlock.simulateWrite('create', { createData: params });
+  }
+
+  public updateDefaultConfigs(configs: DefaultConfigs) {
+    this.defaultV3PoolConfig =
+      configs.defaultV3PoolConfig ?? this.defaultV3PoolConfig;
+    this.defaultVestingConfig =
+      configs.defaultVestingConfig ?? this.defaultVestingConfig;
+    this.defaultSaleConfig =
+      configs.defaultSaleConfig ?? this.defaultSaleConfig;
   }
 }
