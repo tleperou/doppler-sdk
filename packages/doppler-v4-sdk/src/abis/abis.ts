@@ -2426,7 +2426,7 @@ export const governanceFactoryAbi = [
   { type: 'error', name: 'NotAirlock', inputs: [] },
 ] as const;
 
-export const uniswapV5InitializerAbi = [
+export const uniswapV4InitializerAbi = [
   {
     type: 'constructor',
     inputs: [

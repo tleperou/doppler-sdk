@@ -1,44 +1,64 @@
-import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
-import { Address } from 'viem';
-import { onchainRouterAbi } from '@/abis/abis';
+import { ReadWriteContract, ReadWriteAdapter, Drift } from '@delvtech/drift';
+import { basicRouterAbi } from '@/abis';
+import { Address, Hex } from 'viem';
+import { PoolKey } from '@/types';
 
-type OnchainRouterABI = typeof onchainRouterAbi;
-
-export interface SwapParams {
-  tokenIn: Address;
-  tokenOut: Address;
-  amountSpecified: bigint;
-}
-
-export interface Pool {
-  tokenIn: Address;
-  tokenOut: Address;
-  fee: number;
+interface TradeParams {
   pool: Address;
-  version: boolean;
+  recipient: Address;
+  zeroForOne: boolean;
+  deadline: bigint;
 }
 
-export interface Quote {
-  path: readonly Pool[];
+interface ExactInSingleV3Params extends TradeParams {
   amountIn: bigint;
-  amountOut: bigint;
+  amountOutMinimum: bigint;
 }
 
-export class ReadRouter {
-  contract: ReadContract<OnchainRouterABI>;
+interface ExactOutSingleV3Params extends TradeParams {
+  amountOut: bigint;
+  amountInMaximum: bigint;
+}
 
-  constructor(address: Address, drift: Drift<ReadAdapter> = new Drift()) {
+interface ExactInSingleV4Params extends TradeParams {
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+  key: PoolKey;
+  hookData: Hex;
+}
+
+interface ExactOutSingleV4Params extends TradeParams {
+  amountOut: bigint;
+  amountInMaximum: bigint;
+  key: PoolKey;
+  hookData: Hex;
+}
+
+type BasicRouterABI = typeof basicRouterAbi;
+
+export class ReadWriteRouter {
+  contract: ReadWriteContract<BasicRouterABI>;
+
+  constructor(address: Address, drift: Drift<ReadWriteAdapter> = new Drift()) {
     this.contract = drift.contract({
-      abi: onchainRouterAbi,
+      abi: basicRouterAbi,
       address,
     });
   }
 
-  async routeExactInput(params: SwapParams): Promise<Quote> {
-    return this.contract.read('routeExactInput', { params });
+  async exactInputSingleV3(params: ExactInSingleV3Params): Promise<Hex> {
+    return this.contract.write('exactInputSingleV3', params);
   }
 
-  async routeExactOutput(params: SwapParams): Promise<Quote> {
-    return this.contract.read('routeExactOutput', { params });
+  async exactOutputSingleV3(params: ExactOutSingleV3Params): Promise<Hex> {
+    return this.contract.write('exactOutputSingleV3', params);
+  }
+
+  async exactInputSingleV4(params: ExactInSingleV4Params): Promise<Hex> {
+    return this.contract.write('exactInputSingleV4', params);
+  }
+
+  async exactOutputSingleV4(params: ExactOutSingleV4Params): Promise<Hex> {
+    return this.contract.write('exactOutputSingleV4', params);
   }
 }
