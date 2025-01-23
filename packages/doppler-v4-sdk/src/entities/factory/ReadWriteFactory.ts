@@ -22,6 +22,8 @@ export interface CreateParams {
   liquidityMigratorData: Hex;
   integrator: Address;
   salt: Hex;
+  hook: Hex;
+  token: Hex;
 }
 
 export class ReadWriteFactory extends ReadFactory {
