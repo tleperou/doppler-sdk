@@ -19,6 +19,7 @@ const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
 const DEFAULT_INITIAL_SUPPLY_INT = 1_000_000_000;
 const DEFAULT_NUM_TOKENS_TO_SELL_INT = 900_000_000;
 const DEFAULT_YEARLY_MINT_CAP_INT = 100_000_000;
+const DEFAULT_PRE_MINT_INT = 9_000_000; // 0.9% of the total supply
 
 // Leave these as strings so that we know they are less than 1
 // note: must satisfy maxShareToBeSold + maxShareToBond <= 1
@@ -94,7 +95,7 @@ export interface SimulateCreateResult {
   migrationPool: Hex;
 }
 
-interface DefaultConfigs {
+export interface DefaultConfigs {
   defaultV3PoolConfig?: V3PoolConfig;
   defaultVestingConfig?: VestingConfig;
   defaultSaleConfig?: SaleConfig;
@@ -154,7 +155,10 @@ export class ReadWriteFactory extends ReadFactory {
     return {
       ...base,
       recipients: config === 'default' ? [userAddress] : [...base.recipients],
-      amounts: config === 'default' ? [base.yearlyMintCap] : [...base.amounts],
+      amounts:
+        config === 'default'
+          ? [parseEther(DEFAULT_PRE_MINT_INT.toString())]
+          : [...base.amounts],
     };
   }
 
@@ -312,15 +316,18 @@ export class ReadWriteFactory extends ReadFactory {
     const { asset } = await this.simulateCreate(createParams);
     const isToken0 = Number(asset) < Number(params.numeraire);
 
+    let createParamsCopy = { ...createParams };
     if (isToken0) {
       // invert the ticks
       v3PoolConfig.startTick = -v3PoolConfig.startTick;
       v3PoolConfig.endTick = -v3PoolConfig.endTick;
-      createParams.poolInitializerData =
-        this.encodePoolInitializerData(v3PoolConfig);
+      createParamsCopy = {
+        ...createParamsCopy,
+        poolInitializerData: this.encodePoolInitializerData(v3PoolConfig),
+      };
     }
 
-    return createParams;
+    return createParamsCopy;
   }
 
   public async create(
