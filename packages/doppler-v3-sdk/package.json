@@ -1,7 +1,7 @@
 {
   "name": "doppler-v3-sdk",
   "author": "Whetstone Research",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.js",

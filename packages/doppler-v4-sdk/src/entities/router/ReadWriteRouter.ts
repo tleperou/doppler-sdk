@@ -1,38 +1,64 @@
 import { ReadWriteContract, ReadWriteAdapter, Drift } from '@delvtech/drift';
-import { customRouterAbi } from '@/abis';
+import { basicRouterAbi } from '@/abis';
 import { Address, Hex } from 'viem';
 import { PoolKey } from '@/types';
 
 interface TradeParams {
-  key: PoolKey;
-  amount: bigint;
+  pool: Address;
+  recipient: Address;
+  zeroForOne: boolean;
+  deadline: bigint;
 }
 
-type CustomRouterABI = typeof customRouterAbi;
+interface ExactInSingleV3Params extends TradeParams {
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+}
+
+interface ExactOutSingleV3Params extends TradeParams {
+  amountOut: bigint;
+  amountInMaximum: bigint;
+}
+
+interface ExactInSingleV4Params extends TradeParams {
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+  key: PoolKey;
+  hookData: Hex;
+}
+
+interface ExactOutSingleV4Params extends TradeParams {
+  amountOut: bigint;
+  amountInMaximum: bigint;
+  key: PoolKey;
+  hookData: Hex;
+}
+
+type BasicRouterABI = typeof basicRouterAbi;
 
 export class ReadWriteRouter {
-  contract: ReadWriteContract<CustomRouterABI>;
+  contract: ReadWriteContract<BasicRouterABI>;
 
   constructor(address: Address, drift: Drift<ReadWriteAdapter> = new Drift()) {
     this.contract = drift.contract({
-      abi: customRouterAbi,
+      abi: basicRouterAbi,
       address,
     });
   }
 
-  async buyExactIn(params: TradeParams): Promise<Hex> {
-    return this.contract.write('buyExactIn', params);
+  async exactInputSingleV3(params: ExactInSingleV3Params): Promise<Hex> {
+    return this.contract.write('exactInputSingleV3', params);
   }
 
-  async buyExactOut(params: TradeParams): Promise<Hex> {
-    return this.contract.write('buyExactOut', params);
+  async exactOutputSingleV3(params: ExactOutSingleV3Params): Promise<Hex> {
+    return this.contract.write('exactOutputSingleV3', params);
   }
 
-  async sellExactIn(params: TradeParams): Promise<Hex> {
-    return this.contract.write('sellExactIn', params);
+  async exactInputSingleV4(params: ExactInSingleV4Params): Promise<Hex> {
+    return this.contract.write('exactInputSingleV4', params);
   }
 
-  async sellExactOut(params: TradeParams): Promise<Hex> {
-    return this.contract.write('sellExactOut', params);
+  async exactOutputSingleV4(params: ExactOutSingleV4Params): Promise<Hex> {
+    return this.contract.write('exactOutputSingleV4', params);
   }
 }

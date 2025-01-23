@@ -14,11 +14,10 @@ export interface DopplerV4Addresses {
   governanceFactory: Address;
   migrator: Address;
   stateView: Address;
-  quoter: Address;
-  customRouter: Address;
+  basicRouter: Address;
+  universalRouter: Address;
   poolManager: Address;
   dopplerDeployer: Address;
-  uniRouter: Address;
 }
 
 export interface TokenConfig {
