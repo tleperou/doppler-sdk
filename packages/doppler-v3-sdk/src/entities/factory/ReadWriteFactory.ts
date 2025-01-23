@@ -24,16 +24,6 @@ export interface CreateParams {
   salt: Hex;
 }
 
-export interface Derc20Config {
-  name: string;
-  symbol: string;
-  yearlyMintCap: bigint;
-  vestingDuration: bigint;
-  recipients: Address[];
-  amounts: bigint[];
-  tokenURI: string;
-}
-
 export interface V3PoolConfig {
   startTick: number;
   endTick: number;
@@ -41,6 +31,19 @@ export interface V3PoolConfig {
   maxShareToBeSold: bigint;
   maxShareToBond: bigint;
   fee: number;
+}
+
+export interface VestingConfig {
+  yearlyMintCap: bigint;
+  vestingDuration: bigint;
+  recipients: Address[];
+  amounts: bigint[];
+}
+
+export interface TokenConfig {
+  name: string;
+  symbol: string;
+  tokenURI: string;
 }
 
 export interface InitializerContractDependencies {
@@ -59,14 +62,11 @@ export const defaultV3PoolConfig: V3PoolConfig = {
   fee: 3000,
 };
 
-export const defaultV3Derc20Config: Derc20Config = {
-  name: 'Doppler',
-  symbol: 'DOP',
+export const defaultVestingConfig: VestingConfig = {
   yearlyMintCap: parseEther('100000000'),
   vestingDuration: BigInt(365 * 24 * 60 * 60), // 1 year
   recipients: [],
   amounts: [],
-  tokenURI: '',
 };
 
 export interface CreateV3PoolParams {
@@ -75,8 +75,9 @@ export interface CreateV3PoolParams {
   contracts: InitializerContractDependencies;
   initialSupply: bigint;
   numTokensToSell: bigint;
-  v3PoolConfig: V3PoolConfig;
-  tokenConfig: Derc20Config;
+  tokenConfig: TokenConfig;
+  v3PoolConfig?: V3PoolConfig;
+  vestingConfig?: VestingConfig;
   integrator: Address;
 }
 
@@ -86,6 +87,11 @@ export interface SimulateCreateResult {
   governance: Hex;
   timelock: Hex;
   migrationPool: Hex;
+}
+
+interface DefaultConfigOptions {
+  useDefaultVesting: boolean;
+  useDefaultV3PoolConfig: boolean;
 }
 
 export class ReadWriteFactory extends ReadFactory {
@@ -119,6 +125,10 @@ export class ReadWriteFactory extends ReadFactory {
 
   private encodePoolInitializerData(config: CreateV3PoolParams): Hex {
     const { v3PoolConfig } = config;
+
+    if (!v3PoolConfig) {
+      throw new Error('V3 pool config is undefined');
+    }
     return encodeAbiParameters(
       [
         { type: 'uint24' },
@@ -140,7 +150,12 @@ export class ReadWriteFactory extends ReadFactory {
   }
 
   private encodeTokenFactoryData(config: CreateV3PoolParams): Hex {
-    const { tokenConfig } = config;
+    const { tokenConfig, vestingConfig } = config;
+
+    if (!vestingConfig) {
+      throw new Error('Vesting config is undefined');
+    }
+
     return encodeAbiParameters(
       [
         { type: 'string' },
@@ -154,10 +169,10 @@ export class ReadWriteFactory extends ReadFactory {
       [
         tokenConfig.name,
         tokenConfig.symbol,
-        tokenConfig.yearlyMintCap,
-        tokenConfig.vestingDuration,
-        tokenConfig.recipients,
-        tokenConfig.amounts,
+        vestingConfig.yearlyMintCap,
+        vestingConfig.vestingDuration,
+        vestingConfig.recipients,
+        vestingConfig.amounts,
         tokenConfig.tokenURI,
       ]
     );
@@ -168,7 +183,10 @@ export class ReadWriteFactory extends ReadFactory {
     return encodeAbiParameters([{ type: 'string' }], [tokenConfig.name]);
   }
 
-  private encode(params: CreateV3PoolParams): CreateParams {
+  private encode(
+    params: CreateV3PoolParams,
+    options?: DefaultConfigOptions
+  ): CreateParams {
     const {
       userAddress,
       initialSupply,
@@ -180,6 +198,16 @@ export class ReadWriteFactory extends ReadFactory {
 
     if (!userAddress) {
       throw new Error('User address is required. Is a wallet connected?');
+    }
+
+    if (options?.useDefaultV3PoolConfig || !params?.v3PoolConfig) {
+      params.v3PoolConfig = defaultV3PoolConfig;
+    }
+
+    if (options?.useDefaultVesting || !params?.vestingConfig) {
+      params.vestingConfig = defaultVestingConfig;
+      params.vestingConfig.recipients = [userAddress];
+      params.vestingConfig.amounts = [params.vestingConfig.yearlyMintCap];
     }
 
     if (
@@ -225,15 +253,21 @@ export class ReadWriteFactory extends ReadFactory {
   public async encodeCreateData(
     params: CreateV3PoolParams
   ): Promise<CreateParams> {
+    if (!params.v3PoolConfig) {
+      throw new Error('V3 pool config is undefined');
+    }
+
     const createData = this.encode(params);
     const { asset } = await this.simulateCreate(createData);
     const isToken0 = Number(asset) < Number(params.numeraire);
+
     if (isToken0) {
       // invert the ticks
       params.v3PoolConfig.startTick = -params.v3PoolConfig.startTick;
       params.v3PoolConfig.endTick = -params.v3PoolConfig.endTick;
       createData.poolInitializerData = this.encodePoolInitializerData(params);
     }
+
     return createData;
   }
 
