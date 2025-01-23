@@ -56,6 +56,7 @@ export interface TokenFactoryData {
   vestingDuration: bigint;
   recipients: Address[];
   amounts: bigint[];
+  tokenURI: string;
 }
 
 function computeCreate2Address(
@@ -117,6 +118,8 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
     ]
   );
 
+  const { poolManager, numTokensToSell, poolInitializer } = params;
+
   const hookInitHashData = encodeAbiParameters(
     [
       { type: 'address' },
@@ -134,8 +137,8 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       { type: 'address' },
     ],
     [
-      params.poolManager,
-      params.numTokensToSell,
+      poolManager,
+      numTokensToSell,
       minimumProceeds,
       maximumProceeds,
       startingTime,
@@ -146,7 +149,7 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       gamma,
       isToken0,
       numPDSlugs,
-      params.poolInitializer,
+      poolInitializer,
     ]
   );
 
@@ -154,8 +157,15 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
     encodePacked(['bytes', 'bytes'], [DopplerBytecode as Hex, hookInitHashData])
   );
 
-  const { name, symbol, yearlyMintCap, vestingDuration, recipients, amounts } =
-    params.tokenFactoryData;
+  const {
+    name,
+    symbol,
+    yearlyMintCap,
+    vestingDuration,
+    recipients,
+    amounts,
+    tokenURI,
+  } = params.tokenFactoryData;
 
   const tokenFactoryData = encodeAbiParameters(
     [
@@ -165,9 +175,20 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       { type: 'uint256' },
       { type: 'address[]' },
       { type: 'uint256[]' },
+      { type: 'string' },
     ],
-    [name, symbol, yearlyMintCap, vestingDuration, recipients, amounts]
+    [
+      name,
+      symbol,
+      yearlyMintCap,
+      vestingDuration,
+      recipients,
+      amounts,
+      tokenURI,
+    ]
   );
+
+  const { airlock, initialSupply } = params;
 
   const initHashData = encodeAbiParameters(
     [
@@ -180,17 +201,19 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       { type: 'uint256' },
       { type: 'address[]' },
       { type: 'uint256[]' },
+      { type: 'string' },
     ],
     [
       name,
       symbol,
-      params.initialSupply,
-      params.airlock,
-      params.airlock,
+      initialSupply,
+      airlock,
+      airlock,
       yearlyMintCap,
       vestingDuration,
       recipients,
       amounts,
+      tokenURI,
     ]
   );
 

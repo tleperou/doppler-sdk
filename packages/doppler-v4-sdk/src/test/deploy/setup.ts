@@ -1,19 +1,19 @@
 import { randomBytes } from 'crypto';
 import {
   Address,
+  createPublicClient,
   createTestClient,
   createWalletClient,
   Hex,
   http,
   parseEther,
-  publicActions,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { foundry, unichainSepolia } from 'viem/chains';
 import { Clients, DopplerV4Addresses } from '../../types';
 import {
-  DeployDopplerFactoryABI,
-  DeployDopplerFactoryDeployedBytecode,
+  sdkDeployerAbi,
+  sdkDeployerDeployedBytecode,
 } from '../abis/DeployDopplerFactoryABI';
 import { airlockAbi } from '../../abis';
 
@@ -30,11 +30,10 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     'hex'
   )}` as Address;
 
-  const publicClient = createTestClient({
-    chain: unichainSepolia,
-    mode: 'anvil',
+  const publicClient = createPublicClient({
+    chain: foundry,
     transport: http(rpc),
-  }).extend(publicActions);
+  });
 
   const walletClient = createWalletClient({
     account: privateKeyToAccount(privateKey),
@@ -55,11 +54,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
 
   testClient.setCode({
     address: deploymentFactoryAddress,
-    bytecode: DeployDopplerFactoryDeployedBytecode,
+    bytecode: sdkDeployerDeployedBytecode,
   });
 
   const deployContractsHash = await walletClient.writeContract({
-    abi: DeployDopplerFactoryABI,
+    abi: sdkDeployerAbi,
     address: deploymentFactoryAddress,
     functionName: 'deploy',
     account: walletClient.account,
@@ -77,13 +76,11 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     uniswapV3Initializer,
     governanceFactory,
     uniswapV2LiquidityMigrator,
-    customRouter2,
     manager,
-    quoter,
-    stateView,
-    uniRouter,
+    universalRouter,
+    basicRouter,
   } = await publicClient.readContract({
-    abi: DeployDopplerFactoryABI,
+    abi: sdkDeployerAbi,
     address: deploymentFactoryAddress,
     functionName: 'getAddrs',
   });
@@ -98,11 +95,9 @@ export async function setupTestEnvironment(): Promise<TestEnvironment> {
     v3Initializer: uniswapV3Initializer,
     governanceFactory,
     migrator: uniswapV2LiquidityMigrator,
-    customRouter: customRouter2,
     poolManager: manager,
-    quoter,
-    stateView,
-    uniRouter,
+    universalRouter,
+    basicRouter,
   };
 
   await testClient.mine({

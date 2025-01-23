@@ -1,12 +1,10 @@
 import { parseEther } from 'viem';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { setupTestEnvironment } from './setup';
-import { Drift } from '@delvtech/drift';
-import { viemAdapter } from '@delvtech/drift-viem';
-import { ReadDoppler } from '@/entities/doppler';
-import { buildConfig, ReadWriteFactory } from '@/entities/factory';
-import { DopplerPreDeploymentConfig } from '@/types';
+import { buildConfig, ReadWriteFactory } from '../../entities/factory';
+import { DopplerPreDeploymentConfig } from '../../types';
 import { airlockAbi } from '../../abis';
+import { unichainSepolia } from 'viem/chains';
 describe('Doppler Pool Deployment', () => {
   let testEnv: Awaited<ReturnType<typeof setupTestEnvironment>>;
 
@@ -14,7 +12,7 @@ describe('Doppler Pool Deployment', () => {
     testEnv = await setupTestEnvironment();
   });
 
-  it('should deploy a new Doppler pool', async () => {
+  it('should mine and create a new pool', async () => {
     const {
       clients: { publicClient, walletClient },
       addresses,
@@ -23,21 +21,13 @@ describe('Doppler Pool Deployment', () => {
       throw new Error('Test client not found');
     }
 
-    console.log('walletClient', walletClient.account);
-
-    const drift = new Drift({
-      adapter: viemAdapter({
-        publicClient,
-        walletClient,
-      }),
-    });
-
     const { timestamp } = await publicClient.getBlock();
     const configParams: DopplerPreDeploymentConfig = {
       name: 'Gud Coin',
       symbol: 'GUD',
       totalSupply: parseEther('10000'),
       numTokensToSell: parseEther('1000'),
+      tokenURI: 'https://gudcoin.com',
       blockTimestamp: Number(timestamp),
       startTimeOffset: 1,
       duration: 3,
@@ -52,45 +42,27 @@ describe('Doppler Pool Deployment', () => {
       maxProceeds: parseEther('600'),
     };
 
-    const readWriteFactory = new ReadWriteFactory(addresses.airlock, drift);
     const config = buildConfig(configParams, addresses);
-    await readWriteFactory.airlock.simulateWrite('create', {
-      createData: config,
-    });
-    const hash = await walletClient.writeContract({
+    const simulateData = await publicClient.simulateContract({
       address: addresses.airlock,
       abi: airlockAbi,
       functionName: 'create',
       args: [config],
-      gas: BigInt(20_000_000),
+    });
+
+    const txHash = await walletClient.writeContract({
+      address: addresses.airlock,
+      abi: airlockAbi,
+      functionName: 'create',
+      args: [config],
+      account: walletClient.account,
+      chain: unichainSepolia,
     });
 
     const receipt = await publicClient.waitForTransactionReceipt({
-      hash,
+      hash: txHash,
     });
 
     expect(receipt.status).toEqual('success');
-
-    // await walletClient.writeContract({
-    //   address: addresses.airlock,
-    //   abi: airlockAbi,
-    //   functionName: 'create',
-    //   args: [{ createData: config }],
-    // });
-    // await readWriteFactory.create(config, {
-    //   onMined: (result) => {
-    //     console.log('onMined', result);
-    //   },
-    // });
-
-    // const doppler = new ReadDoppler(
-    //   config.poolKey.currency1,
-    //   addresses.stateView,
-    //   drift
-    // );
-
-    // const poolId = await doppler.getPoolId();
-
-    // expect(poolId).toBeDefined();
   });
 });
