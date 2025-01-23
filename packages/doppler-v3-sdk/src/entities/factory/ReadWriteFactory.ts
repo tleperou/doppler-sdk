@@ -72,7 +72,7 @@ export interface TokenConfig {
 export interface InitializerContractDependencies {
   tokenFactory: Address;
   governanceFactory: Address;
-  poolInitializer: Address;
+  v3Initializer: Address;
   liquidityMigrator: Address;
 }
 
@@ -281,7 +281,7 @@ export class ReadWriteFactory extends ReadFactory {
     const {
       tokenFactory,
       governanceFactory,
-      poolInitializer,
+      v3Initializer: poolInitializer,
       liquidityMigrator,
     } = contracts;
 
