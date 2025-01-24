@@ -1,18 +1,12 @@
 import { Navigate, useParams } from "react-router-dom";
 import { addresses } from "../addresses";
-import { Address, formatEther, parseEther, zeroAddress } from "viem";
+import { Address, formatEther, parseEther } from "viem";
 import LiquidityChart from "../components/LiquidityChart";
 import TokenName from "../components/TokenName";
 import { usePoolData } from "../hooks/usePoolData";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { useState } from "react";
-import {
-  ReadRouter,
-  ReadWriteRouter,
-  PermitSingle,
-  SwapRouter02Encoder,
-} from "doppler-v3-sdk";
-import { getDrift } from "../utils/drift";
+import { PermitSingle, SwapRouter02Encoder } from "doppler-v3-sdk";
 import { CommandBuilder, getPermitSignature } from "doppler-v3-sdk";
 import { universalRouterAbi } from "../abis/UniversalRouterABI";
 
@@ -21,7 +15,7 @@ function ViewDoppler() {
   const account = useAccount();
   const { data: walletClient } = useWalletClient(account);
   const publicClient = usePublicClient();
-  const { airlock, v3Initializer, basicRouter, universalRouter } = addresses;
+  const { airlock, v3Initializer, universalRouter } = addresses;
 
   if (!id || !/^0x[a-fA-F0-9]{40}$/.test(id)) {
     return <Navigate to="/" />;
@@ -41,43 +35,10 @@ function ViewDoppler() {
     "numeraire"
   );
 
-  async function getSwapAmount(
-    amount: bigint,
-    field: "numeraire" | "asset"
-  ): Promise<bigint> {
-    if (!publicClient) throw new Error("Public client not found");
-    if (!assetData?.pool) {
-      throw new Error("Error computing swap amounts: pool not found");
-    }
-    if (
-      !asset?.token?.contract?.address ||
-      !numeraire?.token?.contract?.address
-    ) {
-      throw new Error(
-        "Error computing swap amounts: token addresses not found"
-      );
-    }
-
-    const drift = getDrift(walletClient);
-    const rRouter = new ReadRouter(basicRouter, drift);
-
-    const isToken0 =
-      asset.token.contract.address < numeraire.token.contract.address;
-    const zeroForOne = field === "numeraire" ? isToken0 : !isToken0;
-    const swapAmount = await rRouter.exactInputSingleV3({
-      recipient: account.address ?? zeroAddress,
-      amountIn: amount,
-      amountOutMinimum: 0n,
-      pool: assetData.pool,
-      zeroForOne,
-      deadline: 0n,
-    });
-
-    return swapAmount;
-  }
-
   async function handleSwap() {
     if (!walletClient?.account || !numeraire?.token || !asset?.token) return;
+
+    const block = await publicClient.getBlock();
 
     const isSellingNumeraire = activeField === "numeraire";
     const amount = isSellingNumeraire
@@ -91,13 +52,14 @@ function ViewDoppler() {
           ? numeraire.token.contract.address
           : asset.token.contract.address,
         amount: amount,
-        expiration: BigInt(Math.floor(Date.now() / 1000) + 3600), // 1 hour
-        nonce: 0n, // Will be populated by getPermitSignature
+        expiration: block.timestamp + 3600n, // 1 hour
+        nonce: 0n, // Gets populated by getPermitSignature
       },
       spender: universalRouter,
-      sigDeadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
+      sigDeadline: block.timestamp + 3600n,
     };
 
+    // TODO: check if we need the signature?
     const signature = await getPermitSignature(
       permit,
       publicClient.chain.id,
@@ -146,17 +108,11 @@ function ViewDoppler() {
     field: "numeraire" | "asset"
   ) => {
     setActiveField(field);
-    const numericValue = value === "" ? 0 : Number(value);
-
     try {
-      if (field === "numeraire" && numericValue > 0) {
+      if (field === "numeraire") {
         setNumeraireAmount(value);
-        const amountOut = await getSwapAmount(parseEther(value), field);
-        setAssetAmount(formatEther(amountOut));
-      } else if (field === "asset" && numericValue > 0) {
+      } else if (field === "asset") {
         setAssetAmount(value);
-        const amountOut = await getSwapAmount(parseEther(value), field);
-        setNumeraireAmount(formatEther(amountOut));
       } else {
         setNumeraireAmount("");
         setAssetAmount("");
@@ -249,7 +205,6 @@ function ViewDoppler() {
                   </div>
                 </div>
 
-                {/* Asset Input */}
                 <div className="flex flex-col space-y-2">
                   <label className="text-sm font-medium">
                     {asset?.name} ({asset?.symbol})
