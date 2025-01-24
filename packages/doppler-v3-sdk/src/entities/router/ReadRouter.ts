@@ -7,7 +7,7 @@ import {
   ExactInSingleV4Params,
   ExactOutSingleV4Params,
 } from './types';
-import { basicRouterAbi } from '@/abis';
+import { basicRouterAbi } from '../../abis';
 
 export class ReadRouter {
   contract: ReadContract<BasicRouterABI>;

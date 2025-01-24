@@ -1,5 +1,5 @@
 import { ReadWriteContract, ReadWriteAdapter, Drift } from '@delvtech/drift';
-import { basicRouterAbi } from '@/abis';
+import { basicRouterAbi } from '../../abis';
 import { Address, Hex } from 'viem';
 import {
   BasicRouterABI,

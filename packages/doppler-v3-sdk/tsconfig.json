@@ -10,7 +10,6 @@
     "declaration": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "paths":{
       "@/*": ["./src/*"]
     },
@@ -25,6 +24,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "strictPropertyInitialization": false,
-    "noImplicitThis": false
+    "noImplicitThis": false,
+    "baseUrl": ".",
+    "rootDirs": ["src"],
+    "noEmit": false
   }
 }
