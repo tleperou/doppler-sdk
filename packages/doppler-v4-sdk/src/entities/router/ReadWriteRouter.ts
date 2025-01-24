@@ -4,33 +4,34 @@ import { Address, Hex } from 'viem';
 import { PoolKey } from '@/types';
 
 interface TradeParams {
-  pool: Address;
   recipient: Address;
   zeroForOne: boolean;
   deadline: bigint;
 }
 
 interface ExactInSingleV3Params extends TradeParams {
+  pool: Address;
   amountIn: bigint;
   amountOutMinimum: bigint;
 }
 
 interface ExactOutSingleV3Params extends TradeParams {
+  pool: Address;
   amountOut: bigint;
   amountInMaximum: bigint;
 }
 
 interface ExactInSingleV4Params extends TradeParams {
+  key: PoolKey;
   amountIn: bigint;
   amountOutMinimum: bigint;
-  key: PoolKey;
   hookData: Hex;
 }
 
 interface ExactOutSingleV4Params extends TradeParams {
+  key: PoolKey;
   amountOut: bigint;
   amountInMaximum: bigint;
-  key: PoolKey;
   hookData: Hex;
 }
 
