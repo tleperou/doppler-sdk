@@ -11,5 +11,6 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     liquidityMigrator: '0x76309FA8c4D006aa50b5E3417cfca395BBf9B50A' as Address,
     universalRouter: '0xAD5D299658872f5FD917356cC1af752E6526F441' as Address,
     basicRouter: '0x2215D2f121BA5ccDcBd1074D1Be30cefb9233f5d' as Address,
+    permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3' as Address,
   },
 };
