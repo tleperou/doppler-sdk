@@ -1,40 +1,13 @@
 import { ReadWriteContract, ReadWriteAdapter, Drift } from '@delvtech/drift';
 import { basicRouterAbi } from '@/abis';
 import { Address, Hex } from 'viem';
-import { PoolKey } from '@/types';
-
-export type TradeParams = {
-  pool: Address;
-  recipient: Address;
-  zeroForOne: boolean;
-  deadline: bigint;
-};
-
-export type ExactInSingleV3Params = TradeParams & {
-  amountIn: bigint;
-  amountOutMinimum: bigint;
-};
-
-export type ExactOutSingleV3Params = TradeParams & {
-  amountOut: bigint;
-  amountInMaximum: bigint;
-};
-
-export type ExactInSingleV4Params = TradeParams & {
-  amountIn: bigint;
-  amountOutMinimum: bigint;
-  key: PoolKey;
-  hookData: Hex;
-};
-
-export type ExactOutSingleV4Params = TradeParams & {
-  amountOut: bigint;
-  amountInMaximum: bigint;
-  key: PoolKey;
-  hookData: Hex;
-};
-
-type BasicRouterABI = typeof basicRouterAbi;
+import {
+  BasicRouterABI,
+  ExactInSingleV3Params,
+  ExactOutSingleV3Params,
+  ExactInSingleV4Params,
+  ExactOutSingleV4Params,
+} from './types';
 
 export class ReadWriteRouter {
   contract: ReadWriteContract<BasicRouterABI>;
