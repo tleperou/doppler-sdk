@@ -45,7 +45,6 @@ function ViewDoppler() {
       ? parseEther(numeraireAmount)
       : parseEther(assetAmount);
 
-    // 1. Create permit for token approval
     const permit: PermitSingle = {
       details: {
         token: isSellingNumeraire
