@@ -5,4 +5,4 @@ node_modules
 dist
 yarn.lock
 .ponder
-/generated
+packages/*/generated
