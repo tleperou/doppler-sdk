@@ -101,7 +101,8 @@ export function buildConfig(
     poolInitializerData: dopplerParams,
   };
 
-  const [salt, , , poolInitializerData, tokenFactoryData] = mine(mineParams);
+  const [salt, hook, token, poolInitializerData, tokenFactoryData] =
+    mine(mineParams);
 
   const governanceFactoryData = encodeAbiParameters(
     [{ type: 'string' }],
@@ -122,6 +123,8 @@ export function buildConfig(
     liquidityMigratorData: toHex(''),
     integrator: '0xcD3365F82eDD9750C2Fb287309eD7539cBFB51a9' as Address,
     salt,
+    hook,
+    token,
   };
 
   return createArgs;
