@@ -4,6 +4,12 @@ import { useReadContract, useAccount, useWalletClient } from "wagmi";
 import { MigratorABI } from "../abis/MigratorABI";
 import { ReadWriteFactory, CreateV3PoolParams } from "doppler-v3-sdk";
 import { getDrift } from "../utils/drift";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const TICK_SPACING = 60;
 
@@ -127,6 +133,7 @@ function DeployDoppler() {
       };
 
       const drift = getDrift(walletClient);
+      // @ts-ignore
       const rwFactory = new ReadWriteFactory(airlock, drift);
       const createData = await rwFactory.encodeCreateData(createV3PoolParams);
       await rwFactory.create(createData);
@@ -138,187 +145,185 @@ function DeployDoppler() {
   };
 
   return (
-    <div className="deploy-doppler">
-      <h3 className="page-title">Deploy Market</h3>
-      <form onSubmit={handleDeploy} className="deploy-form">
-        <div className="form-group">
-          <label htmlFor="tokenName">Token Name</label>
-          <input
-            type="text"
-            id="tokenName"
-            value={tokenName}
-            onChange={(e) => setTokenName(e.target.value)}
-            required
-            placeholder="Enter token name"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="tokenSymbol">Token Symbol</label>
-          <input
-            type="text"
-            id="tokenSymbol"
-            value={tokenSymbol}
-            onChange={(e) => setTokenSymbol(e.target.value)}
-            required
-            placeholder="Enter token symbol"
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="advanced-toggle">
-            <input
-              type="checkbox"
-              checked={showAdvanced}
-              onChange={(e) => setShowAdvanced(e.target.checked)}
-            />
-            Show Advanced Options
-          </label>
-        </div>
-
-        {showAdvanced && (
-          <>
-            <div className="form-group">
-              <label htmlFor="initialSupply">
-                Initial Supply (in tokens)
-                <button
-                  type="button"
-                  className="inline-default-button"
-                  onClick={() => {
-                    setInitialSupply("1000000000");
-                    setNumTokensToSell("1000000000");
-                  }}
-                >
-                  use default
-                </button>
-              </label>
-              <input
-                type="number"
-                id="initialSupply"
-                value={initialSupply}
-                onChange={(e) => setInitialSupply(e.target.value)}
+    <div className="max-w-4xl mx-auto p-6">
+      <h3 className="text-2xl font-bold mb-4">Deploy Market</h3>
+      <Card className="p-6">
+        <form onSubmit={handleDeploy} className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="tokenName">Token Name</Label>
+              <Input
+                id="tokenName"
+                value={tokenName}
+                onChange={(e) => setTokenName(e.target.value)}
+                placeholder="Enter token name"
                 required
-                placeholder="Enter initial token supply"
-                min="0"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="numTokensToSell">Number of Tokens to Sell</label>
-              <input
-                type="number"
-                id="numTokensToSell"
-                value={numTokensToSell}
-                onChange={(e) => setNumTokensToSell(e.target.value)}
+            <div className="space-y-2">
+              <Label htmlFor="tokenSymbol">Token Symbol</Label>
+              <Input
+                id="tokenSymbol"
+                value={tokenSymbol}
+                onChange={(e) => setTokenSymbol(e.target.value)}
+                placeholder="Enter token symbol"
                 required
-                placeholder="Enter number of tokens to sell"
-                min="0"
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="startTick">
-                Start Tick (will be rounded to nearest {TICK_SPACING})
-              </label>
-              <input
-                type="number"
-                id="startTick"
-                value={startTick}
-                onChange={handleStartTickChange}
-                onBlur={handleStartTickBlur}
-                required
-                placeholder={`Enter start tick (multiple of ${TICK_SPACING})`}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="advancedOptions"
+                checked={showAdvanced}
+                onCheckedChange={(checked) => setShowAdvanced(!!checked)}
               />
-              {startTick && Number(startTick) % TICK_SPACING !== 0 && (
-                <span className="error-message">
-                  Start tick must be divisible by {TICK_SPACING}
-                </span>
-              )}
+              <Label htmlFor="advancedOptions">Show Advanced Options</Label>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="endTick">
-                End Tick (will be rounded to nearest {TICK_SPACING})
-              </label>
-              <input
-                type="number"
-                id="endTick"
-                value={endTick}
-                onChange={handleEndTickChange}
-                onBlur={handleEndTickBlur}
-                required
-                placeholder={`Enter end tick (multiple of ${TICK_SPACING})`}
-              />
-              {endTick && Number(endTick) % TICK_SPACING !== 0 && (
-                <span className="error-message">
-                  End tick must be divisible by {TICK_SPACING}
-                </span>
-              )}
-            </div>
+            {showAdvanced && (
+              <>
+                <Separator className="my-6" />
 
-            <div className="form-group">
-              <label htmlFor="numPositions">Number of Positions</label>
-              <input
-                type="number"
-                id="numPositions"
-                value={numPositions}
-                onChange={handleNumPositionsChange}
-                onBlur={handleNumPositionsBlur}
-                required
-                placeholder={`Enter number of positions`}
-              />
-            </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="initialSupply">
+                      Initial Supply (in tokens)
+                    </Label>
+                    <Input
+                      id="initialSupply"
+                      type="number"
+                      value={initialSupply}
+                      onChange={(e) => setInitialSupply(e.target.value)}
+                      placeholder="Enter initial token supply"
+                      min="0"
+                      required
+                    />
+                  </div>
 
-            <div className="form-group">
-              <label htmlFor="maxShareToBeSold">Max Share to Be Sold</label>
-              <input
-                type="number"
-                id="maxShareToBeSold"
-                value={maxShareToBeSold}
-                onChange={handleMaxShareToBeSoldChange}
-                onBlur={handleMaxShareToSoldBlur}
-                required
-                placeholder={`Enter max share to be sold`}
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numTokensToSell">
+                      Number of Tokens to Sell
+                    </Label>
+                    <Input
+                      id="numTokensToSell"
+                      type="number"
+                      value={numTokensToSell}
+                      onChange={(e) => setNumTokensToSell(e.target.value)}
+                      placeholder="Enter number of tokens to sell"
+                      min="0"
+                      required
+                    />
+                  </div>
 
-            <div className="form-group">
-              <label htmlFor="maxShareToBond">Max Share to Bond</label>
-              <input
-                type="number"
-                id="maxShareToBond"
-                value={maxShareToBond}
-                onChange={handleMaxShareToBondChange}
-                onBlur={handleMaxShareToBondBlur}
-                required
-                placeholder={`Enter max share to bond`}
-              />
-            </div>
-          </>
-        )}
+                  <div className="space-y-2">
+                    <Label htmlFor="startTick">
+                      Start Tick (will be rounded to nearest {TICK_SPACING})
+                    </Label>
+                    <Input
+                      id="startTick"
+                      type="number"
+                      value={startTick}
+                      onChange={handleStartTickChange}
+                      onBlur={handleStartTickBlur}
+                      placeholder={`Enter start tick (multiple of ${TICK_SPACING})`}
+                      required
+                    />
+                    {startTick && Number(startTick) % TICK_SPACING !== 0 && (
+                      <p className="text-sm text-destructive">
+                        Start tick must be divisible by {TICK_SPACING}
+                      </p>
+                    )}
+                  </div>
 
-        <button
-          type="submit"
-          className="deploy-button"
-          disabled={
-            isDeploying ||
-            !tokenName ||
-            !tokenSymbol ||
-            (showAdvanced &&
-              (!startTick ||
-                !endTick ||
-                Number(startTick) % TICK_SPACING !== 0 ||
-                Number(endTick) % TICK_SPACING !== 0 ||
-                !numPositions ||
-                !maxShareToBeSold ||
-                !initialSupply ||
-                !numTokensToSell ||
-                !maxShareToBond))
-          }
-        >
-          {isDeploying ? "Deploying..." : "Deploy Doppler"}
-        </button>
-      </form>
+                  <div className="space-y-2">
+                    <Label htmlFor="endTick">
+                      End Tick (will be rounded to nearest {TICK_SPACING})
+                    </Label>
+                    <Input
+                      id="endTick"
+                      type="number"
+                      value={endTick}
+                      onChange={handleEndTickChange}
+                      onBlur={handleEndTickBlur}
+                      placeholder={`Enter end tick (multiple of ${TICK_SPACING})`}
+                      required
+                    />
+                    {endTick && Number(endTick) % TICK_SPACING !== 0 && (
+                      <p className="text-sm text-destructive">
+                        End tick must be divisible by {TICK_SPACING}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="numPositions">Number of Positions</Label>
+                    <Input
+                      id="numPositions"
+                      type="number"
+                      value={numPositions}
+                      onChange={handleNumPositionsChange}
+                      onBlur={handleNumPositionsBlur}
+                      placeholder="Enter number of positions"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="maxShareToBeSold">
+                      Max Share to Be Sold
+                    </Label>
+                    <Input
+                      id="maxShareToBeSold"
+                      type="number"
+                      value={maxShareToBeSold}
+                      onChange={handleMaxShareToBeSoldChange}
+                      onBlur={handleMaxShareToSoldBlur}
+                      placeholder="Enter max share to be sold"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="maxShareToBond">Max Share to Bond</Label>
+                    <Input
+                      id="maxShareToBond"
+                      type="number"
+                      value={maxShareToBond}
+                      onChange={handleMaxShareToBondChange}
+                      onBlur={handleMaxShareToBondBlur}
+                      placeholder="Enter max share to bond"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={
+              isDeploying ||
+              !tokenName ||
+              !tokenSymbol ||
+              (showAdvanced &&
+                (!startTick ||
+                  !endTick ||
+                  Number(startTick) % TICK_SPACING !== 0 ||
+                  Number(endTick) % TICK_SPACING !== 0 ||
+                  !numPositions ||
+                  !maxShareToBeSold ||
+                  !initialSupply ||
+                  !numTokensToSell ||
+                  !maxShareToBond))
+            }
+          >
+            {isDeploying ? "Deploying..." : "Deploy Market"}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

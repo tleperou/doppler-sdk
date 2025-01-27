@@ -8,5 +8,6 @@ export function getDrift(
   walletClient?: WalletClient
 ): Drift<ViemReadAdapter<PublicClient>> {
   const publicClient = getPublicClient(config);
+  // @ts-ignore
   return new Drift({ adapter: viemAdapter({ publicClient, walletClient }) });
 }

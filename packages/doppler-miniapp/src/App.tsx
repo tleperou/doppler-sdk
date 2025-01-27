@@ -9,6 +9,9 @@ import {
 import DeployDoppler from "./pages/DeployDoppler";
 import ViewDoppler from "./pages/ViewDoppler";
 import HomePage from "./pages/HomePage";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 import "./theme.css";
 
 function App() {
@@ -28,7 +31,7 @@ function App() {
     disconnect();
   };
 
-  const isUniSepolia = account.chain?.id === 1301; // UniChain Sepolia chain ID
+  const isUniSepolia = account.chain?.id === 1301;
 
   const handleSwitchNetwork = () => {
     if (switchChain) {
@@ -38,58 +41,69 @@ function App() {
 
   return (
     <Router>
-      <div className="app">
-        <nav className="nav-container">
-          <div className="nav-links">
-            <Link to="/" className="nav-button">
-              Home
-            </Link>
-            <Link to="/deploy" className="nav-button">
-              Deploy Market
-            </Link>
-          </div>
-          <div className="wallet-section">
-            {account.status === "connected" ? (
-              <div className="address">
-                <span className="address-text">
-                  {account.addresses?.[0]?.slice(0, 6)}...
-                  {account.addresses?.[0]?.slice(-4)}
-                </span>
-                <span className="balance">
-                  {balance?.formatted.slice(0, 6)} ETH
-                </span>
-                <button
-                  onClick={handleDisconnect}
-                  className="disconnect-button"
-                  aria-label="Disconnect wallet"
-                >
-                  ⏻
-                </button>
-              </div>
-            ) : (
-              <button className="connect-button" onClick={handleConnect}>
-                Connect Wallet
-              </button>
-            )}
+      <div className="app min-h-screen flex flex-col">
+        <nav className="w-full border-b">
+          <div className="flex h-24 items-center px-8">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" asChild>
+                <Link to="/" className="text-lg">
+                  Home
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/deploy" className="text-lg">
+                  Deploy Market
+                </Link>
+              </Button>
+            </div>
+
+            <div className="ml-auto flex items-center space-x-4">
+              {account.status === "connected" ? (
+                <Card className="flex items-center gap-4 px-4 py-2">
+                  <div className="flex flex-col text-sm">
+                    <span className="font-medium">
+                      {account.addresses?.[0]?.slice(0, 6)}...
+                      {account.addresses?.[0]?.slice(-4)}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {balance?.formatted.slice(0, 6)} ETH
+                    </span>
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDisconnect}
+                    className="h-8 w-8"
+                  >
+                    ⏻
+                  </Button>
+                </Card>
+              ) : (
+                <Button onClick={handleConnect}>Connect Wallet</Button>
+              )}
+            </div>
           </div>
         </nav>
 
         {account.status === "connected" && !isUniSepolia && (
-          <div className="overlay">
-            <div className="overlay-content">
-              <p>Please switch to UniChain Sepolia network</p>
-              <button className="connect-button" onClick={handleSwitchNetwork}>
-                Switch Network
-              </button>
-            </div>
+          <div className="flex-1 flex items-center justify-center bg-background/80 backdrop-blur">
+            <Card className="p-6 flex flex-col items-center gap-4">
+              <p className="text-lg">
+                Please switch to UniChain Sepolia network
+              </p>
+              <Button onClick={handleSwitchNetwork}>Switch Network</Button>
+            </Card>
           </div>
         )}
 
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/deploy" element={<DeployDoppler />} />
-          <Route path="/doppler/:id" element={<ViewDoppler />} />
-        </Routes>
+        <main className="flex-1 p-6">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/deploy" element={<DeployDoppler />} />
+            <Route path="/doppler/:id" element={<ViewDoppler />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   );
