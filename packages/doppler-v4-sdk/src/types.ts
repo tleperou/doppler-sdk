@@ -86,13 +86,15 @@ export interface DopplerPreDeploymentConfig {
 
 export interface AssetData {
   numeraire: Address;
-  poolInitializer: Address;
   timelock: Address;
   governance: Address;
   liquidityMigrator: Address;
+  poolInitializer: Address;
+  pool: Address;
   migrationPool: Address;
-  integrator: Address;
+  numTokensToSell: bigint;
   totalSupply: bigint;
+  integrator: Address;
 }
 
 export interface PoolConfig {

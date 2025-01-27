@@ -36,9 +36,8 @@ export function buildConfig(
     params.tickSpacing
   );
 
-  const startTime =
-    params.blockTimestamp + params.startTimeOffset * DAY_SECONDS;
-  const endTime = params.blockTimestamp + params.duration * DAY_SECONDS;
+  const startTime = params.blockTimestamp + 30;
+  const endTime = params.blockTimestamp + params.duration * DAY_SECONDS + 30;
 
   const totalDuration = endTime - startTime;
   if (totalDuration % params.epochLength !== 0) {
