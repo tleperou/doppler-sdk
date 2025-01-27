@@ -13,6 +13,15 @@ import {
   getPermitSignature,
 } from "doppler-router";
 import { universalRouterAbi } from "../abis/UniversalRouterABI";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+
+const Q192 = BigInt(2) ** BigInt(192);
+const decimalScale = 10 ** 18;
 
 function ViewDoppler() {
   const { id } = useParams();
@@ -32,6 +41,25 @@ function ViewDoppler() {
   );
 
   const { asset, numeraire, assetData, poolData } = data;
+
+  console.log(poolData);
+
+  const totalLiquidity =
+    poolData?.positions &&
+    poolData.positions
+      .reduce((acc: number, position: { liquidity: bigint }) => {
+        return acc + Number(formatEther(position.liquidity));
+      }, 0)
+      .toFixed(2);
+
+  const ratioX192 =
+    poolData?.slot0?.sqrtPriceX96 * poolData?.slot0?.sqrtPriceX96;
+  const price =
+    ratioX192 > 0
+      ? formatEther((Q192 * BigInt(decimalScale)) / BigInt(ratioX192))
+      : 0;
+
+  console.log("price", price);
 
   const [numeraireAmount, setNumeraireAmount] = useState("");
   const [assetAmount, setAssetAmount] = useState("");
@@ -67,6 +95,7 @@ function ViewDoppler() {
       permit,
       publicClient.chain.id,
       addresses.permit2,
+      // @ts-ignore
       publicClient,
       walletClient
     );
@@ -126,115 +155,123 @@ function ViewDoppler() {
   };
 
   return (
-    <div className="view-doppler">
-      <h3 className="page-title">
-        <TokenName
-          name={asset?.name ?? ""}
-          symbol={asset?.symbol ?? ""}
-          showSymbol={false}
-        />{" "}
-        /{" "}
-        <TokenName
-          name={numeraire?.name ?? ""}
-          symbol={numeraire?.symbol ?? ""}
-          showSymbol={false}
-        />
-      </h3>
-      {isLoading ? (
-        <div className="loading-content">
-          <div className="loading-spinner" />
-          <p>Loading chart data...</p>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">
+            <TokenName
+              name={asset?.name ?? ""}
+              symbol={asset?.symbol ?? ""}
+              showSymbol={true}
+            />{" "}
+            /{" "}
+            <TokenName
+              name={numeraire?.name ?? ""}
+              symbol={numeraire?.symbol ?? ""}
+              showSymbol={true}
+            />
+          </h2>
         </div>
-      ) : (
-        <LiquidityChart
-          positions={poolData?.positions ?? []}
-          currentTick={poolData?.slot0?.tick ?? 0}
-        />
-      )}
-      <div className="doppler-info">
-        {assetData && numeraire && (
+
+        <Separator />
+
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[200px] w-full" />
+          </div>
+        ) : (
           <>
-            <div className="market-stats">
-              <div className="stat-item">
-                <label>Total Supply</label>
-                <span>{formatEther(asset?.totalSupply ?? 0n)}</span>
-              </div>
-              <div className="stat-item">
-                <label>Tokens Sold</label>
-                <span>
-                  {(
-                    Number(formatEther(asset?.totalSupply ?? 0n)) -
-                    Number(formatEther(poolData?.poolBalance ?? 0n))
-                  ).toFixed(0)}
-                </span>
-              </div>
-              <div className="stat-item">
-                <label>Current Tick</label>
-                <span>{poolData?.slot0?.tick ?? 0}</span>
-              </div>
-              <div className="stat-item">
-                <label>Target Tick</label>
-                <span>{poolData?.initializerState?.targetTick ?? 0}</span>
-              </div>
-            </div>
-            <div className="swap-interface mt-8 p-4 border rounded-lg max-w-md mx-auto">
-              <h3 className="text-lg font-medium mb-4">Swap Tokens</h3>
-
+            <Card className="p-6">
               <div className="space-y-4">
-                {/* Numeraire Input */}
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium">
-                    {numeraire?.name} ({numeraire?.symbol})
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0.0"
-                    value={numeraireAmount}
-                    onChange={(e) =>
-                      handleAmountChange(e.target.value, "numeraire")
-                    }
-                    className="p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                {/* Divider */}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Total Liquidity
+                    </h3>
+                    <p className="text-xl font-semibold">{totalLiquidity}</p>
                   </div>
-                  <div className="relative flex justify-center">
-                    <span className="bg-white px-2 text-gray-500">↓</span>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Current Price
+                    </h3>
+                    <p className="text-xl font-semibold">
+                      1 {asset?.symbol} = {price} {numeraire?.symbol}
+                    </p>
                   </div>
                 </div>
-
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium">
-                    {asset?.name} ({asset?.symbol})
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0.0"
-                    value={assetAmount}
-                    onChange={(e) =>
-                      handleAmountChange(e.target.value, "asset")
-                    }
-                    className="p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <button
-                  className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!numeraireAmount && !assetAmount}
-                  onClick={handleSwap}
-                >
-                  {activeField === "numeraire"
-                    ? `Sell ${numeraire?.symbol} for ${asset?.symbol}`
-                    : `Buy ${numeraire?.symbol} with ${asset?.symbol}`}
-                </button>
               </div>
-            </div>
+              <LiquidityChart
+                positions={poolData?.positions ?? []}
+                currentTick={poolData?.slot0?.tick ?? 0}
+              />
+            </Card>
+
+            <Card className="p-6">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">Swap Tokens</h3>
+                    <Separator />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="numeraireAmount">
+                        {numeraire?.name} ({numeraire?.symbol})
+                      </Label>
+                      <Input
+                        type="number"
+                        id="numeraireAmount"
+                        placeholder="0.0"
+                        value={numeraireAmount}
+                        onChange={(e) =>
+                          handleAmountChange(e.target.value, "numeraire")
+                        }
+                        disabled={isLoading}
+                        step="any"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <Separator className="absolute top-1/2 w-full" />
+                      <div className="relative flex justify-center">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          ↓
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="assetAmount">
+                        {asset?.name} ({asset?.symbol})
+                      </Label>
+                      <Input
+                        type="number"
+                        id="assetAmount"
+                        placeholder="0.0"
+                        value={assetAmount}
+                        onChange={(e) =>
+                          handleAmountChange(e.target.value, "asset")
+                        }
+                        disabled={isLoading}
+                        step="any"
+                      />
+                    </div>
+
+                    <Button
+                      className="w-full"
+                      disabled={!numeraireAmount && !assetAmount}
+                      onClick={handleSwap}
+                    >
+                      {activeField === "numeraire"
+                        ? `Sell ${numeraire?.symbol} for ${asset?.symbol}`
+                        : `Buy ${numeraire?.symbol} with ${asset?.symbol}`}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </>
         )}
       </div>

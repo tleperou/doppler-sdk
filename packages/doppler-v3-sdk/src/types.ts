@@ -17,3 +17,35 @@ export type PoolKey = {
   tickSpacing: number;
   hooks: Address;
 };
+
+export interface AssetData {
+  numeraire: Address;
+  pool: Address;
+  timelock: Address;
+  governance: Address;
+  liquidityMigrator: Address;
+  poolInitializer: Address;
+  migrationPool: Address;
+}
+
+export interface PoolState {
+  asset: Address;
+  numeraire: Address;
+  tickLower: number;
+  tickUpper: number;
+  numPositions: number;
+  isInitialized: boolean;
+  isExited: boolean;
+  maxShareToBeSold: bigint;
+  maxShareToBond: bigint;
+}
+
+export interface Slot0 {
+  sqrtPriceX96: bigint;
+  tick: number;
+  observationIndex: number;
+  observationCardinality: number;
+  observationCardinalityNext: number;
+  feeProtocol: number;
+  unlocked: boolean;
+}
