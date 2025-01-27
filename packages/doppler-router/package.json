@@ -1,7 +1,7 @@
 {
   "name": "doppler-router",
   "author": "Whetstone Research",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -11,6 +11,12 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "start": "tsc watch ./src/**",
     "test": "vitest",

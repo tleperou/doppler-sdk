@@ -1,12 +1,21 @@
 {
   "name": "doppler-v3-sdk",
   "author": "Whetstone Research",
-  "version": "0.1.17",
+  "version": "0.1.17-rc0",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "typings": "dist/index.d.ts",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "start": "tsc watch ./src/**",
     "test": "vitest",

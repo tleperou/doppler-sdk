@@ -6,8 +6,12 @@ import TokenName from "../components/TokenName";
 import { usePoolData } from "../hooks/usePoolData";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { useState } from "react";
-import { PermitSingle, SwapRouter02Encoder } from "doppler-v3-sdk";
-import { CommandBuilder, getPermitSignature } from "doppler-v3-sdk";
+import {
+  PermitSingle,
+  SwapRouter02Encoder,
+  CommandBuilder,
+  getPermitSignature,
+} from "doppler-router";
 import { universalRouterAbi } from "../abis/UniversalRouterABI";
 
 function ViewDoppler() {
