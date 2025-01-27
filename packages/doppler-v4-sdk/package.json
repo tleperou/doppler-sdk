@@ -10,7 +10,6 @@
   "directories": {
     "lib": "src"
   },
-  "packageManager": "yarn@1.22.18",
   "files": [
     "dist"
   ],

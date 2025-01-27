@@ -1,6 +1,6 @@
 {
   // see https://www.typescriptlang.org/tsconfig to better understand tsconfigs
-  "include": ["src/**/*", "../doppler-router/src/SwapRouter02Encoder.ts", "../doppler-router/src/CommandBuilder.ts", "../doppler-router/src/Permit2.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "coverage"],
   "compilerOptions": {
     "types": ["node"],

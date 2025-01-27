@@ -8,12 +8,12 @@ export {
   ExactInSingleV4Params,
   ExactOutSingleV4Params,
 } from './types';
-export { CommandBuilder } from './CommandBuilder';
+export { CommandBuilder } from '../../../../doppler-router/src/CommandBuilder';
 export {
   PermitSingle,
   PermitBatch,
   getPermitSignature,
   TransferDetail,
   PermitDetails,
-} from './Permit2';
-export { SwapRouter02Encoder } from './SwapRouter02Encoder';
+} from '../../../../doppler-router/src/Permit2';
+export { SwapRouter02Encoder } from '../../../../doppler-router/src/SwapRouter02Encoder';
