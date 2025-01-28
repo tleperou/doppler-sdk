@@ -1,32 +1,23 @@
 {
   // see https://www.typescriptlang.org/tsconfig to better understand tsconfigs
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "coverage"],
+  "exclude": ["node_modules", "dist", "test"],
   "compilerOptions": {
-    "types": ["node"],
     "target": "ES2020",
     "module": "ESNext",
-    "importHelpers": true,
+    "moduleResolution": "node",
     "declaration": true,
+    "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "paths":{
-      "@/*": ["./src/*"]
-    },
-    "strict": true,
-    "strictNullChecks": true,
-    "resolveJsonModule": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "moduleResolution": "node",
     "esModuleInterop": true,
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "strictPropertyInitialization": false,
-    "noImplicitThis": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "rootDir": "src",
     "baseUrl": ".",
-    "rootDirs": ["src"],
-    "noEmit": false
+    "paths": {
+      "@/*": ["src/*"]
+    }
   }
 }

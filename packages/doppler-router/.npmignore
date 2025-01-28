@@ -1,8 +1,7 @@
 src/
 test/
-coverage/
-.github/
-.git/
+tsconfig.json
+*.test.ts
+*.md
+.editorconfig
 .gitignore
-.env
-*.log

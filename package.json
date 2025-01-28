@@ -3,11 +3,7 @@
   "name": "doppler-monorepo",
   "author": "Whetstone Research",
   "workspaces": [
-    "packages/doppler-v3-sdk",
-    "packages/doppler-v4-sdk",
-    "packages/doppler-miniapp",
-    "packages/doppler-v3-indexer",
-    "packages/doppler-router"
+    "packages/*"
   ],
   "resolutions": {
     "typescript": "^5.5.4",
