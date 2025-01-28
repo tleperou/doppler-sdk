@@ -8,4 +8,5 @@ export const addresses: DopplerV3Addresses = {
   liquidityMigrator: DOPPLER_V3_ADDRESSES[1301].liquidityMigrator,
   universalRouter: DOPPLER_V3_ADDRESSES[1301].universalRouter,
   permit2: DOPPLER_V3_ADDRESSES[1301].permit2,
+  quoterV2: DOPPLER_V3_ADDRESSES[1301].quoterV2,
 };

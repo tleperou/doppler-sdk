@@ -18,6 +18,12 @@ export const fetchAssetData = async (
   return assetData;
 };
 
+/**
+ * Fetches detailed market data for a specific asset
+ * @param airlock - Address of the Doppler Airlock contract
+ * @param assetAddress - Address of the asset token
+ * @returns Query result with market data including pool info and pricing
+ */
 export function useAssetData(
   airlock: Address | undefined,
   assetAddress: Address | undefined
