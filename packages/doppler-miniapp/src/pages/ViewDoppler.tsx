@@ -40,7 +40,7 @@ function ViewDoppler() {
     id as Address
   );
 
-  const { asset, numeraire, assetData, poolData } = data;
+  const { asset, numeraire, poolData } = data;
 
   console.log(poolData);
 
@@ -53,9 +53,10 @@ function ViewDoppler() {
       .toFixed(2);
 
   const ratioX192 =
+    poolData?.slot0?.sqrtPriceX96 &&
     poolData?.slot0?.sqrtPriceX96 * poolData?.slot0?.sqrtPriceX96;
   const price =
-    ratioX192 > 0
+    ratioX192 && ratioX192 > 0n
       ? formatEther((Q192 * BigInt(decimalScale)) / BigInt(ratioX192))
       : 0;
 
