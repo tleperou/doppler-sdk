@@ -140,10 +140,11 @@ function ViewDoppler() {
     field: "numeraire" | "asset"
   ) => {
     setActiveField(field);
+    if (!asset?.token.contract.address || !numeraire?.token.contract.address)
+      return;
     try {
       if (field === "numeraire") {
         setNumeraireAmount(value);
-        console.log("numeraire", value);
         const inputValue = parseEther(value);
         const { amountOut } = await quoter.quoteExactInput({
           tokenIn: numeraire?.token.contract.address,
