@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address } from "viem";
 
 export type DopplerV3Addresses = {
   airlock: Address;
@@ -8,6 +8,7 @@ export type DopplerV3Addresses = {
   v3Initializer: Address;
   universalRouter: Address;
   permit2: Address;
+  quoterV2: Address;
 };
 
 export type PoolKey = {

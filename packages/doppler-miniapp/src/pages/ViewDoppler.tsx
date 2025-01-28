@@ -19,16 +19,19 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
-
-const Q192 = BigInt(2) ** BigInt(192);
-const decimalScale = 10 ** 18;
+import { getDrift } from "@/utils/drift";
+import { ReadQuoter } from "doppler-v3-sdk";
+import { Q192, decimalScale } from "../constants";
 
 function ViewDoppler() {
   const { id } = useParams();
   const account = useAccount();
   const { data: walletClient } = useWalletClient(account);
   const publicClient = usePublicClient();
-  const { airlock, v3Initializer, universalRouter } = addresses;
+  const { airlock, v3Initializer, universalRouter, quoterV2 } = addresses;
+  const drift = getDrift();
+
+  const quoter = new ReadQuoter(quoterV2, drift);
 
   if (!id || !/^0x[a-fA-F0-9]{40}$/.test(id)) {
     return <Navigate to="/" />;
@@ -41,8 +44,6 @@ function ViewDoppler() {
   );
 
   const { asset, numeraire, poolData } = data;
-
-  console.log(poolData);
 
   const totalLiquidity =
     poolData?.positions &&
@@ -59,8 +60,6 @@ function ViewDoppler() {
     ratioX192 && ratioX192 > 0n
       ? formatEther((Q192 * BigInt(decimalScale)) / BigInt(ratioX192))
       : 0;
-
-  console.log("price", price);
 
   const [numeraireAmount, setNumeraireAmount] = useState("");
   const [assetAmount, setAssetAmount] = useState("");
@@ -141,11 +140,41 @@ function ViewDoppler() {
     field: "numeraire" | "asset"
   ) => {
     setActiveField(field);
+    if (!asset?.token.contract.address || !numeraire?.token.contract.address)
+      return;
     try {
       if (field === "numeraire") {
         setNumeraireAmount(value);
+        const inputValue = parseEther(value);
+        const { amountOut } = await quoter.quoteExactInput({
+          tokenIn: numeraire?.token.contract.address,
+          tokenOut: asset?.token.contract.address,
+          amountIn: inputValue,
+          fee: 3000,
+          sqrtPriceLimitX96: 0n,
+        });
+
+        const amountOutFixed = Number(formatEther(amountOut))
+          .toFixed(2)
+          .toString();
+
+        setAssetAmount(amountOutFixed);
       } else if (field === "asset") {
         setAssetAmount(value);
+        const inputValue = parseEther(value);
+        const { amountOut } = await quoter.quoteExactInput({
+          tokenIn: asset?.token.contract.address,
+          tokenOut: numeraire?.token.contract.address,
+          amountIn: inputValue,
+          fee: 3000,
+          sqrtPriceLimitX96: 0n,
+        });
+
+        const amountOutFixed = Number(formatEther(amountOut))
+          .toFixed(2)
+          .toString();
+
+        setNumeraireAmount(amountOutFixed);
       } else {
         setNumeraireAmount("");
         setAssetAmount("");
