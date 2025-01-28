@@ -4,9 +4,10 @@ import {
   Drift,
   ContractWriteOptions,
   OnMinedParam,
-} from '@delvtech/drift';
-import { ReadFactory, AirlockABI } from './ReadFactory';
-import { Address, encodeAbiParameters, Hex, parseEther } from 'viem';
+  createDrift,
+} from "@delvtech/drift";
+import { ReadFactory, AirlockABI } from "./ReadFactory";
+import { Address, encodeAbiParameters, Hex, parseEther } from "viem";
 
 const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
 
@@ -23,8 +24,8 @@ const DEFAULT_PRE_MINT_INT = 9_000_000; // 0.9% of the total supply
 
 // Leave these as strings so that we know they are less than 1
 // note: must satisfy maxShareToBeSold + maxShareToBond <= 1
-const DEFAULT_MAX_SHARE_TO_BE_SOLD = '0.2';
-const DEFAULT_MAX_SHARE_TO_BE_BOND = '0.5';
+const DEFAULT_MAX_SHARE_TO_BE_SOLD = "0.2";
+const DEFAULT_MAX_SHARE_TO_BE_BOND = "0.5";
 
 export interface CreateParams {
   initialSupply: bigint;
@@ -82,9 +83,9 @@ export interface CreateV3PoolParams {
   numeraire: Address;
   contracts: InitializerContractDependencies;
   tokenConfig: TokenConfig;
-  saleConfig: SaleConfig | 'default';
-  v3PoolConfig: V3PoolConfig | 'default';
-  vestingConfig: VestingConfig | 'default';
+  saleConfig: SaleConfig | "default";
+  v3PoolConfig: V3PoolConfig | "default";
+  vestingConfig: VestingConfig | "default";
 }
 
 export interface SimulateCreateResult {
@@ -109,7 +110,7 @@ export class ReadWriteFactory extends ReadFactory {
 
   constructor(
     address: Address,
-    drift: Drift<ReadWriteAdapter>,
+    drift: Drift<ReadWriteAdapter> = createDrift(),
     defaultConfigs?: DefaultConfigs
   ) {
     super(address, drift);
@@ -137,26 +138,26 @@ export class ReadWriteFactory extends ReadFactory {
   }
 
   private resolveConfig<T extends object>(
-    config: T | 'default',
+    config: T | "default",
     defaults: T
   ): T {
-    if (config === 'default') {
+    if (config === "default") {
       return { ...defaults };
     }
     return { ...config };
   }
 
   private resolveVestingConfig(
-    config: VestingConfig | 'default',
+    config: VestingConfig | "default",
     userAddress: Address
   ): VestingConfig {
-    const base = config === 'default' ? this.defaultVestingConfig : config;
+    const base = config === "default" ? this.defaultVestingConfig : config;
 
     return {
       ...base,
-      recipients: config === 'default' ? [userAddress] : [...base.recipients],
+      recipients: config === "default" ? [userAddress] : [...base.recipients],
       amounts:
-        config === 'default'
+        config === "default"
           ? [parseEther(DEFAULT_PRE_MINT_INT.toString())]
           : [...base.amounts],
     };
@@ -165,14 +166,14 @@ export class ReadWriteFactory extends ReadFactory {
   private generateRandomSalt = (account: Address) => {
     const array = new Uint8Array(32);
 
-    if (typeof window !== 'undefined' && window.crypto) {
+    if (typeof window !== "undefined" && window.crypto) {
       window.crypto.getRandomValues(array);
     } else {
-      array.set(require('crypto').randomBytes(32));
+      array.set(require("crypto").randomBytes(32));
     }
 
     if (account) {
-      const addressBytes = account.slice(2).padStart(40, '0');
+      const addressBytes = account.slice(2).padStart(40, "0");
       for (let i = 0; i < 20; i++) {
         const addressByte = parseInt(
           addressBytes.slice(i * 2, (i + 1) * 2),
@@ -182,19 +183,19 @@ export class ReadWriteFactory extends ReadFactory {
       }
     }
     return `0x${Array.from(array)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')}`;
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")}`;
   };
 
   private encodePoolInitializerData(v3PoolConfig: V3PoolConfig): Hex {
     return encodeAbiParameters(
       [
-        { type: 'uint24' },
-        { type: 'int24' },
-        { type: 'int24' },
-        { type: 'uint16' },
-        { type: 'uint256' },
-        { type: 'uint256' },
+        { type: "uint24" },
+        { type: "int24" },
+        { type: "int24" },
+        { type: "uint16" },
+        { type: "uint256" },
+        { type: "uint256" },
       ],
       [
         v3PoolConfig.fee,
@@ -213,13 +214,13 @@ export class ReadWriteFactory extends ReadFactory {
   ): Hex {
     return encodeAbiParameters(
       [
-        { type: 'string' },
-        { type: 'string' },
-        { type: 'uint256' },
-        { type: 'uint256' },
-        { type: 'address[]' },
-        { type: 'uint256[]' },
-        { type: 'string' },
+        { type: "string" },
+        { type: "string" },
+        { type: "uint256" },
+        { type: "uint256" },
+        { type: "address[]" },
+        { type: "uint256[]" },
+        { type: "string" },
       ],
       [
         tokenConfig.name,
@@ -234,7 +235,7 @@ export class ReadWriteFactory extends ReadFactory {
   }
 
   private encodeGovernanceFactoryData(tokenConfig: TokenConfig): Hex {
-    return encodeAbiParameters([{ type: 'string' }], [tokenConfig.name]);
+    return encodeAbiParameters([{ type: "string" }], [tokenConfig.name]);
   }
 
   private encode(params: CreateV3PoolParams): {
@@ -245,7 +246,7 @@ export class ReadWriteFactory extends ReadFactory {
       params;
 
     if (!userAddress) {
-      throw new Error('User address is required. Is a wallet connected?');
+      throw new Error("User address is required. Is a wallet connected?");
     }
 
     const vestingConfig = this.resolveVestingConfig(
@@ -265,7 +266,7 @@ export class ReadWriteFactory extends ReadFactory {
 
     if (v3PoolConfig.startTick > v3PoolConfig.endTick) {
       throw new Error(
-        'Invalid start and end ticks. Start tick must be less than end tick.'
+        "Invalid start and end ticks. Start tick must be less than end tick."
       );
     }
 
@@ -276,7 +277,7 @@ export class ReadWriteFactory extends ReadFactory {
       vestingConfig
     );
     const poolInitializerData = this.encodePoolInitializerData(v3PoolConfig);
-    const liquidityMigratorData = '0x' as Hex;
+    const liquidityMigratorData = "0x" as Hex;
 
     const {
       tokenFactory,
@@ -334,13 +335,13 @@ export class ReadWriteFactory extends ReadFactory {
     params: CreateParams,
     options?: ContractWriteOptions & OnMinedParam
   ): Promise<Hex> {
-    return this.airlock.write('create', { createData: params }, options);
+    return this.airlock.write("create", { createData: params }, options);
   }
 
   public async simulateCreate(
     params: CreateParams
   ): Promise<SimulateCreateResult> {
-    return this.airlock.simulateWrite('create', { createData: params });
+    return this.airlock.simulateWrite("create", { createData: params });
   }
 
   public updateDefaultConfigs(configs: DefaultConfigs) {
