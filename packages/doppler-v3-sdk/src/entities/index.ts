@@ -14,7 +14,7 @@ export { ReadEth } from "./token/eth";
 export { ReadUniswapV3Pool } from "./pool";
 export { ReadUniswapV3Initializer } from "./initializer";
 export {
-  ReadWriteQuoter,
+  ReadQuoter,
   QuoteExactInputSingleParams,
   QuoteExactInputSingleResult,
   QuoteExactOutputSingleParams,

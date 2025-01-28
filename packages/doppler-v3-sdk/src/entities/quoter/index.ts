@@ -1,7 +1,7 @@
 export {
-  ReadWriteQuoter,
+  ReadQuoter,
   QuoteExactInputSingleParams,
   QuoteExactInputSingleResult,
   QuoteExactOutputSingleParams,
   QuoteExactOutputSingleResult,
-} from "./ReadWriteQuoter";
+} from "./ReadQuoter";
