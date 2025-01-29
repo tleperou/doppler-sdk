@@ -74,8 +74,10 @@ export const v3Pool = onchainTable("v3_pool", (t) => ({
   sqrtPrice: t.bigint().notNull(),
   liquidity: t.bigint().notNull(),
   createdAt: t.bigint().notNull(),
+  asset: t.hex().notNull(),
   baseToken: t.hex().notNull(),
   quoteToken: t.hex().notNull(),
+  initializer: t.hex(),
 }));
 
 // assets have one pool
@@ -85,8 +87,20 @@ export const assetRelations = relations(asset, ({ one, many }) => ({
 }));
 
 // pools have many positions
-export const poolRelations = relations(v3Pool, ({ many }) => ({
+export const poolRelations = relations(v3Pool, ({ one, many }) => ({
   positions: many(position),
+  asset: one(asset, {
+    fields: [v3Pool.asset],
+    references: [asset.address],
+  }),
+  baseToken: one(token, {
+    fields: [v3Pool.baseToken],
+    references: [token.address],
+  }),
+  quoteToken: one(token, {
+    fields: [v3Pool.quoteToken],
+    references: [token.address],
+  }),
 }));
 
 // positions have one pool

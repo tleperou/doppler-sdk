@@ -28,7 +28,6 @@ interface AssetData {
 
 const secondsInHour = 3600;
 
-const Q96 = BigInt(2) ** BigInt(96);
 const Q192 = BigInt(2) ** BigInt(192);
 
 const insertOrUpdateHourBucket = async ({
@@ -76,12 +75,6 @@ const insertOrUpdateHourBucket = async ({
   const price = assetBefore
     ? (ratioX192 * BigInt(baseTokenDecimalScale)) / Q192
     : (Q192 * BigInt(baseTokenDecimalScale)) / ratioX192;
-
-  console.log({
-    sqrtPriceX96,
-    ratioX192,
-    price,
-  });
 
   try {
     await context.db
@@ -273,7 +266,6 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
     context,
   });
 
-  const baseToken = assetId;
   const quoteToken =
     assetId.toLowerCase() === token0.toLowerCase() ? token1 : token0;
 
@@ -284,7 +276,9 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
       ...slot0Data,
       liquidity: liquidity,
       createdAt: event.block.timestamp,
-      baseToken: baseToken as Address,
+      initializer: assetDataStruct.poolInitializer,
+      asset: assetId,
+      baseToken: assetId,
       quoteToken: quoteToken as Address,
     })
     .onConflictDoNothing();
@@ -446,6 +440,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
       ...slot0Data,
       liquidity: liquidity,
       createdAt: event.block.timestamp,
+      asset: baseToken as Address,
       baseToken: baseToken as Address,
       quoteToken: quoteToken as Address,
     })
