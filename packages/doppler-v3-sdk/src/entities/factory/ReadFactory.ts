@@ -5,9 +5,10 @@ import {
   EventLog,
   ContractGetEventsOptions,
   ContractReadOptions,
-} from '@delvtech/drift';
-import { Address } from 'viem';
-import { airlockAbi } from '../../abis';
+  createDrift,
+} from "@delvtech/drift";
+import { Address } from "viem";
+import { airlockAbi } from "../../abis";
 
 export type AirlockABI = typeof airlockAbi;
 
@@ -32,7 +33,7 @@ export interface AssetData {
 export class ReadFactory {
   airlock: ReadContract<AirlockABI>;
 
-  constructor(address: Address, drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(address: Address, drift: Drift<ReadAdapter> = createDrift()) {
     this.airlock = drift.contract({
       abi: airlockAbi,
       address,
@@ -43,7 +44,7 @@ export class ReadFactory {
     address: Address,
     options?: ContractReadOptions
   ): Promise<ModuleState> {
-    return this.airlock.read('getModuleState', {
+    return this.airlock.read("getModuleState", {
       module: address,
       ...options,
     });
@@ -53,7 +54,7 @@ export class ReadFactory {
     asset: Address,
     options?: ContractReadOptions
   ): Promise<AssetData> {
-    return this.airlock.read('getAssetData', {
+    return this.airlock.read("getAssetData", {
       asset,
       ...options,
     });
@@ -61,24 +62,24 @@ export class ReadFactory {
 
   async getCreateEvents(
     options?: ContractGetEventsOptions
-  ): Promise<EventLog<AirlockABI, 'Create'>[]> {
-    return this.airlock.getEvents('Create', {
+  ): Promise<EventLog<AirlockABI, "Create">[]> {
+    return this.airlock.getEvents("Create", {
       ...options,
     });
   }
 
   async getMigrateEvents(
     options?: ContractGetEventsOptions
-  ): Promise<EventLog<AirlockABI, 'Migrate'>[]> {
-    return this.airlock.getEvents('Migrate', {
+  ): Promise<EventLog<AirlockABI, "Migrate">[]> {
+    return this.airlock.getEvents("Migrate", {
       ...options,
     });
   }
 
   async getSetModuleStateEvents(
     options?: ContractGetEventsOptions
-  ): Promise<EventLog<AirlockABI, 'SetModuleState'>[]> {
-    return this.airlock.getEvents('SetModuleState', {
+  ): Promise<EventLog<AirlockABI, "SetModuleState">[]> {
+    return this.airlock.getEvents("SetModuleState", {
       ...options,
     });
   }

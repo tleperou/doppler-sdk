@@ -1,24 +1,17 @@
 import { Link } from "react-router-dom";
 import { addresses } from "../addresses";
 import TokenName from "../components/TokenName";
-import { usePoolCreationDatas } from "../hooks/usePoolCreationData";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { useAssets } from "@/services/indexer";
 // import { useState } from "react";
 
 function HomePage() {
-  const {
-    data: poolDatas,
-    isLoading: isPoolsLoading,
-    error: poolDataError,
-  } = usePoolCreationDatas(addresses.airlock);
-  // const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  if (poolDataError) {
-    throw poolDataError;
-  }
+  const { data: assets, isLoading: isAssetsLoading } = useAssets(
+    addresses.v3Initializer
+  );
 
   const getRandom24HChange = () => {
     const change = (Math.random() * 20 - 10).toFixed(2); // Random between -10% and +10%
@@ -28,6 +21,8 @@ function HomePage() {
     };
   };
 
+  console.log(assets);
+
   return (
     <div className="home-page p-6 max-w-6xl mx-auto">
       <div className="doppler-actions">
@@ -35,13 +30,13 @@ function HomePage() {
           <h2 className="text-2xl font-bold">Explore</h2>
           <Separator />
 
-          {isPoolsLoading ? (
+          {isAssetsLoading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : poolDatas?.length === 0 ? (
+          ) : assets?.assets?.items?.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-8">
               <p className="text-muted-foreground">No markets found</p>
               <Button asChild>
@@ -64,27 +59,30 @@ function HomePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {poolDatas?.map((poolData) => {
+                  {assets?.assets?.items?.map((asset) => {
                     const change = getRandom24HChange();
                     return (
-                      <tr key={poolData.asset.address} className="border-t">
+                      <tr
+                        key={asset?.pool?.baseToken?.address}
+                        className="border-t"
+                      >
                         <td className="p-4">
                           <Link
-                            to={`/doppler/${poolData.asset.address}`}
+                            to={`/doppler/${asset?.pool?.baseToken?.address}`}
                             className="block hover:bg-muted/50 transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               <TokenName
-                                name={poolData.asset.name}
-                                symbol={poolData.asset.symbol}
+                                name={asset?.pool?.baseToken?.name || ""}
+                                symbol={asset?.pool?.baseToken?.symbol || ""}
                                 showSymbol={false}
                               />
                               <div>
                                 <div className="font-medium">
-                                  {poolData.asset.symbol}
+                                  {asset?.pool?.baseToken?.symbol}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {poolData.asset.name}
+                                  {asset?.pool?.baseToken?.name}
                                 </div>
                               </div>
                             </div>

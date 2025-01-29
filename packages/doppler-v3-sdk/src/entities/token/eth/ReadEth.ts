@@ -1,21 +1,21 @@
-import { ReadAdapter, Drift } from '@delvtech/drift';
-import { Address } from 'abitype';
-import { ETH_ADDRESS } from '../../../constants';
+import { ReadAdapter, Drift, createDrift } from "@delvtech/drift";
+import { Address } from "abitype";
+import { ETH_ADDRESS } from "../../../constants";
 
 export class ReadEth {
   drift: Drift<ReadAdapter>;
   static address = ETH_ADDRESS;
 
-  constructor(drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(drift: Drift<ReadAdapter> = createDrift()) {
     this.drift = drift;
   }
 
   async getName(): Promise<string> {
-    return 'Ether';
+    return "Ether";
   }
 
   async getSymbol(): Promise<string> {
-    return 'ETH';
+    return "ETH";
   }
 
   async getDecimals(): Promise<number> {

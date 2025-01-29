@@ -12,6 +12,7 @@ import { AirlockABI } from "../abis/AirlockABI";
 import { UniswapV3PoolABI } from "../abis/UniswapV3PoolABI";
 import { Address, Hex, parseUnits, zeroAddress } from "viem";
 import { DERC20ABI } from "../abis/DERC20ABI";
+import { addresses } from "../ponder.config";
 
 interface AssetData {
   numeraire: Hex;
@@ -28,8 +29,42 @@ interface AssetData {
 
 const secondsInHour = 3600;
 
-const Q96 = BigInt(2) ** BigInt(96);
 const Q192 = BigInt(2) ** BigInt(192);
+
+const computePrice = async ({
+  sqrtPriceX96,
+  baseToken,
+  context,
+  poolAddress,
+}: {
+  sqrtPriceX96: bigint;
+  baseToken: Address;
+  context: Context;
+  poolAddress: Address;
+}) => {
+  const { token0 } = await getV3PoolData({
+    address: poolAddress,
+    context,
+  });
+
+  const isToken0 = token0.toLowerCase() === baseToken.toLowerCase();
+
+  const baseTokenDecimals = await context.client.readContract({
+    abi: DERC20ABI,
+    address: baseToken,
+    functionName: "decimals",
+  });
+
+  const ratioX192 = sqrtPriceX96 * sqrtPriceX96;
+
+  const baseTokenDecimalScale = 10 ** baseTokenDecimals;
+
+  const price = isToken0
+    ? (ratioX192 * BigInt(baseTokenDecimalScale)) / Q192
+    : (Q192 * BigInt(baseTokenDecimalScale)) / ratioX192;
+
+  return price;
+};
 
 const insertOrUpdateHourBucket = async ({
   poolAddress,
@@ -46,41 +81,11 @@ const insertOrUpdateHourBucket = async ({
 }) => {
   const hourId = Math.floor(Number(timestamp) / secondsInHour) * secondsInHour;
 
-  const { token0, token1 } = await getV3PoolData({
-    address: poolAddress,
-    context,
-  });
-
-  const isToken0 = token0.toLowerCase() === baseToken.toLowerCase();
-
-  const assetBefore = isToken0
-    ? token0.toLowerCase() < token1.toLowerCase()
-    : token1.toLowerCase() < token0.toLowerCase();
-
-  const baseTokenDecimals = await context.client.readContract({
-    abi: DERC20ABI,
-    address: baseToken,
-    functionName: "decimals",
-  });
-
-  const quoteTokenDecimals = await context.client.readContract({
-    abi: DERC20ABI,
-    address: isToken0 ? (token1 as Address) : (token0 as Address),
-    functionName: "decimals",
-  });
-
-  const baseTokenDecimalScale = 10 ** baseTokenDecimals;
-
-  const ratioX192 = sqrtPriceX96 * sqrtPriceX96;
-
-  const price = assetBefore
-    ? (ratioX192 * BigInt(baseTokenDecimalScale)) / Q192
-    : (Q192 * BigInt(baseTokenDecimalScale)) / ratioX192;
-
-  console.log({
+  const price = await computePrice({
     sqrtPriceX96,
-    ratioX192,
-    price,
+    baseToken,
+    context,
+    poolAddress,
   });
 
   try {
@@ -257,37 +262,56 @@ ponder.on("Airlock:Create", async ({ event, context }) => {
     integrator: assetData[9],
   };
 
-  await context.db
-    .insert(asset)
-    .values({
-      address: assetId,
-      ...assetDataStruct,
-      createdAt: event.block.timestamp,
-      migratedAt: null,
-      isDerc20: true,
-    })
-    .onConflictDoNothing();
+  console.log(assetDataStruct);
+
+  if (assetDataStruct.poolInitializer != addresses.v3Initializer) {
+    return;
+  }
 
   const { slot0Data, liquidity, token0, token1 } = await getV3PoolData({
     address: poolOrHook,
     context,
   });
 
-  const baseToken = assetId;
   const quoteToken =
     assetId.toLowerCase() === token0.toLowerCase() ? token1 : token0;
+
+  const price = await computePrice({
+    sqrtPriceX96: slot0Data.sqrtPrice,
+    baseToken: assetId,
+    context,
+    poolAddress: poolOrHook,
+  });
 
   await context.db
     .insert(v3Pool)
     .values({
-      id: poolOrHook,
       ...slot0Data,
+      address: poolOrHook,
       liquidity: liquidity,
       createdAt: event.block.timestamp,
-      baseToken: baseToken as Address,
+      initializer: assetDataStruct.poolInitializer,
+      asset: assetId,
+      baseToken: assetId,
       quoteToken: quoteToken as Address,
+      price,
     })
     .onConflictDoNothing();
+
+  await context.db
+    .insert(asset)
+    .values({
+      ...assetDataStruct,
+      pool: poolOrHook,
+      address: assetId,
+      createdAt: event.block.timestamp,
+      migratedAt: null,
+      isDerc20: true,
+    })
+    .onConflictDoUpdate((row) => ({
+      pool: poolOrHook,
+      migratedAt: null,
+    }));
 });
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
@@ -319,8 +343,9 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
   await db
     .insert(asset)
     .values({
-      address: assetId,
       ...assetDataStruct,
+      address: assetId,
+      pool: assetDataStruct.pool,
       createdAt: event.block.timestamp,
       migratedAt: event.block.timestamp,
       isDerc20: true,
@@ -425,32 +450,34 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   });
 
   const poolData = await db.find(v3Pool, {
-    id: pool,
+    address: pool,
   });
 
   const baseToken = poolData?.baseToken;
   const quoteToken = poolData?.quoteToken;
 
-  await insertOrUpdateHourBucket({
-    poolAddress: pool,
-    baseToken: baseToken as Address,
+  const price = await computePrice({
     sqrtPriceX96: slot0Data.sqrtPrice,
-    timestamp: event.block.timestamp,
+    baseToken: baseToken as Address,
     context,
+    poolAddress: pool,
   });
 
   await db
     .insert(v3Pool)
     .values({
-      id: pool,
+      address: pool,
       ...slot0Data,
       liquidity: liquidity,
       createdAt: event.block.timestamp,
       baseToken: baseToken as Address,
       quoteToken: quoteToken as Address,
+      price: price,
+      asset: baseToken as Address,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: liquidity,
+      price: price,
       ...slot0Data,
     }));
 });

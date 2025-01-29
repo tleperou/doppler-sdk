@@ -1,4 +1,4 @@
-import { ReadContract, ReadAdapter, Drift } from "@delvtech/drift";
+import { ReadContract, ReadAdapter, Drift, createDrift } from "@delvtech/drift";
 import { Address } from "viem";
 import { quoterV2Abi } from "../../abis";
 
@@ -37,7 +37,7 @@ export type QuoterV2ABI = typeof quoterV2Abi;
 export class ReadQuoter {
   quoter: ReadContract<QuoterV2ABI>;
 
-  constructor(address: Address, drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(address: Address, drift: Drift<ReadAdapter> = createDrift()) {
     this.quoter = drift.contract({
       abi: quoterV2Abi,
       address,

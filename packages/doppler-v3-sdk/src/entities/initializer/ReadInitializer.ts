@@ -1,6 +1,6 @@
-import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
-import { Address } from 'viem';
-import { uniswapV3InitializerAbi } from '../../abis';
+import { ReadContract, ReadAdapter, Drift, createDrift } from "@delvtech/drift";
+import { Address } from "viem";
+import { uniswapV3InitializerAbi } from "../../abis";
 
 export interface PoolState {
   asset: Address;
@@ -19,7 +19,7 @@ export type UniswapV3InitializerABI = typeof uniswapV3InitializerAbi;
 export class ReadUniswapV3Initializer {
   initializer: ReadContract<UniswapV3InitializerABI>;
 
-  constructor(address: Address, drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(address: Address, drift: Drift<ReadAdapter> = createDrift()) {
     this.initializer = drift.contract({
       abi: uniswapV3InitializerAbi,
       address,
@@ -27,6 +27,6 @@ export class ReadUniswapV3Initializer {
   }
 
   async getState(pool: Address): Promise<PoolState> {
-    return this.initializer.read('getState', { pool });
+    return this.initializer.read("getState", { pool });
   }
 }

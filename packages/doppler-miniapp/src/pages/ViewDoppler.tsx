@@ -1,11 +1,7 @@
 import { Navigate, useParams } from "react-router-dom";
-import { addresses } from "../addresses";
-import { Address, formatEther, parseEther } from "viem";
-import LiquidityChart from "../components/LiquidityChart";
-import TokenName from "../components/TokenName";
-import { usePoolData } from "../hooks/usePoolData";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { useState } from "react";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { Address, formatEther, Hex, parseEther } from "viem";
 import {
   PermitSingle,
   SwapRouter02Encoder,
@@ -13,84 +9,68 @@ import {
   getPermitSignature,
 } from "doppler-router";
 import { universalRouterAbi } from "../abis/UniversalRouterABI";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
-import { getDrift } from "@/utils/drift";
 import { ReadQuoter } from "doppler-v3-sdk";
-import { Q192, decimalScale } from "../constants";
+import { getDrift } from "@/utils/drift";
+import { useAsset, usePositions } from "@/services/indexer";
+import {
+  Button,
+  Input,
+  Card,
+  Separator,
+  Skeleton,
+  Label,
+} from "../components/ui";
+import LiquidityChart from "../components/LiquidityChart";
+import TokenName from "../components/TokenName";
 
+import { addresses } from "../addresses";
 function ViewDoppler() {
+  // Hooks and state initialization
   const { id } = useParams();
   const account = useAccount();
   const { data: walletClient } = useWalletClient(account);
   const publicClient = usePublicClient();
-  const { airlock, v3Initializer, universalRouter, quoterV2 } = addresses;
+  const { universalRouter, quoterV2 } = addresses;
   const drift = getDrift();
-
   const quoter = new ReadQuoter(quoterV2, drift);
 
-  if (!id || !/^0x[a-fA-F0-9]{40}$/.test(id)) {
-    return <Navigate to="/" />;
-  }
+  // Validation and data fetching
+  const isValidAddress = id?.match(/^0x[a-fA-F0-9]{40}$/);
+  if (!isValidAddress || !id) return <Navigate to="/" />;
 
-  const { data, isLoading } = usePoolData(
-    airlock,
-    v3Initializer,
-    id as Address
+  const { data: assetData, isLoading: isAssetLoading } = useAsset(id);
+  const { data: positions, isLoading: isPositionsLoading } = usePositions(
+    assetData?.asset?.pool?.address
   );
 
-  const { asset, numeraire, poolData } = data;
+  const isLoading = isAssetLoading || isPositionsLoading;
+  const { baseToken, quoteToken } = assetData?.asset?.pool || {};
+  const positionItems = positions?.positions?.items || [];
 
-  const totalLiquidity =
-    poolData?.positions &&
-    poolData.positions
-      .reduce((acc: number, position: { liquidity: bigint }) => {
-        return acc + Number(formatEther(position.liquidity));
-      }, 0)
-      .toFixed(2);
+  const [swapState, setSwapState] = useState({
+    numeraireAmount: "",
+    assetAmount: "",
+    activeField: "numeraire" as "numeraire" | "asset",
+  });
 
-  const ratioX192 =
-    poolData?.slot0?.sqrtPriceX96 &&
-    poolData?.slot0?.sqrtPriceX96 * poolData?.slot0?.sqrtPriceX96;
-  const price =
-    ratioX192 && ratioX192 > 0n
-      ? formatEther((Q192 * BigInt(decimalScale)) / BigInt(ratioX192))
-      : 0;
-
-  const [numeraireAmount, setNumeraireAmount] = useState("");
-  const [assetAmount, setAssetAmount] = useState("");
-  const [activeField, setActiveField] = useState<"numeraire" | "asset">(
-    "numeraire"
-  );
-
-  async function handleSwap() {
-    if (!walletClient?.account || !numeraire?.token || !asset?.token) return;
+  const handleSwap = async () => {
+    if (!account.address || !baseToken || !quoteToken || !walletClient) return;
 
     const block = await publicClient.getBlock();
-
+    const { activeField, numeraireAmount, assetAmount } = swapState;
     const isSellingNumeraire = activeField === "numeraire";
-    const amount = isSellingNumeraire
-      ? parseEther(numeraireAmount)
-      : parseEther(assetAmount);
+    const amount = parseEther(
+      isSellingNumeraire ? numeraireAmount : assetAmount
+    );
 
-    const permit: PermitSingle = {
-      details: {
-        token: isSellingNumeraire
-          ? numeraire.token.contract.address
-          : asset.token.contract.address,
-        amount: amount,
-        expiration: block.timestamp + 3600n, // 1 hour
-        nonce: 0n, // Gets populated by getPermitSignature
-      },
-      spender: universalRouter,
-      sigDeadline: block.timestamp + 3600n,
-    };
+    const permit = createPermitData({
+      isSellingNumeraire,
+      amount,
+      blockTimestamp: block.timestamp,
+      baseTokenAddress: baseToken.address as Address,
+      quoteTokenAddress: quoteToken.address as Address,
+    });
 
-    // TODO: check if we need the signature?
     const signature = await getPermitSignature(
       permit,
       publicClient.chain.id,
@@ -100,20 +80,15 @@ function ViewDoppler() {
       walletClient
     );
 
-    const isToken0 =
-      numeraire.token.contract.address < asset.token.contract.address;
-    const zeroForOne = isSellingNumeraire ? isToken0 : !isToken0;
-    const pathArray = zeroForOne
-      ? [numeraire.token.contract.address, asset.token.contract.address]
-      : [asset.token.contract.address, numeraire.token.contract.address];
-    const path = new SwapRouter02Encoder().encodePathExactInput(pathArray);
-
-    const builder = new CommandBuilder()
-      .addWrapEth(universalRouter, amount)
-      .addPermit2Permit(permit, signature)
-      .addV3SwapExactIn(walletClient.account.address, amount, 0n, path, false); // TODO: set amountOutMinimum
-
-    const [commands, inputs] = builder.build();
+    const [commands, inputs] = buildSwapCommands({
+      isSellingNumeraire,
+      amount,
+      permit,
+      signature,
+      baseTokenAddress: baseToken.address as Address,
+      quoteTokenAddress: quoteToken.address as Address,
+      account: account.address,
+    });
 
     const { request } = await publicClient.simulateContract({
       address: universalRouter,
@@ -124,189 +99,296 @@ function ViewDoppler() {
       value: amount,
     });
 
-    const txHash = await walletClient.writeContract({
-      ...request,
-    });
-
-    // Wait for transaction confirmation
-    const receipt = await publicClient.waitForTransactionReceipt({
-      hash: txHash,
-    });
-    return receipt;
-  }
+    const txHash = await walletClient.writeContract(request);
+    return await publicClient.waitForTransactionReceipt({ hash: txHash });
+  };
 
   const handleAmountChange = async (
     value: string,
-    field: "numeraire" | "asset"
+    field: typeof swapState.activeField
   ) => {
-    setActiveField(field);
-    if (!asset?.token.contract.address || !numeraire?.token.contract.address)
-      return;
+    setSwapState((prev) => ({
+      ...prev,
+      [field === "numeraire" ? "numeraireAmount" : "assetAmount"]: value,
+      activeField: field,
+    }));
+
+    if (!baseToken?.address || !quoteToken?.address) return;
+
     try {
-      if (field === "numeraire") {
-        setNumeraireAmount(value);
-        const inputValue = parseEther(value);
-        const { amountOut } = await quoter.quoteExactInput({
-          tokenIn: numeraire?.token.contract.address,
-          tokenOut: asset?.token.contract.address,
-          amountIn: inputValue,
-          fee: 3000,
-          sqrtPriceLimitX96: 0n,
-        });
+      const inputValue = parseFloat(value);
+      if (isNaN(inputValue)) return;
 
-        const amountOutFixed = Number(formatEther(amountOut))
-          .toFixed(2)
-          .toString();
+      const { tokenIn, tokenOut } = getSwapDirection(
+        field,
+        quoteToken.address as Address,
+        baseToken.address as Address
+      );
 
-        setAssetAmount(amountOutFixed);
-      } else if (field === "asset") {
-        setAssetAmount(value);
-        const inputValue = parseEther(value);
-        const { amountOut } = await quoter.quoteExactInput({
-          tokenIn: asset?.token.contract.address,
-          tokenOut: numeraire?.token.contract.address,
-          amountIn: inputValue,
-          fee: 3000,
-          sqrtPriceLimitX96: 0n,
-        });
+      const inputValueInWei = parseEther(inputValue.toString());
 
-        const amountOutFixed = Number(formatEther(amountOut))
-          .toFixed(2)
-          .toString();
-
-        setNumeraireAmount(amountOutFixed);
-      } else {
-        setNumeraireAmount("");
-        setAssetAmount("");
+      if (inputValueInWei === 0n) {
+        setSwapState((prev) => ({
+          ...prev,
+          [field === "numeraire" ? "assetAmount" : "numeraireAmount"]: "",
+        }));
+        return;
       }
+
+      const { amountOut } = await quoter.quoteExactInput({
+        tokenIn,
+        tokenOut,
+        amountIn: inputValueInWei,
+        fee: 3000,
+        sqrtPriceLimitX96: 0n,
+      });
+
+      console.log("amountOut", amountOut);
+
+      const formattedAmount = Number(formatEther(amountOut)).toFixed(4);
+      setSwapState((prev) => ({
+        ...prev,
+        [field === "numeraire" ? "assetAmount" : "numeraireAmount"]:
+          formattedAmount,
+      }));
     } catch (error) {
-      console.error("Swap simulation failed:", error);
+      console.error("Invalid input:", error);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">
-            <TokenName
-              name={asset?.name ?? ""}
-              symbol={asset?.symbol ?? ""}
-              showSymbol={true}
-            />{" "}
-            /{" "}
-            <TokenName
-              name={numeraire?.name ?? ""}
-              symbol={numeraire?.symbol ?? ""}
-              showSymbol={true}
-            />
-          </h2>
+    <div className="max-w-4xl mx-auto p-6 space-y-6 text-lg">
+      <header className="flex items-center flex-start">
+        <TokenName
+          name={quoteToken?.name ?? ""}
+          symbol={quoteToken?.symbol ?? ""}
+        />{" "}
+        /{" "}
+        <TokenName
+          name={baseToken?.name ?? ""}
+          symbol={baseToken?.symbol ?? ""}
+        />
+      </header>
+
+      <Separator />
+
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[200px] w-full" />
         </div>
+      ) : (
+        <>
+          <LiquidityInfoCard
+            liquidity={assetData?.asset?.pool?.liquidity}
+            price={assetData?.asset?.pool?.price}
+            currentTick={assetData?.asset?.pool?.tick}
+            // @ts-ignore
+            baseToken={baseToken}
+            // @ts-ignore
+            quoteToken={quoteToken}
+            positions={positionItems}
+          />
 
-        <Separator />
-
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-[300px] w-full" />
-            <Skeleton className="h-[200px] w-full" />
-          </div>
-        ) : (
-          <>
-            <Card className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Total Liquidity
-                    </h3>
-                    <p className="text-xl font-semibold">{totalLiquidity}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Current Price
-                    </h3>
-                    <p className="text-xl font-semibold">
-                      1 {asset?.symbol} = {price} {numeraire?.symbol}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <LiquidityChart
-                positions={poolData?.positions ?? []}
-                currentTick={poolData?.slot0?.tick ?? 0}
-              />
-            </Card>
-
-            <Card className="p-6">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">Swap Tokens</h3>
-                    <Separator />
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="numeraireAmount">
-                        {numeraire?.name} ({numeraire?.symbol})
-                      </Label>
-                      <Input
-                        type="number"
-                        id="numeraireAmount"
-                        placeholder="0.0"
-                        value={numeraireAmount}
-                        onChange={(e) =>
-                          handleAmountChange(e.target.value, "numeraire")
-                        }
-                        disabled={isLoading}
-                        step="any"
-                      />
-                    </div>
-
-                    <div className="relative">
-                      <Separator className="absolute top-1/2 w-full" />
-                      <div className="relative flex justify-center">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          ↓
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="assetAmount">
-                        {asset?.name} ({asset?.symbol})
-                      </Label>
-                      <Input
-                        type="number"
-                        id="assetAmount"
-                        placeholder="0.0"
-                        value={assetAmount}
-                        onChange={(e) =>
-                          handleAmountChange(e.target.value, "asset")
-                        }
-                        disabled={isLoading}
-                        step="any"
-                      />
-                    </div>
-
-                    <Button
-                      className="w-full"
-                      disabled={!numeraireAmount && !assetAmount}
-                      onClick={handleSwap}
-                    >
-                      {activeField === "numeraire"
-                        ? `Sell ${numeraire?.symbol} for ${asset?.symbol}`
-                        : `Buy ${numeraire?.symbol} with ${asset?.symbol}`}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </>
-        )}
-      </div>
+          <SwapCard
+            // @ts-ignore
+            baseToken={baseToken}
+            // @ts-ignore
+            quoteToken={quoteToken}
+            swapState={swapState}
+            onAmountChange={handleAmountChange}
+            onSwap={handleSwap}
+            isLoading={isLoading}
+          />
+        </>
+      )}
     </div>
   );
 }
+
+function createPermitData({
+  isSellingNumeraire,
+  amount,
+  blockTimestamp,
+  baseTokenAddress,
+  quoteTokenAddress,
+}: {
+  isSellingNumeraire: boolean;
+  amount: bigint;
+  blockTimestamp: bigint;
+  baseTokenAddress: Address;
+  quoteTokenAddress: Address;
+}): PermitSingle {
+  return {
+    details: {
+      token: isSellingNumeraire ? baseTokenAddress : quoteTokenAddress,
+      amount,
+      expiration: blockTimestamp + 3600n,
+      nonce: 0n,
+    },
+    spender: addresses.universalRouter,
+    sigDeadline: blockTimestamp + 3600n,
+  };
+}
+
+function buildSwapCommands({
+  isSellingNumeraire,
+  amount,
+  permit,
+  signature,
+  baseTokenAddress,
+  quoteTokenAddress,
+  account,
+}: {
+  isSellingNumeraire: boolean;
+  amount: bigint;
+  permit: PermitSingle;
+  signature: Hex;
+  baseTokenAddress: Address;
+  quoteTokenAddress: Address;
+  account: Address;
+}) {
+  const isToken0 = baseTokenAddress < quoteTokenAddress;
+  const zeroForOne = isSellingNumeraire ? isToken0 : !isToken0;
+  const pathArray = zeroForOne
+    ? [baseTokenAddress, quoteTokenAddress]
+    : [quoteTokenAddress, baseTokenAddress];
+
+  const path = new SwapRouter02Encoder().encodePathExactInput(pathArray);
+
+  return new CommandBuilder()
+    .addWrapEth(addresses.universalRouter, amount)
+    .addPermit2Permit(permit, signature)
+    .addV3SwapExactIn(account, amount, 0n, path, false)
+    .build();
+}
+
+function getSwapDirection(
+  activeField: "numeraire" | "asset",
+  baseTokenAddress: Address,
+  quoteTokenAddress: Address
+) {
+  return activeField === "numeraire"
+    ? { tokenIn: baseTokenAddress, tokenOut: quoteTokenAddress }
+    : { tokenIn: quoteTokenAddress, tokenOut: baseTokenAddress };
+}
+
+// Extracted UI components
+const LiquidityInfoCard = ({
+  liquidity,
+  price,
+  currentTick,
+  baseToken,
+  quoteToken,
+  positions,
+}: {
+  liquidity?: bigint;
+  price?: bigint;
+  currentTick?: number;
+  baseToken?: { symbol?: string };
+  quoteToken?: { symbol?: string };
+  positions: any[];
+}) => (
+  <Card className="p-6 space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <StatItem label="Total Liquidity" value={liquidity?.toString()} />
+      <StatItem
+        label="Current Price"
+        value={`1 ${quoteToken?.symbol} = ${price} ${baseToken?.symbol}`}
+      />
+    </div>
+    <LiquidityChart positions={positions} currentTick={currentTick ?? 0} />
+  </Card>
+);
+
+const StatItem = ({ label, value }: { label: string; value?: string }) => (
+  <div className="space-y-1">
+    <h3 className="text-sm font-medium text-muted-foreground">{label}</h3>
+    <p className="text-xl font-semibold">{value || "-"}</p>
+  </div>
+);
+
+const SwapCard = ({
+  baseToken,
+  quoteToken,
+  swapState,
+  onAmountChange,
+  onSwap,
+  isLoading,
+}: {
+  baseToken?: { name?: string; symbol?: string };
+  quoteToken?: { name?: string; symbol?: string };
+  swapState: {
+    numeraireAmount: string;
+    assetAmount: string;
+    activeField: string;
+  };
+  onAmountChange: (value: string, field: "numeraire" | "asset") => void;
+  onSwap: () => void;
+  isLoading: boolean;
+}) => (
+  <Card className="p-6 space-y-6">
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Swap Tokens</h3>
+      <Separator />
+
+      <SwapInput
+        label={`${quoteToken?.name} (${quoteToken?.symbol})`}
+        value={swapState.numeraireAmount}
+        onChange={(value) => onAmountChange(value, "numeraire")}
+        disabled={isLoading}
+      />
+
+      <div className="relative">
+        <Separator className="absolute top-1/2 w-full" />
+        <div className="relative flex justify-center">
+          <span className="bg-background px-2 text-muted-foreground">↓</span>
+        </div>
+      </div>
+
+      <SwapInput
+        label={`${baseToken?.name} (${baseToken?.symbol})`}
+        value={swapState.assetAmount}
+        onChange={(value) => onAmountChange(value, "asset")}
+        disabled={isLoading}
+      />
+
+      <Button
+        className="w-full"
+        disabled={!swapState.numeraireAmount && !swapState.assetAmount}
+        onClick={onSwap}
+      >
+        {swapState.activeField === "numeraire"
+          ? `Buy ${baseToken?.symbol} with ${quoteToken?.symbol}`
+          : `Buy ${quoteToken?.symbol} with ${baseToken?.symbol}`}
+      </Button>
+    </div>
+  </Card>
+);
+
+const SwapInput = ({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) => (
+  <div className="space-y-2">
+    <Label htmlFor={label}>{label}</Label>
+    <Input
+      type="number"
+      id={label}
+      placeholder="0.0"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      step="any"
+    />
+  </div>
+);
 
 export default ViewDoppler;
