@@ -4,7 +4,7 @@ import { AirlockABI } from "./abis/AirlockABI";
 import { UniswapV3PoolABI } from "./abis/UniswapV3PoolABI";
 import { DERC20ABI } from "./abis/DERC20ABI";
 
-const addresses = {
+export const addresses = {
   airlock: "0x69224c3523999331E01C8B7d1DCc295343CEE26a" as Address,
   tokenFactory: "0xaF7333D5B1D12170867078ed84387B9dD3B33d67" as Address,
   v3Initializer: "0x003CaB286014EB585363ab2661dDC1307aE1E977" as Address,

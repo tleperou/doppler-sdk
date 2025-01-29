@@ -18,12 +18,12 @@ export const token = onchainTable("token", (t) => ({
 
 export const asset = onchainTable("asset", (t) => ({
   address: t.hex().primaryKey(),
+  pool: t.hex().notNull(),
   numeraire: t.hex().notNull(),
   timelock: t.hex().notNull(),
   governance: t.hex().notNull(),
   liquidityMigrator: t.hex().notNull(),
   poolInitializer: t.hex().notNull(),
-  pool: t.hex().notNull(),
   migrationPool: t.hex().notNull(),
   numTokensToSell: t.bigint().notNull(),
   integrator: t.hex().notNull(),
@@ -55,7 +55,7 @@ export const userAsset = onchainTable(
 export const position = onchainTable("position", (t) => ({
   id: t.text().primaryKey(),
   owner: t.text().notNull(),
-  pool: t.text().notNull(),
+  pool: t.hex().notNull(),
   tickLower: t.integer().notNull(),
   tickUpper: t.integer().notNull(),
   liquidity: t.bigint().notNull(),
@@ -63,13 +63,13 @@ export const position = onchainTable("position", (t) => ({
 }));
 
 export const module = onchainTable("module", (t) => ({
-  id: t.text().primaryKey(),
+  address: t.text().primaryKey(),
   state: t.integer().notNull(),
   lastUpdated: t.bigint().notNull(),
 }));
 
 export const v3Pool = onchainTable("v3_pool", (t) => ({
-  id: t.text().primaryKey(),
+  address: t.hex().primaryKey(),
   tick: t.integer().notNull(),
   sqrtPrice: t.bigint().notNull(),
   liquidity: t.bigint().notNull(),
@@ -77,22 +77,19 @@ export const v3Pool = onchainTable("v3_pool", (t) => ({
   asset: t.hex().notNull(),
   baseToken: t.hex().notNull(),
   quoteToken: t.hex().notNull(),
+  price: t.bigint().notNull(),
   initializer: t.hex(),
 }));
 
 // assets have one pool
 export const assetRelations = relations(asset, ({ one, many }) => ({
-  pool: one(v3Pool, { fields: [asset.pool], references: [v3Pool.id] }),
+  pool: one(v3Pool, { fields: [asset.pool], references: [v3Pool.address] }),
   userAssets: many(userAsset),
 }));
 
 // pools have many positions
 export const poolRelations = relations(v3Pool, ({ one, many }) => ({
   positions: many(position),
-  asset: one(asset, {
-    fields: [v3Pool.asset],
-    references: [asset.address],
-  }),
   baseToken: one(token, {
     fields: [v3Pool.baseToken],
     references: [token.address],
@@ -101,11 +98,15 @@ export const poolRelations = relations(v3Pool, ({ one, many }) => ({
     fields: [v3Pool.quoteToken],
     references: [token.address],
   }),
+  asset: one(asset, {
+    fields: [v3Pool.asset],
+    references: [asset.address],
+  }),
 }));
 
 // positions have one pool
 export const positionRelations = relations(position, ({ one }) => ({
-  pool: one(v3Pool, { fields: [position.pool], references: [v3Pool.id] }),
+  pool: one(v3Pool, { fields: [position.pool], references: [v3Pool.address] }),
 }));
 
 // users have many assets and positions

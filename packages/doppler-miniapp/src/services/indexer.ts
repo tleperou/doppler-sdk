@@ -1,131 +1,61 @@
 import { useQuery } from "@tanstack/react-query";
-import { request, gql } from "graphql-request";
+import { request } from "graphql-request";
+import {
+  AssetsDocument,
+  AssetsQuery,
+  TokenQuery,
+  AssetQuery,
+  PositionsQuery,
+} from "../gql/graphql";
+import { AssetDocument, PositionsDocument, TokenDocument } from "./documents";
 
 export const INDEXER_URL = import.meta.env.VITE_INDEXER_GRAPHQL;
 
-export type Token = {
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  isDerc20: boolean;
-};
-
-export type Pool = {
-  id: string;
-  token0: Token;
-  token1: Token;
-  feeTier: number;
-};
-
-export type Position = {
-  id: string;
-  owner: string;
-  liquidity: string;
-  tickLower: number;
-  tickUpper: number;
-};
-
-const tokensQuery = gql`
-  query Tokens {
-    tokens {
-      items {
-        address
-        name
-        symbol
-        decimals
-        isDerc20
-      }
-    }
-  }
-`;
-
-const v3PoolsQuery = gql`
-  query V3Pools($poolInitializer: String) {
-    v3Pools(where: { initializer: $poolInitializer }) {
-      items {
-        id
-        asset {
-          ...assetFields
-        }
-        baseToken {
-          ...tokenFields
-        }
-        quoteToken {
-          ...tokenFields
-        }
-      }
-    }
-  }
-  fragment tokenFields on token {
-    address
-    name
-    symbol
-    decimals
-    isDerc20
-  }
-  fragment assetFields on asset {
-    address
-    numeraire
-    timelock
-    governance
-    migrationPool
-    liquidityMigrator
-    poolInitializer
-    numTokensToSell
-    integrator
-    createdAt
-    migratedAt
-  }
-`;
-
-const positionsQuery = gql`
-  query Positions($owner: String!) {
-    positions(where: { owner: $owner }) {
-      id
-      owner
-      liquidity
-      tickLower
-      tickUpper
-    }
-  }
-`;
-
-const hourBucketsQuery = gql`
-  query HourBuckets($poolId: String!) {
-    hourBuckets(where: { pool: $poolId }) {
-      id
-      open
-      close
-      low
-      high
-      average
-      count
-    }
-  }
-`;
-
-export const useTokens = () =>
-  useQuery({
-    queryKey: ["indexer", "tokens"],
-    queryFn: () => request(INDEXER_URL, tokensQuery),
+export const useToken = (address: string) =>
+  useQuery<TokenQuery>({
+    queryKey: ["indexer", "token", address],
+    queryFn: () => request(INDEXER_URL, TokenDocument, { address }),
   });
 
-export const useV3Pools = (poolInitializer?: string) =>
-  useQuery({
-    queryKey: ["indexer", "v3Pools", poolInitializer],
-    queryFn: () => request(INDEXER_URL, v3PoolsQuery, { poolInitializer }),
+export const useAssets = (poolInitializer?: string) =>
+  useQuery<AssetsQuery>({
+    queryKey: ["indexer", "assets", poolInitializer],
+    queryFn: () =>
+      request(INDEXER_URL, AssetsDocument, {
+        poolInitializer: poolInitializer?.toLowerCase(),
+      }),
   });
 
-export const usePositions = (owner: string) =>
-  useQuery({
-    queryKey: ["indexer", "positions", owner],
-    queryFn: () => request(INDEXER_URL, positionsQuery, { owner }),
-    enabled: !!owner,
+export const useAsset = (address: string) =>
+  useQuery<AssetQuery>({
+    queryKey: ["indexer", "asset", address],
+    queryFn: () => request(INDEXER_URL, AssetDocument, { address }),
   });
 
-export const useHourBuckets = (poolId: string) =>
-  useQuery({
-    queryKey: ["indexer", "hourBuckets", poolId],
-    queryFn: () => request(INDEXER_URL, hourBucketsQuery, { poolId }),
+export const usePositions = (pool: string | undefined) =>
+  useQuery<PositionsQuery>({
+    queryKey: ["indexer", "positions", pool],
+    queryFn: () => {
+      if (!pool) throw new Error("Pool address required");
+      return request(INDEXER_URL, PositionsDocument, { pool });
+    },
+    enabled: !!pool,
   });
+// export const usePositions = (owner: string) =>
+//   useQuery<PositionPage>({
+//     queryKey: ["indexer", "positions", owner],
+//     queryFn: () =>
+//       request(INDEXER_URL, PositionPageDocument, {
+//         owner: owner.toLowerCase(),
+//       }),
+//     enabled: !!owner,
+//   });
+
+// export const useHourBuckets = (poolId: string) =>
+//   useQuery<HourBucketPage>({
+//     queryKey: ["indexer", "hourBuckets", poolId],
+//     queryFn: () =>
+//       request(INDEXER_URL, HourBucketPageDocument, {
+//         poolId: poolId.toLowerCase(),
+//       }),
+//   });
