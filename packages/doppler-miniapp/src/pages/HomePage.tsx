@@ -6,19 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-// import { useState } from "react";
+import { useV3Pools, useTokens } from "@/services/indexer";
+import { useState } from "react";
 
 function HomePage() {
-  const {
-    data: poolDatas,
-    isLoading: isPoolsLoading,
-    error: poolDataError,
-  } = usePoolCreationDatas(addresses.airlock);
+  // const {
+  //   data: poolDatas,
+  //   isLoading: isPoolsLoading,
+  //   error: poolDataError,
+  // } = usePoolCreationDatas(addresses.airlock);
   // const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (poolDataError) {
-    throw poolDataError;
-  }
+  const { data: poolDatas, isLoading: isPoolsLoading } = useV3Pools(
+    addresses.v3Initializer
+  );
+  const { data: tokens } = useTokens();
 
   const getRandom24HChange = () => {
     const change = (Math.random() * 20 - 10).toFixed(2); // Random between -10% and +10%

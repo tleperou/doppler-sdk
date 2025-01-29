@@ -3,6 +3,8 @@ import { Address } from "viem";
 import { ReadDerc20 } from "doppler-v3-sdk";
 import { getDrift } from "../utils/drift";
 import { TokenData } from "../types";
+import { useTokens, INDEXER_URL } from "../services/indexer";
+import { gql, request } from "graphql-request";
 
 export const fetchDerc20TokenData = async (
   address: Address | undefined
@@ -53,3 +55,27 @@ export function useTokenData(address: Address | undefined) {
 
   return tokenDataQuery;
 }
+
+export const useToken = (address?: Address) => {
+  const tokenQuery = gql`
+    query Token($address: String!) {
+      token(id: $address) {
+        address
+        name
+        symbol
+        decimals
+        isDerc20
+      }
+    }
+  `;
+
+  return useQuery({
+    queryKey: ["token", address],
+    queryFn: () =>
+      request(INDEXER_URL, tokenQuery, {
+        address: address?.toLowerCase(),
+      }),
+    enabled: !!address,
+    select: (data: any) => data.token,
+  });
+};
