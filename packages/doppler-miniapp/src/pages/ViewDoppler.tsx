@@ -183,13 +183,17 @@ function ViewDoppler() {
             liquidity={assetData?.asset?.pool?.liquidity}
             price={assetData?.asset?.pool?.price}
             currentTick={assetData?.asset?.pool?.tick}
+            // @ts-ignore
             baseToken={baseToken}
+            // @ts-ignore
             quoteToken={quoteToken}
             positions={positionItems}
           />
 
           <SwapCard
+            // @ts-ignore
             baseToken={baseToken}
+            // @ts-ignore
             quoteToken={quoteToken}
             swapState={swapState}
             onAmountChange={handleAmountChange}

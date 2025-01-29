@@ -3,7 +3,7 @@ import { Address } from "viem";
 import { ReadDerc20 } from "doppler-v3-sdk";
 import { getDrift } from "../utils/drift";
 import { TokenData } from "../types";
-import { useTokens, INDEXER_URL } from "../services/indexer";
+import { INDEXER_URL } from "../services/indexer";
 import { gql, request } from "graphql-request";
 
 export const fetchDerc20TokenData = async (

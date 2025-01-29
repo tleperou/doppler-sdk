@@ -6,16 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useAssets } from "@/services/indexer";
-import { useState } from "react";
+// import { useState } from "react";
 
 function HomePage() {
-  // const {
-  //   data: poolDatas,
-  //   isLoading: isPoolsLoading,
-  //   error: poolDataError,
-  // } = usePoolCreationDatas(addresses.airlock);
-  // const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const { data: assets, isLoading: isAssetsLoading } = useAssets(
     addresses.v3Initializer
   );
