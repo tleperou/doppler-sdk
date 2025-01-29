@@ -83,8 +83,8 @@ export interface CreateV3PoolParams {
   numeraire: Address;
   contracts: InitializerContractDependencies;
   tokenConfig: TokenConfig;
-  saleConfig: SaleConfig | "default";
-  v3PoolConfig: V3PoolConfig | "default";
+  saleConfig?: Partial<SaleConfig>;
+  v3PoolConfig?: Partial<V3PoolConfig>;
   vestingConfig: VestingConfig | "default";
 }
 
@@ -137,17 +137,24 @@ export class ReadWriteFactory extends ReadFactory {
     };
   }
 
-  private resolveConfig<T extends object>(
-    config: T | "default",
+  private mergeWithDefaults<T extends object>(
+    config: Partial<T> | undefined,
     defaults: T
   ): T {
-    if (config === "default") {
-      return { ...defaults };
-    }
-    return { ...config };
+    return { ...defaults, ...config };
   }
 
-  private resolveVestingConfig(
+  private getMergedSaleConfig(saleConfig?: Partial<SaleConfig>): SaleConfig {
+    return this.mergeWithDefaults(saleConfig, this.defaultSaleConfig);
+  }
+
+  private getMergedV3PoolConfig(
+    v3PoolConfig?: Partial<V3PoolConfig>
+  ): V3PoolConfig {
+    return this.mergeWithDefaults(v3PoolConfig, this.defaultV3PoolConfig);
+  }
+
+  private getMergedVestingConfig(
     config: VestingConfig | "default",
     userAddress: Address
   ): VestingConfig {
@@ -238,7 +245,7 @@ export class ReadWriteFactory extends ReadFactory {
     return encodeAbiParameters([{ type: "string" }], [tokenConfig.name]);
   }
 
-  private encode(params: CreateV3PoolParams): {
+  public encode(params: CreateV3PoolParams): {
     createParams: CreateParams;
     v3PoolConfig: V3PoolConfig;
   } {
@@ -249,20 +256,12 @@ export class ReadWriteFactory extends ReadFactory {
       throw new Error("User address is required. Is a wallet connected?");
     }
 
-    const vestingConfig = this.resolveVestingConfig(
+    const vestingConfig = this.getMergedVestingConfig(
       params.vestingConfig,
       userAddress
     );
-
-    const v3PoolConfig = this.resolveConfig(
-      params.v3PoolConfig,
-      this.defaultV3PoolConfig
-    );
-
-    const saleConfig = this.resolveConfig(
-      params.saleConfig,
-      this.defaultSaleConfig
-    );
+    const v3PoolConfig = this.getMergedV3PoolConfig(params.v3PoolConfig);
+    const saleConfig = this.getMergedSaleConfig(params.saleConfig);
 
     if (v3PoolConfig.startTick > v3PoolConfig.endTick) {
       throw new Error(
@@ -344,12 +343,24 @@ export class ReadWriteFactory extends ReadFactory {
     return this.airlock.simulateWrite("create", { createData: params });
   }
 
-  public updateDefaultConfigs(configs: DefaultConfigs) {
-    this.defaultV3PoolConfig =
-      configs.defaultV3PoolConfig ?? this.defaultV3PoolConfig;
-    this.defaultVestingConfig =
-      configs.defaultVestingConfig ?? this.defaultVestingConfig;
-    this.defaultSaleConfig =
-      configs.defaultSaleConfig ?? this.defaultSaleConfig;
+  public updateDefaultConfigs(configs: {
+    defaultV3PoolConfig?: Partial<V3PoolConfig>;
+    defaultVestingConfig?: Partial<VestingConfig>;
+    defaultSaleConfig?: Partial<SaleConfig>;
+  }) {
+    this.defaultV3PoolConfig = this.mergeWithDefaults(
+      configs.defaultV3PoolConfig || {},
+      this.defaultV3PoolConfig
+    );
+
+    this.defaultVestingConfig = this.mergeWithDefaults(
+      configs.defaultVestingConfig || {},
+      this.defaultVestingConfig
+    );
+
+    this.defaultSaleConfig = this.mergeWithDefaults(
+      configs.defaultSaleConfig || {},
+      this.defaultSaleConfig
+    );
   }
 }
