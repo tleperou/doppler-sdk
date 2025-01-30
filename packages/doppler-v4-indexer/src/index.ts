@@ -24,6 +24,10 @@ ponder.on('Airlock:Create', async ({ event, context }) => {
         return;
     }
     const poolId = await getPoolID(assetData.pool, context);
+    if(!poolId){
+        console.error(`Error fetching pool ID for ${assetData.pool}`);
+        return;
+    }
 
     // Persist the asset entity
     await context.db.insert(asset).values({
