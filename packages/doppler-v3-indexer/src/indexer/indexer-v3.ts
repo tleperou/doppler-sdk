@@ -1,17 +1,7 @@
 import { ponder } from "ponder:registry";
-import { Address } from "viem";
-import { AirlockABI } from "@app/abis";
-import { AssetData } from "@app/types/shared";
-import { addresses } from "@app/types/addresses";
-import {
-  insertOrUpdateHourBucket,
-  insertTokenIfNotExists,
-} from "@app/indexer/indexer-shared";
 import { computeV3Price, getV3PoolData } from "@app/utils/v3-utils";
-import { asset, position, token, v3Pool } from "ponder.schema";
+import { asset, position, v3Pool } from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
-
-const { v3Initializer } = addresses.v3;
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
   const { poolOrHook, asset: assetId, numeraire } = event.args;

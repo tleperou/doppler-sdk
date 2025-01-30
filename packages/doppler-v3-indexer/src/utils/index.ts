@@ -1,4 +1,4 @@
-export { getPoolID, getV4PoolData } from "./v4-utils";
+export { getPoolId, getV4PoolData } from "./v4-utils";
 export { getAssetData } from "./getAssetData";
 
 export type { AssetData } from "./getAssetData";
