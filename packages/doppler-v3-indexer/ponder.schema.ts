@@ -1,5 +1,7 @@
 import { onchainTable, primaryKey, relations } from "ponder";
 
+/* TABLES */
+
 export const user = onchainTable("user", (t) => ({
   address: t.hex().primaryKey(),
   createdAt: t.bigint().notNull(),
@@ -41,17 +43,6 @@ export const hourBucket = onchainTable("hour_buckets", (t) => ({
   count: t.integer().notNull(),
 }));
 
-export const userAsset = onchainTable(
-  "user_asset",
-  (t) => ({
-    userId: t.text().notNull(),
-    assetId: t.text().notNull(),
-  }),
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.assetId] }),
-  })
-);
-
 export const position = onchainTable("position", (t) => ({
   id: t.text().primaryKey(),
   owner: t.text().notNull(),
@@ -80,6 +71,19 @@ export const v3Pool = onchainTable("v3_pool", (t) => ({
   price: t.bigint().notNull(),
   initializer: t.hex(),
 }));
+
+export const userAsset = onchainTable(
+  "user_asset",
+  (t) => ({
+    userId: t.text().notNull(),
+    assetId: t.text().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.assetId] }),
+  })
+);
+
+/* RELATIONS */
 
 // assets have one pool
 export const assetRelations = relations(asset, ({ one, many }) => ({
