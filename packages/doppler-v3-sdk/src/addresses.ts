@@ -4,12 +4,12 @@ import { DopplerV3Addresses } from "./types";
 export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
   // unichain sepolia
   1301: {
-    airlock: "0x69224c3523999331E01C8B7d1DCc295343CEE26a" as Address,
-    tokenFactory: "0xaF7333D5B1D12170867078ed84387B9dD3B33d67" as Address,
-    v3Initializer: "0x003CaB286014EB585363ab2661dDC1307aE1E977" as Address,
-    governanceFactory: "0xd0DE88aff74eC9D52A3e4F565844fDE378386BaA" as Address,
-    liquidityMigrator: "0x76309FA8c4D006aa50b5E3417cfca395BBf9B50A" as Address,
-    universalRouter: "0xAD5D299658872f5FD917356cC1af752E6526F441" as Address,
+    airlock: "0x2a6a1881b5cda2c444782a713d3979670df2206f" as Address,
+    tokenFactory: "0xf713fd0f91517a9f22b268b6f8d8deb88e8fea5b" as Address,
+    v3Initializer: "0xdf6f19077cba70fb4f43fa609247ad7dda7a9a1c" as Address,
+    universalRouter: "0x34d5a9624c340f2cf4a2a0edc64f6fcadd65d475" as Address,
+    governanceFactory: "0x9442c17048b2c8bdd8ffdea1ac1d98e25106517b" as Address,
+    liquidityMigrator: "0xa87301f5efc1e39b72c9e84114893a981e09277b" as Address,
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x6Dd37329A1A225a6Fca658265D460423DCafBF89" as Address,
   },
