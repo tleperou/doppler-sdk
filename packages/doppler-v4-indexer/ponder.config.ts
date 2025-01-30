@@ -8,10 +8,14 @@ const chainId = 1301;
 const startingBlock = 11399810;
 
 export default createConfig({
+    database: {
+        kind: 'postgres',
+        connectionString: process.env.DATABASE_URL,
+    },
     networks: {
         unichainSepolia: {
             chainId: chainId,
-            transport: http(process.env.PONDER_RPC_UNICHAIN_SEPOLIA),
+            transport: http(process.env.RPC_UNICHAIN_SEPOLIA),
         },
     },
     contracts: {
