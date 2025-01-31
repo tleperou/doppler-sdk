@@ -2,8 +2,10 @@ import { ponder } from "ponder:registry";
 import { computeV3Price, getV3PoolData } from "@app/utils/v3-utils";
 import { asset, position, v3Pool } from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
+import { insertTokenIfNotExists } from "./indexer-shared";
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
+  const { network } = context;
   const { poolOrHook, asset: assetId, numeraire } = event.args;
 
   const assetData = await getAssetData(assetId, context);
@@ -23,6 +25,14 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     baseToken: assetId,
     context,
     poolAddress: poolOrHook,
+  });
+
+  await insertTokenIfNotExists({
+    address: numeraire,
+    chainId: BigInt(network.chainId),
+    timestamp: event.block.timestamp,
+    context,
+    isDerc20: false,
   });
 
   await context.db

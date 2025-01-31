@@ -1,6 +1,11 @@
 import { Navigate, useParams } from "react-router-dom";
 import { useState } from "react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import {
+  useAccount,
+  usePublicClient,
+  useReadContract,
+  useWalletClient,
+} from "wagmi";
 import { Address, formatEther, Hex, parseEther } from "viem";
 import {
   PermitSingle,
@@ -22,8 +27,9 @@ import {
 } from "../components/ui";
 import LiquidityChart from "../components/LiquidityChart";
 import TokenName from "../components/TokenName";
-
 import { addresses } from "../addresses";
+import { MigratorABI } from "@/abis/MigratorABI";
+
 function ViewDoppler() {
   // Hooks and state initialization
   const { id } = useParams();
@@ -33,6 +39,7 @@ function ViewDoppler() {
   const { universalRouter, quoterV2 } = addresses;
   const drift = getDrift();
   const quoter = new ReadQuoter(quoterV2, drift);
+  const { liquidityMigrator } = addresses;
 
   // Validation and data fetching
   const isValidAddress = id?.match(/^0x[a-fA-F0-9]{40}$/);
@@ -42,6 +49,14 @@ function ViewDoppler() {
   const { data: positions, isLoading: isPositionsLoading } = usePositions(
     assetData?.asset?.pool?.address
   );
+
+  const { data: wethAddress } = useReadContract({
+    abi: MigratorABI,
+    address: liquidityMigrator,
+    functionName: "weth",
+  });
+
+  console.log("weth", wethAddress);
 
   const isLoading = isAssetLoading || isPositionsLoading;
   const { baseToken, quoteToken } = assetData?.asset?.pool || {};
@@ -136,14 +151,14 @@ function ViewDoppler() {
       }
 
       const { amountOut } = await quoter.quoteExactInput({
-        tokenIn,
-        tokenOut,
-        amountIn: inputValueInWei,
-        fee: 3000,
-        sqrtPriceLimitX96: 0n,
+        params: {
+          tokenIn,
+          tokenOut,
+          amountIn: inputValueInWei,
+          fee: 3000,
+          sqrtPriceLimitX96: 0n,
+        },
       });
-
-      console.log("amountOut", amountOut);
 
       const formattedAmount = Number(formatEther(amountOut)).toFixed(4);
       setSwapState((prev) => ({
