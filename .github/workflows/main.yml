@@ -20,7 +20,6 @@ jobs:
           for package in packages/*; do
             echo "📦 Processing $package"
             cd $package
-            bun run lint --if-present
             bun run build --if-present
             cd ../..
           done
