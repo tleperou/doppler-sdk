@@ -1,4 +1,10 @@
-import { ReadContract, ReadAdapter, Drift, createDrift } from "@delvtech/drift";
+import {
+  ReadContract,
+  ReadAdapter,
+  Drift,
+  createDrift,
+  FunctionReturn,
+} from "@delvtech/drift";
 import { Address } from "abitype";
 import { derc20Abi } from "../../../abis";
 
@@ -38,10 +44,9 @@ export class ReadDerc20 {
     return this.contract.read("totalSupply");
   }
 
-  async getVestingData(account: Address): Promise<{
-    totalAmount: bigint;
-    releasedAmount: bigint;
-  }> {
+  async getVestingData(
+    account: Address
+  ): Promise<FunctionReturn<Derc20ABI, "getVestingDataOf">> {
     return this.contract.read("getVestingDataOf", { account });
   }
 

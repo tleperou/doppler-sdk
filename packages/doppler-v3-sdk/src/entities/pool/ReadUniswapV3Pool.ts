@@ -58,4 +58,16 @@ export class ReadUniswapV3Pool {
   async getSlot0(): Promise<Slot0> {
     return this.pool.read("slot0");
   }
+
+  async getToken0(): Promise<Address> {
+    return this.pool.read("token0");
+  }
+
+  async getToken1(): Promise<Address> {
+    return this.pool.read("token1");
+  }
+
+  async getFee(): Promise<number> {
+    return this.pool.read("fee");
+  }
 }

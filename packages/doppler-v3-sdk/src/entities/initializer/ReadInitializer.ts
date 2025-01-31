@@ -1,18 +1,12 @@
-import { ReadContract, ReadAdapter, Drift, createDrift } from "@delvtech/drift";
+import {
+  ReadContract,
+  ReadAdapter,
+  Drift,
+  createDrift,
+  FunctionReturn,
+} from "@delvtech/drift";
 import { Address } from "viem";
 import { uniswapV3InitializerAbi } from "../../abis";
-
-export interface PoolState {
-  asset: Address;
-  numeraire: Address;
-  tickLower: number;
-  tickUpper: number;
-  numPositions: number;
-  isInitialized: boolean;
-  isExited: boolean;
-  maxShareToBeSold: bigint;
-  maxShareToBond: bigint;
-}
 
 export type UniswapV3InitializerABI = typeof uniswapV3InitializerAbi;
 
@@ -26,7 +20,9 @@ export class ReadUniswapV3Initializer {
     });
   }
 
-  async getState(pool: Address): Promise<PoolState> {
+  async getState(
+    pool: Address
+  ): Promise<FunctionReturn<UniswapV3InitializerABI, "getState">> {
     return this.initializer.read("getState", { pool });
   }
 }

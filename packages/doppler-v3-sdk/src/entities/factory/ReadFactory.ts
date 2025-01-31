@@ -3,6 +3,7 @@ import {
   ReadAdapter,
   Drift,
   EventLog,
+  FunctionReturn,
   ContractGetEventsOptions,
   ContractReadOptions,
   createDrift,
@@ -20,16 +21,6 @@ export enum ModuleState {
   Migrator = 4,
 }
 
-export interface AssetData {
-  numeraire: Address;
-  pool: Address;
-  timelock: Address;
-  governance: Address;
-  liquidityMigrator: Address;
-  poolInitializer: Address;
-  migrationPool: Address;
-}
-
 export class ReadFactory {
   airlock: ReadContract<AirlockABI>;
 
@@ -43,7 +34,7 @@ export class ReadFactory {
   async getModuleState(
     address: Address,
     options?: ContractReadOptions
-  ): Promise<ModuleState> {
+  ): Promise<FunctionReturn<AirlockABI, "getModuleState">> {
     return this.airlock.read("getModuleState", {
       module: address,
       ...options,
@@ -53,7 +44,7 @@ export class ReadFactory {
   async getAssetData(
     asset: Address,
     options?: ContractReadOptions
-  ): Promise<AssetData> {
+  ): Promise<FunctionReturn<AirlockABI, "getAssetData">> {
     return this.airlock.read("getAssetData", {
       asset,
       ...options,

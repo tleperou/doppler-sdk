@@ -1,4 +1,4 @@
-export { ReadFactory } from './ReadFactory';
+export { ReadFactory } from "./ReadFactory";
 export {
   ReadWriteFactory,
   CreateV3PoolParams,
@@ -7,5 +7,4 @@ export {
   SaleConfig,
   V3PoolConfig,
   DefaultConfigs,
-  SimulateCreateResult,
-} from './ReadWriteFactory';
+} from "./ReadWriteFactory";

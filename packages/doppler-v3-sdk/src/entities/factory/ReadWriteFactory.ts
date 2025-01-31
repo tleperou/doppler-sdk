@@ -5,6 +5,7 @@ import {
   ContractWriteOptions,
   OnMinedParam,
   createDrift,
+  FunctionReturn,
 } from "@delvtech/drift";
 import { ReadFactory, AirlockABI } from "./ReadFactory";
 import { Address, encodeAbiParameters, Hex, parseEther } from "viem";
@@ -86,14 +87,6 @@ export interface CreateV3PoolParams {
   saleConfig?: Partial<SaleConfig>;
   v3PoolConfig?: Partial<V3PoolConfig>;
   vestingConfig: VestingConfig | "default";
-}
-
-export interface SimulateCreateResult {
-  asset: Hex;
-  pool: Hex;
-  governance: Hex;
-  timelock: Hex;
-  migrationPool: Hex;
 }
 
 export interface DefaultConfigs {
@@ -339,7 +332,7 @@ export class ReadWriteFactory extends ReadFactory {
 
   public async simulateCreate(
     params: CreateParams
-  ): Promise<SimulateCreateResult> {
+  ): Promise<FunctionReturn<AirlockABI, "create">> {
     return this.airlock.simulateWrite("create", { createData: params });
   }
 
