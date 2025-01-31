@@ -127,9 +127,7 @@ function DeployDoppler() {
           symbol: tokenSymbol,
           tokenURI: `https://pure.xyz/token/${tokenName}`,
         },
-        v3PoolConfig: "default",
         vestingConfig: "default",
-        saleConfig: "default",
       };
 
       const drift = getDrift(walletClient);

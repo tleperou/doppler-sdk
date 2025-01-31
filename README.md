@@ -19,11 +19,11 @@ A suite of tools for interacting with the Doppler Protocol - liquidity bootstrap
 
 ```bash
 # Install V3 SDK
-npm install doppler-v3-sdk
+bun install doppler-v3-sdk
 # Install Router
-npm install doppler-router
+bun install doppler-router
 # Install V4 SDK
-npm install doppler-v4-sdk
+bun install doppler-v4-sdk
 # Run indexer dev environment
 cd packages/doppler-v3-indexer
 bun run dev
