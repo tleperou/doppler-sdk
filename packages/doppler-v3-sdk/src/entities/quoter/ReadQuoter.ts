@@ -14,7 +14,7 @@ import { FixedPoint } from "@delvtech/fixed-point-wasm";
 /**
  * Represents a formatted fixed-point amount, typically used for precise decimal calculations
  */
-export type FormattedAmount = string;
+export type FormattedAmount = string | FixedPoint;
 
 /**
  * Options for formatting quoted amounts with token decimal precision
@@ -22,6 +22,8 @@ export type FormattedAmount = string;
 export type QuoteOptions = {
   /** Number of decimals for the token being quoted */
   tokenDecimals: number;
+  /** Number of decimals to format to */
+  formatDecimals: number;
 };
 
 /**
@@ -73,7 +75,7 @@ export class ReadQuoter {
    */
   async quoteExactInput(
     params: FunctionArgs<QuoterV2ABI, "quoteExactInputSingle">,
-    options: QuoteOptions = { tokenDecimals: 18 }
+    options: QuoteOptions = { tokenDecimals: 18, formatDecimals: 4 }
   ): Promise<
     FunctionReturn<QuoterV2ABI, "quoteExactInputSingle"> & {
       formattedAmountOut: FormattedAmount;
@@ -84,10 +86,9 @@ export class ReadQuoter {
     });
     return {
       ...result,
-      formattedAmountOut: fixed(
-        result.amountOut,
-        options?.tokenDecimals
-      ).format(),
+      formattedAmountOut: fixed(result.amountOut, options?.tokenDecimals)
+        .toFixed(options?.formatDecimals)
+        .format(),
     };
   }
 
@@ -101,7 +102,7 @@ export class ReadQuoter {
    */
   async quoteExactOutput(
     params: FunctionArgs<QuoterV2ABI, "quoteExactOutputSingle">,
-    options: QuoteOptions = { tokenDecimals: 18 }
+    options: QuoteOptions = { tokenDecimals: 18, formatDecimals: 4 }
   ): Promise<
     FunctionReturn<QuoterV2ABI, "quoteExactOutputSingle"> & {
       formattedAmountIn: FormattedAmount;
@@ -112,10 +113,9 @@ export class ReadQuoter {
     });
     return {
       ...result,
-      formattedAmountIn: fixed(
-        result.amountIn,
-        options?.tokenDecimals
-      ).format(),
+      formattedAmountIn: fixed(result.amountIn, options?.tokenDecimals)
+        .toFixed(options?.formatDecimals)
+        .format(),
     };
   }
 }
