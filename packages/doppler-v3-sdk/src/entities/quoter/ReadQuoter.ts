@@ -74,7 +74,7 @@ export class ReadQuoter {
    * - Formatted output amount (FixedPoint representation)
    */
   async quoteExactInput(
-    params: FunctionArgs<QuoterV2ABI, "quoteExactInputSingle">,
+    params: FunctionArgs<QuoterV2ABI, "quoteExactInputSingle">["params"],
     options: QuoteOptions = { tokenDecimals: 18, formatDecimals: 4 }
   ): Promise<
     FunctionReturn<QuoterV2ABI, "quoteExactInputSingle"> & {
@@ -82,7 +82,7 @@ export class ReadQuoter {
     }
   > {
     const result = await this.quoter.simulateWrite("quoteExactInputSingle", {
-      ...params,
+      params: { ...params },
     });
     return {
       ...result,
@@ -101,7 +101,7 @@ export class ReadQuoter {
    * - Formatted input amount (FixedPoint representation)
    */
   async quoteExactOutput(
-    params: FunctionArgs<QuoterV2ABI, "quoteExactOutputSingle">,
+    params: FunctionArgs<QuoterV2ABI, "quoteExactOutputSingle">["params"],
     options: QuoteOptions = { tokenDecimals: 18, formatDecimals: 4 }
   ): Promise<
     FunctionReturn<QuoterV2ABI, "quoteExactOutputSingle"> & {
@@ -109,7 +109,7 @@ export class ReadQuoter {
     }
   > {
     const result = await this.quoter.simulateWrite("quoteExactOutputSingle", {
-      ...params,
+      params: { ...params },
     });
     return {
       ...result,

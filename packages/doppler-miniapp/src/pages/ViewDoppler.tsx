@@ -151,13 +151,11 @@ function ViewDoppler() {
       }
 
       const { amountOut } = await quoter.quoteExactInput({
-        params: {
-          tokenIn,
-          tokenOut,
-          amountIn: inputValueInWei,
-          fee: 3000,
-          sqrtPriceLimitX96: 0n,
-        },
+        tokenIn,
+        tokenOut,
+        amountIn: inputValueInWei,
+        fee: 3000,
+        sqrtPriceLimitX96: 0n,
       });
 
       const formattedAmount = Number(formatEther(amountOut)).toFixed(4);
