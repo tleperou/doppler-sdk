@@ -3,6 +3,7 @@ import { Context } from "ponder:registry";
 import { UniswapV3InitializerABI, UniswapV3PoolABI } from "@app/abis";
 import { v3Pool } from "ponder:schema";
 import { addresses } from "@app/types/addresses";
+import { computeV3Price } from "./computeV3Price";
 
 type PoolState = {
   asset: Address;
@@ -26,6 +27,7 @@ export type V3PoolData = {
   token0: Address;
   token1: Address;
   poolState: PoolState;
+  price: bigint;
 };
 
 export const getV3PoolData = async ({
@@ -77,12 +79,20 @@ export const getV3PoolData = async ({
   const token0Result = token0?.result ?? "0x";
   const token1Result = token1?.result ?? "0x";
 
+  const price = await computeV3Price({
+    sqrtPriceX96: slot0Data.sqrtPrice,
+    token0: token0Result,
+    baseToken: poolState.asset,
+    context,
+  });
+
   return {
     slot0Data,
     liquidity: liquidityResult,
     token0: token0Result,
     token1: token1Result,
     poolState,
+    price,
   };
 };
 

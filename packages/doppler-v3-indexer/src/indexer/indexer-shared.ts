@@ -8,25 +8,16 @@ import { getAssetData } from "@app/utils/getAssetData";
 
 export const insertOrUpdateHourBucket = async ({
   poolAddress,
-  baseToken,
-  sqrtPriceX96,
+  price,
   timestamp,
   context,
 }: {
   poolAddress: Address;
-  baseToken: Address;
-  sqrtPriceX96: bigint;
+  price: bigint;
   timestamp: bigint;
   context: Context;
 }) => {
   const hourId = Math.floor(Number(timestamp) / secondsInHour) * secondsInHour;
-
-  const price = await computeV3Price({
-    sqrtPriceX96,
-    baseToken,
-    context,
-    poolAddress,
-  });
 
   try {
     await context.db
