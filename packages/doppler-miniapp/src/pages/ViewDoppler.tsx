@@ -150,7 +150,7 @@ function ViewDoppler() {
         return;
       }
 
-      const { amountOut, formattedAmountOut } = await quoter.quoteExactInput({
+      const { amountOut } = await quoter.quoteExactInput({
         params: {
           tokenIn,
           tokenOut,
@@ -159,9 +159,6 @@ function ViewDoppler() {
           sqrtPriceLimitX96: 0n,
         },
       });
-
-      console.log("amountOut", amountOut);
-      console.log("formattedAmountOut", formattedAmountOut);
 
       const formattedAmount = Number(formatEther(amountOut)).toFixed(4);
       setSwapState((prev) => ({
