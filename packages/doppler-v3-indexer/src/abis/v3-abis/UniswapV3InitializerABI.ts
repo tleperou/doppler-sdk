@@ -84,6 +84,31 @@ export const UniswapV3InitializerABI = [
     stateMutability: "nonpayable",
   },
   {
+    type: "event",
+    name: "Create",
+    inputs: [
+      {
+        name: "poolOrHook",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "asset",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "numeraire",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
     type: "error",
     name: "CannotMigrateInsufficientTick",
     inputs: [

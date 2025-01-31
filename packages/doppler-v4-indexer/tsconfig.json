@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+
     // Type checking
     "strict": true,
     "noUncheckedIndexedAccess": true,
