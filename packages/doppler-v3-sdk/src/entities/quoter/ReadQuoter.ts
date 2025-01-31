@@ -79,10 +79,9 @@ export class ReadQuoter {
       formattedAmountOut: FormattedAmount;
     }
   > {
-    const result = await this.quoter.simulateWrite(
-      "quoteExactInputSingle",
-      params
-    );
+    const result = await this.quoter.simulateWrite("quoteExactInputSingle", {
+      ...params,
+    });
     return {
       ...result,
       formattedAmountOut: fixed(
@@ -108,10 +107,9 @@ export class ReadQuoter {
       formattedAmountIn: FormattedAmount;
     }
   > {
-    const result = await this.quoter.simulateWrite(
-      "quoteExactOutputSingle",
-      params
-    );
+    const result = await this.quoter.simulateWrite("quoteExactOutputSingle", {
+      ...params,
+    });
     return {
       ...result,
       formattedAmountIn: fixed(
