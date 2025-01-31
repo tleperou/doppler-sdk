@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A suite of tools for interacting with Doppler Protocol - Next-generation liquidity bootstrapping protocol built on Uniswap V3 architecture.
+A suite of tools for interacting with the Doppler Protocol - liquidity bootstrapping protocol built on Uniswap.
 
 ## Packages
 
