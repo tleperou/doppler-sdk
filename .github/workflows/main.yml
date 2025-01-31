@@ -1,18 +1,26 @@
 name: CI
-on: [push]
+on: [push, pull_request]
+
 jobs:
-  build:
-    name: Build, lint, and test
-
+  lint-and-build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: ["18.x"]
-        os: [ubuntu-latest]
-
     steps:
-      - name: Lint
-        run: bun lint
+      - uses: actions/checkout@v4
 
-      - name: Build
-        run: bun build
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Lint and build packages
+        run: |
+          for package in packages/*; do
+            echo "📦 Processing $package"
+            cd $package
+            bun run lint --if-present
+            bun run build --if-present
+            cd ../..
+          done
