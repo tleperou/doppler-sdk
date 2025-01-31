@@ -49,7 +49,7 @@ const ethBalance = await eth.getBalanceOf(userAddress);
 
 ```typescript
 const pool = new ReadUniswapV3Pool(poolAddress);
-const [slot0, volume] = await Promise.all([
+const [slot0, swapEvents] = await Promise.all([
   pool.getSlot0(),
   pool.getSwapEvents(),
 ]);
