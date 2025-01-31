@@ -10,24 +10,38 @@ import {
 import { ReadFactory, AirlockABI } from "./ReadFactory";
 import { Address, encodeAbiParameters, Hex, parseEther } from "viem";
 
+// Constants for default configuration values
 const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
-
 const DEFAULT_START_TICK = 167520;
 const DEFAULT_END_TICK = 200040;
 const DEFAULT_NUM_POSITIONS = 10;
 const DEFAULT_FEE = 3000; // 0.3% fee tier
-
 const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
 const DEFAULT_INITIAL_SUPPLY_INT = 1_000_000_000;
 const DEFAULT_NUM_TOKENS_TO_SELL_INT = 900_000_000;
 const DEFAULT_YEARLY_MINT_CAP_INT = 100_000_000;
 const DEFAULT_PRE_MINT_INT = 9_000_000; // 0.9% of the total supply
 
-// Leave these as strings so that we know they are less than 1
-// note: must satisfy maxShareToBeSold + maxShareToBond <= 1
+// String-based defaults for percentage values (must sum to <= 1)
 const DEFAULT_MAX_SHARE_TO_BE_SOLD = "0.2";
 const DEFAULT_MAX_SHARE_TO_BE_BOND = "0.5";
 
+/**
+ * Parameters required for creating a new Doppler V3 pool
+ * @property initialSupply Initial token supply
+ * @property numTokensToSell Number of tokens to sell
+ * @property numeraire Address of the numeraire token
+ * @property tokenFactory Address of token factory contract
+ * @property tokenFactoryData Encoded token factory initialization data
+ * @property governanceFactory Address of governance factory contract
+ * @property governanceFactoryData Encoded governance factory initialization data
+ * @property poolInitializer Address of pool initializer contract
+ * @property poolInitializerData Encoded pool initialization data
+ * @property liquidityMigrator Address of liquidity migrator contract
+ * @property liquidityMigratorData Encoded liquidity migration data
+ * @property integrator Integrator address
+ * @property salt Unique salt for deployment
+ */
 export interface CreateParams {
   initialSupply: bigint;
   numTokensToSell: bigint;
@@ -44,6 +58,15 @@ export interface CreateParams {
   salt: Hex;
 }
 
+/**
+ * Configuration for a Doppler V3 liquidity pool
+ * @property startTick Initial tick position
+ * @property endTick Final tick position
+ * @property numPositions Number of positions
+ * @property maxShareToBeSold Maximum percentage of shares to sell
+ * @property maxShareToBond Maximum percentage of shares to bond
+ * @property fee Pool fee percentage (in basis points)
+ */
 export interface V3PoolConfig {
   startTick: number;
   endTick: number;
@@ -53,11 +76,23 @@ export interface V3PoolConfig {
   fee: number;
 }
 
+/**
+ * Token sale configuration parameters
+ * @property initialSupply Initial token supply
+ * @property numTokensToSell Number of tokens available for sale
+ */
 export interface SaleConfig {
   initialSupply: bigint;
   numTokensToSell: bigint;
 }
 
+/**
+ * Vesting schedule configuration
+ * @property yearlyMintCap Annual minting cap
+ * @property vestingDuration Duration of vesting period
+ * @property recipients Array of recipient addresses
+ * @property amounts Corresponding vesting amounts
+ */
 export interface VestingConfig {
   yearlyMintCap: bigint;
   vestingDuration: bigint;
@@ -65,12 +100,25 @@ export interface VestingConfig {
   amounts: bigint[];
 }
 
+/**
+ * Basic token metadata configuration
+ * @property name Token name
+ * @property symbol Token symbol
+ * @property tokenURI URI for token metadata
+ */
 export interface TokenConfig {
   name: string;
   symbol: string;
   tokenURI: string;
 }
 
+/**
+ * Contract dependencies for pool initialization
+ * @property tokenFactory Address of token factory
+ * @property governanceFactory Address of governance factory
+ * @property v3Initializer Address of V3 initializer
+ * @property liquidityMigrator Address of liquidity migrator
+ */
 export interface InitializerContractDependencies {
   tokenFactory: Address;
   governanceFactory: Address;
@@ -78,9 +126,20 @@ export interface InitializerContractDependencies {
   liquidityMigrator: Address;
 }
 
+/**
+ * Parameters for creating a Doppler V3 pool
+ * @property integrator Integrator address
+ * @property userAddress User address for salt generation
+ * @property numeraire Address of numeraire token
+ * @property contracts Contract dependencies
+ * @property tokenConfig Token metadata configuration
+ * @property saleConfig Optional sale configuration overrides
+ * @property v3PoolConfig Optional pool configuration overrides
+ * @property vestingConfig Vesting configuration or "default" preset
+ */
 export interface CreateV3PoolParams {
   integrator: Address;
-  userAddress: Address; // used to generate salt
+  userAddress: Address;
   numeraire: Address;
   contracts: InitializerContractDependencies;
   tokenConfig: TokenConfig;
@@ -89,18 +148,33 @@ export interface CreateV3PoolParams {
   vestingConfig: VestingConfig | "default";
 }
 
+/**
+ * Default configuration presets
+ * @property defaultV3PoolConfig Default pool configuration
+ * @property defaultVestingConfig Default vesting schedule
+ * @property defaultSaleConfig Default sale parameters
+ */
 export interface DefaultConfigs {
   defaultV3PoolConfig?: V3PoolConfig;
   defaultVestingConfig?: VestingConfig;
   defaultSaleConfig?: SaleConfig;
 }
 
+/**
+ * Factory class for creating and managing Doppler V3 pools with read/write capabilities
+ */
 export class ReadWriteFactory extends ReadFactory {
   declare airlock: ReadWriteContract<AirlockABI>;
   declare defaultV3PoolConfig: V3PoolConfig;
   declare defaultVestingConfig: VestingConfig;
   declare defaultSaleConfig: SaleConfig;
 
+  /**
+   * Create a new ReadWriteFactory instance
+   * @param address Contract address
+   * @param drift Drift instance for blockchain interaction
+   * @param defaultConfigs Optional default configurations
+   */
   constructor(
     address: Address,
     drift: Drift<ReadWriteAdapter> = createDrift(),
@@ -108,6 +182,7 @@ export class ReadWriteFactory extends ReadFactory {
   ) {
     super(address, drift);
 
+    // Initialize default configurations with fallback values
     this.defaultV3PoolConfig = defaultConfigs?.defaultV3PoolConfig ?? {
       startTick: DEFAULT_START_TICK,
       endTick: DEFAULT_END_TICK,
@@ -130,6 +205,12 @@ export class ReadWriteFactory extends ReadFactory {
     };
   }
 
+  /**
+   * Merge user configuration with defaults
+   * @param config User-provided partial configuration
+   * @param defaults Full default configuration
+   * @returns Merged configuration object
+   */
   private mergeWithDefaults<T extends object>(
     config: Partial<T> | undefined,
     defaults: T
@@ -137,16 +218,32 @@ export class ReadWriteFactory extends ReadFactory {
     return { ...defaults, ...config };
   }
 
+  /**
+   * Get merged sale configuration
+   * @param saleConfig Optional partial sale config
+   * @returns Complete SaleConfig
+   */
   private getMergedSaleConfig(saleConfig?: Partial<SaleConfig>): SaleConfig {
     return this.mergeWithDefaults(saleConfig, this.defaultSaleConfig);
   }
 
+  /**
+   * Get merged pool configuration
+   * @param v3PoolConfig Optional partial pool config
+   * @returns Complete V3PoolConfig
+   */
   private getMergedV3PoolConfig(
     v3PoolConfig?: Partial<V3PoolConfig>
   ): V3PoolConfig {
     return this.mergeWithDefaults(v3PoolConfig, this.defaultV3PoolConfig);
   }
 
+  /**
+   * Get merged vesting configuration
+   * @param config Vesting config or "default" preset
+   * @param userAddress User address for default recipient
+   * @returns Complete VestingConfig
+   */
   private getMergedVestingConfig(
     config: VestingConfig | "default",
     userAddress: Address
@@ -163,15 +260,22 @@ export class ReadWriteFactory extends ReadFactory {
     };
   }
 
+  /**
+   * Generate a random salt using cryptographic random values
+   * @param account User address to incorporate into salt
+   * @returns Hex string of generated salt
+   */
   private generateRandomSalt = (account: Address) => {
     const array = new Uint8Array(32);
 
+    // Cross-platform random generation
     if (typeof window !== "undefined" && window.crypto) {
       window.crypto.getRandomValues(array);
     } else {
       array.set(require("crypto").randomBytes(32));
     }
 
+    // Incorporate user address into salt
     if (account) {
       const addressBytes = account.slice(2).padStart(40, "0");
       for (let i = 0; i < 20; i++) {
@@ -187,6 +291,11 @@ export class ReadWriteFactory extends ReadFactory {
       .join("")}`;
   };
 
+  /**
+   * Encode pool initialization data for contract calls
+   * @param v3PoolConfig Complete pool configuration
+   * @returns ABI-encoded initialization data
+   */
   private encodePoolInitializerData(v3PoolConfig: V3PoolConfig): Hex {
     return encodeAbiParameters(
       [
@@ -208,6 +317,12 @@ export class ReadWriteFactory extends ReadFactory {
     );
   }
 
+  /**
+   * Encode token factory initialization data
+   * @param tokenConfig Token metadata
+   * @param vestingConfig Vesting schedule
+   * @returns ABI-encoded token factory data
+   */
   private encodeTokenFactoryData(
     tokenConfig: TokenConfig,
     vestingConfig: VestingConfig
@@ -234,10 +349,21 @@ export class ReadWriteFactory extends ReadFactory {
     );
   }
 
+  /**
+   * Encode governance factory initialization data
+   * @param tokenConfig Token metadata
+   * @returns ABI-encoded governance data
+   */
   private encodeGovernanceFactoryData(tokenConfig: TokenConfig): Hex {
     return encodeAbiParameters([{ type: "string" }], [tokenConfig.name]);
   }
 
+  /**
+   * Encode all parameters for pool creation
+   * @param params CreateV3PoolParams input parameters
+   * @returns Object containing create parameters and final pool config
+   * @throws Error if user address is missing or invalid tick range
+   */
   public encode(params: CreateV3PoolParams): {
     createParams: CreateParams;
     v3PoolConfig: V3PoolConfig;
@@ -249,6 +375,7 @@ export class ReadWriteFactory extends ReadFactory {
       throw new Error("User address is required. Is a wallet connected?");
     }
 
+    // Merge configurations with defaults
     const vestingConfig = this.getMergedVestingConfig(
       params.vestingConfig,
       userAddress
@@ -256,12 +383,14 @@ export class ReadWriteFactory extends ReadFactory {
     const v3PoolConfig = this.getMergedV3PoolConfig(params.v3PoolConfig);
     const saleConfig = this.getMergedSaleConfig(params.saleConfig);
 
+    // Validate tick configuration
     if (v3PoolConfig.startTick > v3PoolConfig.endTick) {
       throw new Error(
         "Invalid start and end ticks. Start tick must be less than end tick."
       );
     }
 
+    // Generate unique salt and encode contract data
     const salt = this.generateRandomSalt(userAddress) as Hex;
     const governanceFactoryData = this.encodeGovernanceFactoryData(tokenConfig);
     const tokenFactoryData = this.encodeTokenFactoryData(
@@ -271,6 +400,7 @@ export class ReadWriteFactory extends ReadFactory {
     const poolInitializerData = this.encodePoolInitializerData(v3PoolConfig);
     const liquidityMigratorData = "0x" as Hex;
 
+    // Prepare final arguments
     const {
       tokenFactory,
       governanceFactory,
@@ -302,6 +432,11 @@ export class ReadWriteFactory extends ReadFactory {
     };
   }
 
+  /**
+   * Encode creation data with token order validation
+   * @param params CreateV3PoolParams input parameters
+   * @returns Finalized create parameters with adjusted ticks if needed
+   */
   public async encodeCreateData(
     params: CreateV3PoolParams
   ): Promise<CreateParams> {
@@ -311,7 +446,7 @@ export class ReadWriteFactory extends ReadFactory {
 
     let createParamsCopy = { ...createParams };
     if (isToken0) {
-      // invert the ticks
+      // Adjust ticks for token order
       v3PoolConfig.startTick = -v3PoolConfig.startTick;
       v3PoolConfig.endTick = -v3PoolConfig.endTick;
       createParamsCopy = {
@@ -323,6 +458,12 @@ export class ReadWriteFactory extends ReadFactory {
     return createParamsCopy;
   }
 
+  /**
+   * Execute pool creation transaction
+   * @param params Finalized create parameters
+   * @param options Write options and mined handlers
+   * @returns Transaction hash
+   */
   public async create(
     params: CreateParams,
     options?: ContractWriteOptions & OnMinedParam
@@ -330,12 +471,21 @@ export class ReadWriteFactory extends ReadFactory {
     return this.airlock.write("create", { createData: params }, options);
   }
 
+  /**
+   * Simulate pool creation transaction
+   * @param params Create parameters
+   * @returns Simulation results
+   */
   public async simulateCreate(
     params: CreateParams
   ): Promise<FunctionReturn<AirlockABI, "create">> {
     return this.airlock.simulateWrite("create", { createData: params });
   }
 
+  /**
+   * Update default configurations
+   * @param configs Partial configuration overrides
+   */
   public updateDefaultConfigs(configs: {
     defaultV3PoolConfig?: Partial<V3PoolConfig>;
     defaultVestingConfig?: Partial<VestingConfig>;
