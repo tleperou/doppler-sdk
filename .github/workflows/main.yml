@@ -17,9 +17,14 @@ jobs:
 
       - name: Build packages
         run: |
-          for package in packages/*; do
-            echo "📦 Processing $package"
-            cd $package
-            bun run build
-            cd ../..
+          for dir in packages/*; do
+            dirname=$(basename "$dir")
+            if [[ "$dirname" != *-indexer ]]; then
+              echo "📦 Building $dirname"
+              cd $dir
+              bun run build
+              cd ../..
+            else
+              echo "⏭️ Skipping indexer package $dirname"
+            fi
           done
