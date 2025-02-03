@@ -11,7 +11,6 @@ A suite of tools for interacting with the Doppler Protocol - liquidity bootstrap
 | [`doppler-v3-sdk`](/packages/doppler-v3-sdk)         | [![npm](https://img.shields.io/npm/v/doppler-v3-sdk)](https://www.npmjs.com/package/doppler-v3-sdk) | Core SDK for V3 interactions         |
 | [`doppler-v4-sdk`](/packages/doppler-v4-sdk)         | [![npm](https://img.shields.io/npm/v/doppler-v4-sdk)](https://www.npmjs.com/package/doppler-v4-sdk) | Core SDK for V4 interactions         |
 | [`doppler-router`](/packages/doppler-router)         | [![npm](https://img.shields.io/npm/v/doppler-router)](https://www.npmjs.com/package/doppler-router) | Swap routing & transaction execution |
-| [`doppler-miniapp`](/packages/doppler-miniapp)       | -                                                                                                   | Reference implementation UI          |
 | [`doppler-v3-indexer`](/packages/doppler-v3-indexer) | -                                                                                                   | V3 Indexer for protocol analytics    |
 | [`doppler-v4-indexer`](/packages/doppler-v4-indexer) | -                                                                                                   | V4 Indexer for protocol analytics    |
 
@@ -26,20 +25,6 @@ bun install doppler-router
 bun install doppler-v4-sdk
 # Run indexer dev environment
 cd packages/doppler-v3-indexer
-bun run dev
-# Run miniapp dev environment
-cd packages/doppler-miniapp
-bun run dev
-```
-
-## Miniapp Development
-
-```bash
-# Install dependencies
-bun install
-
-# Start dev environment (miniapp)
-cd packages/doppler-miniapp
 bun run dev
 ```
 
