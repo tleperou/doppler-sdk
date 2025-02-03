@@ -1,4 +1,4 @@
-import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
+import { ReadContract, ReadAdapter, Drift, createDrift } from '@delvtech/drift';
 import { Address } from 'abitype';
 import { derc20Abi } from '@/abis';
 
@@ -7,7 +7,10 @@ export type Derc20ABI = typeof derc20Abi;
 export class ReadDerc20 {
   contract: ReadContract<Derc20ABI>;
 
-  constructor(address: `0x${string}`, drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(
+    address: `0x${string}`,
+    drift: Drift<ReadAdapter> = createDrift()
+  ) {
     this.contract = drift.contract({ abi: derc20Abi, address });
   }
 

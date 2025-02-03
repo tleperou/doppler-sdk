@@ -1,4 +1,4 @@
-import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
+import { ReadContract, ReadAdapter, Drift, createDrift } from '@delvtech/drift';
 import { Address } from 'viem';
 import { airlockAbi } from '@/abis';
 import { AssetData } from '@/types';
@@ -15,7 +15,7 @@ export enum ModuleState {
 export class ReadFactory {
   airlock: ReadContract<AirlockABI>;
 
-  constructor(address: Address, drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(address: Address, drift: Drift<ReadAdapter> = createDrift()) {
     this.airlock = drift.contract({
       abi: airlockAbi,
       address,

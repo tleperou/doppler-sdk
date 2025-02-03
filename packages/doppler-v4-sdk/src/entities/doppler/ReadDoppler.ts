@@ -1,4 +1,4 @@
-import { ReadContract, ReadAdapter, Drift } from '@delvtech/drift';
+import { ReadContract, ReadAdapter, Drift, createDrift } from '@delvtech/drift';
 import { Address } from 'abitype';
 import { dopplerAbi, stateViewAbi } from '@/abis';
 import { encodePacked, Hex, keccak256 } from 'viem';
@@ -20,7 +20,7 @@ export class ReadDoppler {
   constructor(
     dopplerAddress: `0x${string}`,
     stateViewAddress: `0x${string}`,
-    drift: Drift<ReadAdapter> = new Drift()
+    drift: Drift<ReadAdapter> = createDrift()
   ) {
     this.address = dopplerAddress;
     this.doppler = drift.contract({

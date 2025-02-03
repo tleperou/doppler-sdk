@@ -1,4 +1,9 @@
-import { ReadWriteContract, ReadWriteAdapter, Drift } from '@delvtech/drift';
+import {
+  ReadWriteContract,
+  ReadWriteAdapter,
+  Drift,
+  createDrift,
+} from '@delvtech/drift';
 import { basicRouterAbi } from '@/abis';
 import { Address, Hex } from 'viem';
 import { PoolKey } from '@/types';
@@ -40,7 +45,10 @@ export type BasicRouterABI = typeof basicRouterAbi;
 export class ReadWriteRouter {
   contract: ReadWriteContract<BasicRouterABI>;
 
-  constructor(address: Address, drift: Drift<ReadWriteAdapter> = new Drift()) {
+  constructor(
+    address: Address,
+    drift: Drift<ReadWriteAdapter> = createDrift()
+  ) {
     this.contract = drift.contract({
       abi: basicRouterAbi,
       address,

@@ -1,4 +1,4 @@
-import { ReadAdapter, Drift } from '@delvtech/drift';
+import { ReadAdapter, Drift, createDrift } from '@delvtech/drift';
 import { Address } from 'abitype';
 import { ETH_ADDRESS } from '@/constants';
 
@@ -6,7 +6,7 @@ export class ReadEth {
   drift: Drift<ReadAdapter>;
   static address = ETH_ADDRESS;
 
-  constructor(drift: Drift<ReadAdapter> = new Drift()) {
+  constructor(drift: Drift<ReadAdapter> = createDrift()) {
     this.drift = drift;
   }
 
