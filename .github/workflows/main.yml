@@ -15,11 +15,11 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: build packages
+      - name: Build packages
         run: |
           for package in packages/*; do
             echo "📦 Processing $package"
             cd $package
-            bun run build --if-present
+            bun run build
             cd ../..
           done
