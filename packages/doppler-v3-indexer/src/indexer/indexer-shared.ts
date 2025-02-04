@@ -176,7 +176,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   await db
     .insert(userAsset)
     .values({
-      id: `${to}-${address}`,
       userId: to,
       assetId: address,
       balance: value,
@@ -189,7 +188,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   await db
     .insert(userAsset)
     .values({
-      id: `${from}-${address}`,
       userId: from,
       assetId: address,
       balance: -value,
