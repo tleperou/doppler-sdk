@@ -87,6 +87,7 @@ export const dailyVolume = onchainTable(
     volume: t.bigint().notNull(),
     chainId: t.bigint().notNull(),
     checkpoints: t.jsonb().notNull(),
+    lastUpdated: t.bigint().notNull(),
   }),
   (table) => ({
     pk: primaryKey({ columns: [table.pool, table.chainId] }),

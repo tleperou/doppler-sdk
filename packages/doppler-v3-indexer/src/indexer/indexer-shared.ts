@@ -8,7 +8,6 @@ import { addresses } from "@app/types/addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { and, gte, lt } from "drizzle-orm";
 
-// Add type definition for checkpoints
 interface Checkpoint {
   timestamp: string;
   volume: string;
@@ -56,19 +55,19 @@ export const insertOrUpdateHourBucket = async ({
 };
 
 export const insertOrUpdateDailyVolume = async ({
+  tokenIn,
   poolAddress,
   amountIn,
   amountOut,
   timestamp,
   context,
-  tokenIn,
 }: {
+  tokenIn: Address;
   poolAddress: Address;
   amountIn: bigint;
   amountOut: bigint;
   timestamp: bigint;
   context: Context;
-  tokenIn: Address;
 }) => {
   const { db, network } = context;
 
@@ -84,7 +83,6 @@ export const insertOrUpdateDailyVolume = async ({
     return;
   }
 
-
   let dollarVolume;
   if (tokenIn === addresses.shared.weth) {
     dollarVolume = amountIn * price.price / CHAINLINK_ETH_DECIMALS;
@@ -98,6 +96,7 @@ export const insertOrUpdateDailyVolume = async ({
       pool: poolAddress,
       volume: dollarVolume,
       chainId: BigInt(network.chainId),
+      lastUpdated: timestamp,
       checkpoints: [
         {
           timestamp: timestamp.toString(),
@@ -110,10 +109,12 @@ export const insertOrUpdateDailyVolume = async ({
         timestamp: timestamp.toString(),
         volume: String(dollarVolume),
       }];
-      const updatedCheckpoints = checkpoints.filter((checkpoint) => BigInt(checkpoint.timestamp) < timestamp - BigInt(secondsInDay));
+      const updatedCheckpoints = checkpoints.filter((checkpoint) => BigInt(checkpoint.timestamp) >= timestamp - BigInt(secondsInDay));
+      const volume = updatedCheckpoints.reduce((acc, checkpoint) => acc + BigInt(checkpoint.volume), BigInt(0));
       return {
-        volume: row.volume + dollarVolume,
+        volume,
         checkpoints: updatedCheckpoints,
+        lastUpdated: timestamp,
       };
     });
 };
