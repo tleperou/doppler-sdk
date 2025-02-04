@@ -49,14 +49,12 @@ export const insertTokenIfNotExists = async ({
   timestamp,
   context,
   isDerc20 = false,
-  holderDelta = 0,
 }: {
   address: Address;
   chainId: bigint;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
-  holderDelta?: number;
 }) => {
   const existingToken = await context.db.find(token, {
     address,
