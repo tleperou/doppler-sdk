@@ -1,9 +1,18 @@
 import { Context, ponder } from "ponder:registry";
 import { Address, zeroAddress } from "viem";
 import { DERC20ABI } from "../abis";
-import { secondsInHour } from "@app/utils/constants";
-import { token, hourBucket, asset, userAsset, user } from "ponder.schema";
+import { CHAINLINK_ETH_DECIMALS, secondsInDay, secondsInHour, WAD } from "@app/utils/constants";
+import { token, hourBucket, asset, userAsset, user, ethPrice, dailyVolume } from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
+import { addresses } from "@app/types/addresses";
+import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
+import { and, gte, lt } from "drizzle-orm";
+
+// Add type definition for checkpoints
+interface Checkpoint {
+  timestamp: string;
+  volume: string;
+}
 
 export const insertOrUpdateHourBucket = async ({
   poolAddress,
@@ -16,19 +25,22 @@ export const insertOrUpdateHourBucket = async ({
   timestamp: bigint;
   context: Context;
 }) => {
+  const { db, network } = context;
   const hourId = Math.floor(Number(timestamp) / secondsInHour) * secondsInHour;
 
   try {
-    await context.db
+    await db
       .insert(hourBucket)
       .values({
-        id: `${poolAddress}-${hourId.toString()}`,
+        hourId,
+        pool: poolAddress,
         open: price,
         close: price,
         low: price,
         high: price,
         average: price,
         count: 1,
+        chainId: BigInt(network.chainId),
       })
       .onConflictDoUpdate((row) => ({
         close: price,
@@ -43,33 +55,99 @@ export const insertOrUpdateHourBucket = async ({
   }
 };
 
+export const insertOrUpdateDailyVolume = async ({
+  poolAddress,
+  amountIn,
+  amountOut,
+  timestamp,
+  context,
+  tokenIn,
+}: {
+  poolAddress: Address;
+  amountIn: bigint;
+  amountOut: bigint;
+  timestamp: bigint;
+  context: Context;
+  tokenIn: Address;
+}) => {
+  const { db, network } = context;
+
+  const price = await db.sql.query.ethPrice.findFirst({
+    where: and(
+      gte(ethPrice.timestamp, timestamp - 5n * 60n),
+      lt(ethPrice.timestamp, timestamp)
+    ),
+  });
+
+  if (!price) {
+    console.error("No price found for timestamp", timestamp);
+    return;
+  }
+
+
+  let dollarVolume;
+  if (tokenIn === addresses.shared.weth) {
+    dollarVolume = amountIn * price.price / CHAINLINK_ETH_DECIMALS;
+  } else {
+    dollarVolume = amountOut * price.price / CHAINLINK_ETH_DECIMALS;
+  }
+
+  return await db
+    .insert(dailyVolume)
+    .values({
+      pool: poolAddress,
+      volume: dollarVolume,
+      chainId: BigInt(network.chainId),
+      checkpoints: [
+        {
+          timestamp: timestamp.toString(),
+          volume: dollarVolume.toString(),
+        },
+      ],
+    })
+    .onConflictDoUpdate((row) => {
+      const checkpoints = [...(row.checkpoints as Checkpoint[]), {
+        timestamp: timestamp.toString(),
+        volume: String(dollarVolume),
+      }];
+      const updatedCheckpoints = checkpoints.filter((checkpoint) => BigInt(checkpoint.timestamp) < timestamp - BigInt(secondsInDay));
+      return {
+        volume: row.volume + dollarVolume,
+        checkpoints: updatedCheckpoints,
+      };
+    });
+};
+
 export const insertTokenIfNotExists = async ({
   address,
-  chainId,
   timestamp,
   context,
   isDerc20 = false,
 }: {
   address: Address;
-  chainId: bigint;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
 }) => {
-  const existingToken = await context.db.find(token, {
+  const { db, network } = context;
+  const existingToken = await db.find(token, {
     address,
   });
 
+
   if (existingToken) return existingToken;
 
+  const chainId = BigInt(network.chainId);
+
   if (address === zeroAddress) {
-    return await context.db.insert(token).values({
+    return await db.insert(token).values({
       address,
       chainId,
       name: "Ether",
       symbol: "ETH",
       decimals: 18,
       firstSeenAt: timestamp,
+      lastSeenAt: timestamp,
       totalSupply: 0n,
       isDerc20: false,
     });
@@ -110,6 +188,7 @@ export const insertTokenIfNotExists = async ({
         decimals: decimalsResult.result ?? 18,
         totalSupply: totalSupplyResult.result ?? 0n,
         firstSeenAt: timestamp,
+        lastSeenAt: timestamp,
         isDerc20,
       })
       .onConflictDoNothing();
@@ -117,7 +196,7 @@ export const insertTokenIfNotExists = async ({
 };
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
-  const { db } = context;
+  const { db, network } = context;
   const { asset: assetId } = event.args;
 
   const assetData = await getAssetData(assetId, context);
@@ -132,6 +211,7 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
     .values({
       ...assetData,
       address: assetId,
+      chainId: BigInt(network.chainId),
       createdAt: event.block.timestamp,
       migratedAt: event.block.timestamp,
     })
@@ -147,7 +227,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
 
   await insertTokenIfNotExists({
     address,
-    chainId: BigInt(network.chainId),
     timestamp: event.block.timestamp,
     context,
     isDerc20: true,
@@ -156,21 +235,23 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   await db
     .insert(user)
     .values({
-      id: to,
       address: to,
       createdAt: event.block.timestamp,
+      lastSeenAt: event.block.timestamp,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate((row) => ({
+      lastSeenAt: event.block.timestamp,
+    }));
 
   await db
     .insert(user)
     .values({
-      id: from,
       address: from,
       createdAt: event.block.timestamp,
+      lastSeenAt: event.block.timestamp,
     })
     .onConflictDoUpdate((row) => ({
-      createdAt: event.block.timestamp,
+      lastSeenAt: event.block.timestamp,
     }));
 
   await db
@@ -178,11 +259,14 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     .values({
       userId: to,
       assetId: address,
+      chainId: BigInt(network.chainId),
       balance: value,
       createdAt: event.block.timestamp,
+      lastInteraction: event.block.timestamp,
     })
     .onConflictDoUpdate((row) => ({
       balance: row.balance + value,
+      lastInteraction: event.block.timestamp,
     }));
 
   await db
@@ -190,11 +274,35 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     .values({
       userId: from,
       assetId: address,
+      chainId: BigInt(network.chainId),
       balance: -value,
       createdAt: event.block.timestamp,
+      lastInteraction: event.block.timestamp,
     })
     .onConflictDoUpdate((row) => ({
       balance: row.balance - value,
+      lastInteraction: event.block.timestamp,
     }));
+});
+
+ponder.on("ChainlinkEthPriceFeed:block", async ({ event, context }) => {
+  const { db, client } = context;
+  const { timestamp } = event.block;
+
+  const latestAnswer = await client.readContract({
+    abi: ChainlinkOracleABI,
+    address: addresses.oracle.chainlinkEth,
+    functionName: "latestAnswer",
+  });
+
+  const price = latestAnswer;
+
+  await db
+    .insert(ethPrice)
+    .values({
+      timestamp: timestamp,
+      price: price,
+    })
+    .onConflictDoNothing();
 });
 

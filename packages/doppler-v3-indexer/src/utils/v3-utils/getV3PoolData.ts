@@ -1,7 +1,6 @@
 import { Address } from "viem";
 import { Context } from "ponder:registry";
 import { UniswapV3InitializerABI, UniswapV3PoolABI } from "@app/abis";
-import { v3Pool } from "ponder:schema";
 import { addresses } from "@app/types/addresses";
 import { computeV3Price } from "./computeV3Price";
 
@@ -28,6 +27,7 @@ export type V3PoolData = {
   token1: Address;
   poolState: PoolState;
   price: bigint;
+  fee: number;
 };
 
 export const getV3PoolData = async ({
@@ -39,7 +39,7 @@ export const getV3PoolData = async ({
 }): Promise<V3PoolData> => {
   const { client, db } = context;
 
-  const [slot0, liquidity, token0, token1] = await client.multicall({
+  const [slot0, liquidity, token0, token1, fee] = await client.multicall({
     contracts: [
       {
         abi: UniswapV3PoolABI,
@@ -61,6 +61,11 @@ export const getV3PoolData = async ({
         address,
         functionName: "token1",
       },
+      {
+        abi: UniswapV3PoolABI,
+        address,
+        functionName: "fee",
+      },
     ],
   });
 
@@ -78,6 +83,7 @@ export const getV3PoolData = async ({
 
   const token0Result = token0?.result ?? "0x";
   const token1Result = token1?.result ?? "0x";
+  const feeResult = fee?.result ?? 3000;
 
   const price = await computeV3Price({
     sqrtPriceX96: slot0Data.sqrtPrice,
@@ -91,6 +97,7 @@ export const getV3PoolData = async ({
     liquidity: liquidityResult,
     token0: token0Result,
     token1: token1Result,
+    fee: feeResult,
     poolState,
     price,
   };
@@ -103,7 +110,7 @@ const getPoolState = async ({
   poolAddress: Address;
   context: Context;
 }) => {
-  const { client, db } = context;
+  const { client } = context;
   const { v3Initializer } = addresses.v3;
 
   const poolData = await client.readContract({

@@ -4,6 +4,7 @@ export type DopplerAddresses = {
   v3: V3Addresses;
   v4: V4Addresses;
   shared: SharedAddresses;
+  oracle: OracleAddresses;
 };
 
 export type SharedAddresses = {
@@ -12,6 +13,7 @@ export type SharedAddresses = {
   universalRouter: Address;
   governanceFactory: Address;
   migrator: Address;
+  weth: Address;
 };
 
 export type V4Addresses = {
@@ -23,6 +25,13 @@ export type V4Addresses = {
 
 export type V3Addresses = {
   v3Initializer: Address;
+};
+
+export type OracleAddresses = {
+  mainnetEthUsdc: Address;
+  weth: Address;
+  usdc: Address;
+  chainlinkEth: Address;
 };
 
 export const v3Addresses: V3Addresses = {
@@ -42,10 +51,19 @@ export const sharedAddresses: SharedAddresses = {
   universalRouter: "0x34d5a9624c340f2cf4a2a0edc64f6fcadd65d475" as Address,
   governanceFactory: "0x9442c17048b2c8bdd8ffdea1ac1d98e25106517b" as Address,
   migrator: "0xa87301f5efc1e39b72c9e84114893a981e09277b" as Address,
+  weth: "0x4200000000000000000000000000000000000006" as Address,
+};
+
+export const oracleAddresses: OracleAddresses = {
+  mainnetEthUsdc: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640" as Address,
+  weth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" as Address,
+  usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as Address,
+  chainlinkEth: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419" as Address,
 };
 
 export const addresses: DopplerAddresses = {
   v3: v3Addresses,
   v4: v4Addresses,
   shared: sharedAddresses,
+  oracle: oracleAddresses,
 };

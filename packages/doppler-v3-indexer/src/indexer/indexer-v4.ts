@@ -1,11 +1,11 @@
 import { ponder } from "ponder:registry";
 import { getAssetData } from "@app/utils/getAssetData";
-import { asset, v4Pool } from "ponder.schema";
+import { asset, pool } from "ponder.schema";
 import { getV4PoolData } from "@app/utils/v4-utils";
 
 ponder.on("UniswapV4Initializer:Create", async ({ event, context }) => {
   const { poolOrHook: hook, asset: assetId, numeraire } = event.args;
-
+  const { db, network } = context;
   const assetData = await getAssetData(assetId, context);
 
   if (!assetData) {
@@ -13,23 +13,25 @@ ponder.on("UniswapV4Initializer:Create", async ({ event, context }) => {
     return;
   }
 
-  const { slot0Data, liquidity, price } = await getV4PoolData({
+  const { slot0Data, liquidity, price, poolKey } = await getV4PoolData({
     context,
     hook,
   });
 
-  await context.db
-    .insert(v4Pool)
+  await db
+    .insert(pool)
     .values({
       ...slot0Data,
-      hook,
+      address: hook,
       liquidity: liquidity,
       createdAt: event.block.timestamp,
-      initializer: assetData.poolInitializer,
       asset: assetId,
       baseToken: assetId,
       quoteToken: numeraire,
       price,
+      type: "v4",
+      chainId: BigInt(network.chainId),
+      fee: poolKey.fee,
     })
     .onConflictDoNothing();
 
@@ -38,6 +40,7 @@ ponder.on("UniswapV4Initializer:Create", async ({ event, context }) => {
     .values({
       ...assetData,
       address: assetId,
+      chainId: BigInt(network.chainId),
       createdAt: event.block.timestamp,
       migratedAt: null,
     })
