@@ -2,7 +2,6 @@ import { Context, ponder } from "ponder:registry";
 import { Address, zeroAddress } from "viem";
 import { DERC20ABI } from "../abis";
 import { secondsInHour } from "@app/utils/constants";
-import { computeV3Price } from "@app/utils/v3-utils";
 import { token, hourBucket, asset, userAsset, user } from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
 
@@ -50,12 +49,14 @@ export const insertTokenIfNotExists = async ({
   timestamp,
   context,
   isDerc20 = false,
+  holderDelta = 0,
 }: {
   address: Address;
   chainId: bigint;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
+  holderDelta?: number;
 }) => {
   const existingToken = await context.db.find(token, {
     address,
@@ -142,9 +143,9 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
 });
 
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
-  const userAddress = event.transaction.from;
   const { db, network } = context;
   const { address } = event.log;
+  const { from, to, value } = event.args;
 
   await insertTokenIfNotExists({
     address,
@@ -157,18 +158,47 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   await db
     .insert(user)
     .values({
-      id: event.args.from,
-      address: event.args.from,
+      id: to,
+      address: to,
       createdAt: event.block.timestamp,
     })
     .onConflictDoNothing();
 
   await db
+    .insert(user)
+    .values({
+      id: from,
+      address: from,
+      createdAt: event.block.timestamp,
+    })
+    .onConflictDoUpdate((row) => ({
+      createdAt: event.block.timestamp,
+    }));
+
+  await db
     .insert(userAsset)
     .values({
-      id: `${userAddress}-${address}`,
-      userId: userAddress,
+      id: `${to}-${address}`,
+      userId: to,
       assetId: address,
+      balance: value,
+      createdAt: event.block.timestamp,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate((row) => ({
+      balance: row.balance + value,
+    }));
+
+  await db
+    .insert(userAsset)
+    .values({
+      id: `${from}-${address}`,
+      userId: from,
+      assetId: address,
+      balance: -value,
+      createdAt: event.block.timestamp,
+    })
+    .onConflictDoUpdate((row) => ({
+      balance: row.balance - value,
+    }));
 });
+

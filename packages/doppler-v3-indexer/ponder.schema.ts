@@ -91,6 +91,8 @@ export const userAsset = onchainTable(
   (t) => ({
     userId: t.text().notNull(),
     assetId: t.text().notNull(),
+    balance: t.bigint().notNull(),
+    createdAt: t.bigint().notNull(),
   }),
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.assetId] }),
