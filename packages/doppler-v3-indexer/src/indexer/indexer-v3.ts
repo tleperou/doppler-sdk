@@ -46,10 +46,8 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     assetLiquidity = 0n;
     numeraireLiquidity = 0n;
   }
-  
 
   const dollarLiquidity = assetLiquidity + numeraireLiquidity;
-
 
   await context.db
     .insert(pool)
@@ -66,6 +64,7 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
+      dailyVolume: poolOrHook,
     })
     .onConflictDoNothing();
 
@@ -120,6 +119,7 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
+      dailyVolume: address,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: row.liquidity + amount,
@@ -180,6 +180,7 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
+      dailyVolume: address,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: row.liquidity - amount,
@@ -271,6 +272,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
+      dailyVolume: address,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: liquidity,

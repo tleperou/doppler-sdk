@@ -30,10 +30,10 @@ ponder.on("UniswapV4Initializer:Create", async ({ event, context }) => {
       quoteToken: numeraire,
       price,
       type: "v4",
-      dollarMarketCap: 0n,
       dollarLiquidity: 0n,
       chainId: BigInt(network.chainId),
       fee: poolKey.fee,
+      dailyVolume: hook,
     })
     .onConflictDoNothing();
 

@@ -80,19 +80,13 @@ export const hourBucket = onchainTable(
   })
 );
 
-export const dailyVolume = onchainTable(
-  "daily_volume",
-  (t) => ({
-    pool: t.hex().notNull(),
-    volume: t.bigint().notNull(),
-    chainId: t.bigint().notNull(),
-    checkpoints: t.jsonb().notNull(),
-    lastUpdated: t.bigint().notNull(),
-  }),
-  (table) => ({
-    pk: primaryKey({ columns: [table.pool, table.chainId] }),
-  })
-);
+export const dailyVolume = onchainTable("daily_volume", (t) => ({
+  pool: t.hex().notNull().primaryKey(),
+  volume: t.bigint().notNull(),
+  chainId: t.bigint().notNull(),
+  checkpoints: t.jsonb().notNull(),
+  lastUpdated: t.bigint().notNull(),
+}));
 
 export const position = onchainTable(
   "position",
@@ -150,6 +144,7 @@ export const pool = onchainTable(
     fee: t.integer().notNull(),
     type: t.text().notNull(),
     dollarLiquidity: t.bigint().notNull(),
+    dailyVolume: t.hex().notNull(),
   }),
   (table) => ({
     pk: primaryKey({
@@ -205,6 +200,10 @@ export const poolRelations = relations(pool, ({ one, many }) => ({
   asset: one(asset, {
     fields: [pool.asset],
     references: [asset.address],
+  }),
+  dailyVolume: one(dailyVolume, {
+    fields: [pool.address],
+    references: [dailyVolume.pool],
   }),
 }));
 
