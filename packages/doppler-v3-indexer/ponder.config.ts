@@ -12,13 +12,27 @@ import {
 import { addresses } from "./src/types/addresses";
 
 const unichainSepoliaChainId = 1301;
-const startingBlock = 11410729;
+const mainnetChainId = 1;
+
+const unichainSepoliaStartingBlock = 11410729;
+const mainnetStartingBlock = 21737500;
 
 export default createConfig({
   networks: {
     unichainSepolia: {
       chainId: unichainSepoliaChainId,
-      transport: http(process.env.PONDER_RPC_UNICHAIN_SEPOLIA),
+      transport: http(process.env.PONDER_RPC_URL_1301),
+    },
+    mainnet: {
+      chainId: mainnetChainId,
+      transport: http(process.env.PONDER_RPC_URL_1),
+    },
+  },
+  blocks: {
+    ChainlinkEthPriceFeed: {
+      network: "mainnet",
+      startBlock: mainnetStartingBlock,
+      interval: (60 * 5) / 12, // every 5 minutes
     },
   },
   contracts: {
@@ -26,19 +40,19 @@ export default createConfig({
       abi: AirlockABI,
       network: "unichainSepolia",
       address: addresses.shared.airlock,
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
     UniswapV3Initializer: {
       abi: UniswapV3InitializerABI,
       network: "unichainSepolia",
       address: addresses.v3.v3Initializer,
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
     UniswapV4Initializer: {
       abi: UniswapV4InitializerABI,
       network: "unichainSepolia",
       address: addresses.v4.v4Initializer,
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
     DERC20: {
       abi: DERC20ABI,
@@ -48,7 +62,7 @@ export default createConfig({
         event: getAbiItem({ abi: AirlockABI, name: "Create" }),
         parameter: "asset",
       }),
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
     UniswapV3Pool: {
       abi: UniswapV3PoolABI,
@@ -58,13 +72,13 @@ export default createConfig({
         event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
         parameter: "poolOrHook",
       }),
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
     PoolManager: {
       abi: PoolManagerABI,
       network: "unichainSepolia",
       address: addresses.v4.poolManager,
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
     UniswapV4Pool: {
       abi: DopplerABI,
@@ -74,7 +88,7 @@ export default createConfig({
         event: getAbiItem({ abi: UniswapV4InitializerABI, name: "Create" }),
         parameter: "poolOrHook",
       }),
-      startBlock: startingBlock,
+      startBlock: unichainSepoliaStartingBlock,
     },
   },
 });
