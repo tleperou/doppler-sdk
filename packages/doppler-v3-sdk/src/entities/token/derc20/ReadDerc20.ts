@@ -44,6 +44,11 @@ export class ReadDerc20 {
     return this.contract.read("decimals");
   }
 
+  /** Get the token URI for the token */
+  async getTokenURI(): Promise<string> {
+    return this.contract.read("tokenURI");
+  }
+
   /**
    * Get the allowance granted by an owner to a spender
    * @param params - Arguments for the allowance contract method
@@ -77,14 +82,19 @@ export class ReadDerc20 {
     return this.contract.read("vestingStart");
   }
 
-  /** Get the start timestamp of the current vesting year */
-  async getCurrentYearStart(): Promise<bigint> {
-    return this.contract.read("currentYearStart");
+  /** Get the total amount of tokens that have been vested */
+  async getVestedTotalAmount(): Promise<bigint> {
+    return this.contract.read("vestedTotalAmount");
   }
 
   /** Get the current annual mint rate in tokens per year */
-  async getCurrentAnnualMintRate(): Promise<bigint> {
-    return this.contract.read("currentAnnualMint");
+  async getYearlyMintRate(): Promise<bigint> {
+    return this.contract.read("yearlyMintRate");
+  }
+
+  /** Get the pool address for the token */
+  async getPool(): Promise<Address> {
+    return this.contract.read("pool");
   }
 
   /** Check if the liquidity pool is unlocked */
@@ -93,8 +103,13 @@ export class ReadDerc20 {
   }
 
   /** Get the timestamp when token minting begins */
-  async getMintStartDate(): Promise<bigint> {
-    return this.contract.read("mintStartDate");
+  async getCurrentYearStart(): Promise<bigint> {
+    return this.contract.read("currentYearStart");
+  }
+
+  /** Get the timestamp of the last mint */
+  async getLastMintTimestamp(): Promise<bigint> {
+    return this.contract.read("lastMintTimestamp");
   }
 
   /**
