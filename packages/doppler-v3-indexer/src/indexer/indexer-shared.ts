@@ -20,11 +20,52 @@ import { getAssetData } from "@app/utils/getAssetData";
 import { addresses } from "@app/types/addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { and, gte, lt } from "drizzle-orm";
+import { PoolState } from "@app/utils/v3-utils/getV3PoolData";
 
 interface Checkpoint {
   timestamp: string;
   volume: string;
 }
+
+export const computeDollarLiquidity = async ({
+  token0Balance,
+  token1Balance,
+  poolState,
+  token0,
+  price,
+  timestamp,
+  context,
+}: {
+  token0Balance: bigint;
+  token1Balance: bigint;
+  poolState: PoolState;
+  token0: Address;
+  price: bigint;
+  timestamp: bigint;
+  context: Context;
+}) => {
+  const ethPrice = await fetchEthPrice(timestamp, context);
+
+  let assetLiquidity;
+  let numeraireLiquidity;
+  if (ethPrice?.price) {
+    const assetBalance =
+      poolState.asset === token0 ? token0Balance : token1Balance;
+    assetLiquidity =
+      (((assetBalance * price) / WAD) * ethPrice.price) /
+      CHAINLINK_ETH_DECIMALS;
+
+    const numeraireBalance =
+      poolState.numeraire === token0 ? token0Balance : token1Balance;
+    numeraireLiquidity =
+      (numeraireBalance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
+  } else {
+    assetLiquidity = 0n;
+    numeraireLiquidity = 0n;
+  }
+
+  return assetLiquidity + numeraireLiquidity;
+};
 
 export const fetchEthPrice = async (timestamp: bigint, context: Context) => {
   const { db } = context;

@@ -8,7 +8,7 @@ import {
 import { addresses } from "@app/types/addresses";
 import { computeV3Price } from "./computeV3Price";
 
-type PoolState = {
+export type PoolState = {
   asset: Address;
   numeraire: Address;
   tickLower: number;
