@@ -1209,7 +1209,7 @@ export const derc20Abi = [
       { name: 'initialSupply', type: 'uint256', internalType: 'uint256' },
       { name: 'recipient', type: 'address', internalType: 'address' },
       { name: 'owner_', type: 'address', internalType: 'address' },
-      { name: 'yearlyMintCap_', type: 'uint256', internalType: 'uint256' },
+      { name: 'yearlyMintRate_', type: 'uint256', internalType: 'uint256' },
       { name: 'vestingDuration_', type: 'uint256', internalType: 'uint256' },
       { name: 'recipients_', type: 'address[]', internalType: 'address[]' },
       { name: 'amounts_', type: 'uint256[]', internalType: 'uint256[]' },
@@ -1260,6 +1260,13 @@ export const derc20Abi = [
   },
   {
     type: 'function',
+    name: 'burn',
+    inputs: [{ name: 'amount', type: 'uint256', internalType: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'checkpoints',
     inputs: [
       { name: 'account', type: 'address', internalType: 'address' },
@@ -1283,13 +1290,6 @@ export const derc20Abi = [
     name: 'clock',
     inputs: [],
     outputs: [{ name: '', type: 'uint48', internalType: 'uint48' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'currentAnnualMint',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -1392,6 +1392,13 @@ export const derc20Abi = [
   },
   {
     type: 'function',
+    name: 'lastMintTimestamp',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'lockPool',
     inputs: [{ name: 'pool_', type: 'address', internalType: 'address' }],
     outputs: [],
@@ -1399,20 +1406,10 @@ export const derc20Abi = [
   },
   {
     type: 'function',
-    name: 'mint',
-    inputs: [
-      { name: 'to', type: 'address', internalType: 'address' },
-      { name: 'value', type: 'uint256', internalType: 'uint256' },
-    ],
+    name: 'mintInflation',
+    inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'mintStartDate',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -1424,7 +1421,7 @@ export const derc20Abi = [
   {
     type: 'function',
     name: 'nonces',
-    inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
+    inputs: [{ name: 'owner_', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
@@ -1536,6 +1533,20 @@ export const derc20Abi = [
   },
   {
     type: 'function',
+    name: 'updateMintRate',
+    inputs: [{ name: 'newMintRate', type: 'uint256', internalType: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'vestedTotalAmount',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'vestingDuration',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
@@ -1550,7 +1561,7 @@ export const derc20Abi = [
   },
   {
     type: 'function',
-    name: 'yearlyMintCap',
+    name: 'yearlyMintRate',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
@@ -1746,7 +1757,6 @@ export const derc20Abi = [
     ],
   },
   { type: 'error', name: 'ERC6372InconsistentClock', inputs: [] },
-  { type: 'error', name: 'ExceedsYearlyMintCap', inputs: [] },
   {
     type: 'error',
     name: 'InvalidAccountNonce',
@@ -1772,7 +1782,24 @@ export const derc20Abi = [
       { name: 'limit', type: 'uint256', internalType: 'uint256' },
     ],
   },
+  {
+    type: 'error',
+    name: 'MaxTotalVestedExceeded',
+    inputs: [
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'limit', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'MaxYearlyMintRateExceeded',
+    inputs: [
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'limit', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
   { type: 'error', name: 'MintingNotStartedYet', inputs: [] },
+  { type: 'error', name: 'NoMintableAmount', inputs: [] },
   {
     type: 'error',
     name: 'OwnableInvalidOwner',
@@ -1798,6 +1825,7 @@ export const derc20Abi = [
     name: 'StringTooLong',
     inputs: [{ name: 'str', type: 'string', internalType: 'string' }],
   },
+  { type: 'error', name: 'VestingNotStartedYet', inputs: [] },
   {
     type: 'error',
     name: 'VotesExpiredSignature',
@@ -2398,7 +2426,7 @@ export const governanceFactoryAbi = [
     type: 'function',
     name: 'airlock',
     inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'address', internalType: 'contract Airlock' }],
     stateMutability: 'view',
   },
   {
@@ -2423,7 +2451,7 @@ export const governanceFactoryAbi = [
     ],
     stateMutability: 'view',
   },
-  { type: 'error', name: 'NotAirlock', inputs: [] },
+  { type: 'error', name: 'SenderNotAirlock', inputs: [] },
 ] as const;
 
 export const uniswapV4InitializerAbi = [
@@ -2448,7 +2476,7 @@ export const uniswapV4InitializerAbi = [
     type: 'function',
     name: 'airlock',
     inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'address', internalType: 'contract Airlock' }],
     stateMutability: 'view',
   },
   {
@@ -2497,103 +2525,33 @@ export const uniswapV4InitializerAbi = [
     ],
     stateMutability: 'view',
   },
+  {
+    type: 'event',
+    name: 'Create',
+    inputs: [
+      {
+        name: 'poolOrHook',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'asset',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'numeraire',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
   { type: 'error', name: 'InvalidTokenOrder', inputs: [] },
-  { type: 'error', name: 'OnlyAirlock', inputs: [] },
-];
-
-export const basicRouterAbi = [
-  {
-    type: 'constructor',
-    inputs: [{ name: '_router', type: 'address', internalType: 'address' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'exactInputSingleV3',
-    inputs: [
-      { name: 'pool', type: 'address', internalType: 'address' },
-      { name: 'recipient', type: 'address', internalType: 'address' },
-      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
-      { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
-      { name: 'amountOutMinimum', type: 'uint256', internalType: 'uint256' },
-      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'exactInputSingleV4',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
-      { name: 'amountIn', type: 'uint128', internalType: 'uint128' },
-      { name: 'amountOutMinimum', type: 'uint128', internalType: 'uint128' },
-      { name: 'hookData', type: 'bytes', internalType: 'bytes' },
-      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'exactOutputSingleV3',
-    inputs: [
-      { name: 'pool', type: 'address', internalType: 'address' },
-      { name: 'recipient', type: 'address', internalType: 'address' },
-      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
-      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
-      { name: 'amountInMaximum', type: 'uint256', internalType: 'uint256' },
-      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'exactOutputSingleV4',
-    inputs: [
-      {
-        name: 'key',
-        type: 'tuple',
-        internalType: 'struct PoolKey',
-        components: [
-          { name: 'currency0', type: 'address', internalType: 'Currency' },
-          { name: 'currency1', type: 'address', internalType: 'Currency' },
-          { name: 'fee', type: 'uint24', internalType: 'uint24' },
-          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
-          { name: 'hooks', type: 'address', internalType: 'contract IHooks' },
-        ],
-      },
-      { name: 'zeroForOne', type: 'bool', internalType: 'bool' },
-      { name: 'amountOut', type: 'uint128', internalType: 'uint128' },
-      { name: 'amountInMaximum', type: 'uint128', internalType: 'uint128' },
-      { name: 'hookData', type: 'bytes', internalType: 'bytes' },
-      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'int256', internalType: 'BalanceDelta' }],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    name: 'router',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract IUniversalRouter' },
-    ],
-    stateMutability: 'view',
-  },
+  { type: 'error', name: 'SenderNotAirlock', inputs: [] },
 ] as const;
 
 export const universalRouterAbi = [
