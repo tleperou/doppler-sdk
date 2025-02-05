@@ -11,6 +11,7 @@ import {
 import { UniswapV3PoolABI } from "@app/abis";
 import { addresses } from "@app/types/addresses";
 import { CHAINLINK_ETH_DECIMALS, WAD } from "@app/utils/constants";
+
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
   const { network } = context;
   const { poolOrHook, asset: assetId, numeraire } = event.args;
@@ -65,7 +66,6 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
-      dollarMarketCap: 0n,
     })
     .onConflictDoNothing();
 
@@ -120,10 +120,10 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
-      dollarMarketCap: 0n,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: row.liquidity + amount,
+      dollarLiquidity: dollarLiquidity,
     }));
 
   await db
@@ -180,7 +180,6 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
-      dollarMarketCap: 0n,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: row.liquidity - amount,
@@ -200,6 +199,7 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
     })
     .onConflictDoUpdate((row) => ({
       liquidity: row.liquidity - amount,
+      dollarLiquidity: dollarLiquidity,
     }));
 });
 
@@ -226,7 +226,6 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   }
 
   const dollarLiquidity = assetLiquidity + numeraireLiquidity;
-
 
   let amountIn;
   let amountOut;
@@ -272,7 +271,6 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       fee,
       dollarLiquidity,
-      dollarMarketCap: 0n,
     })
     .onConflictDoUpdate((row) => ({
       liquidity: liquidity,
