@@ -13,6 +13,18 @@ interface Checkpoint {
   volume: string;
 }
 
+export const fetchEthPrice = async (timestamp: bigint, context: Context) => {
+  const { db } = context;
+  const price = await db.sql.query.ethPrice.findFirst({
+    where: and(
+      gte(ethPrice.timestamp, timestamp - 5n * 60n),
+      lt(ethPrice.timestamp, timestamp)
+    ),
+  });
+
+  return price;
+};
+
 export const insertOrUpdateHourBucket = async ({
   poolAddress,
   price,
@@ -71,12 +83,7 @@ export const insertOrUpdateDailyVolume = async ({
 }) => {
   const { db, network } = context;
 
-  const price = await db.sql.query.ethPrice.findFirst({
-    where: and(
-      gte(ethPrice.timestamp, timestamp - 5n * 60n),
-      lt(ethPrice.timestamp, timestamp)
-    ),
-  });
+  const price = await fetchEthPrice(timestamp, context);
 
   if (!price) {
     console.error("No price found for timestamp", timestamp);
@@ -134,7 +141,6 @@ export const insertTokenIfNotExists = async ({
   const existingToken = await db.find(token, {
     address,
   });
-
 
   if (existingToken) return existingToken;
 

@@ -149,6 +149,8 @@ export const pool = onchainTable(
     price: t.bigint().notNull(),
     fee: t.integer().notNull(),
     type: t.text().notNull(),
+    dollarMarketCap: t.bigint().notNull(),
+    dollarLiquidity: t.bigint().notNull(),
   }),
   (table) => ({
     pk: primaryKey({
