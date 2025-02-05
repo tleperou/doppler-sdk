@@ -23,7 +23,17 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     return;
   }
 
-  const { slot0Data, liquidity, price, fee, token0Balance, token1Balance, token0, token1, poolState } = await getV3PoolData({
+  const {
+    slot0Data,
+    liquidity,
+    price,
+    fee,
+    token0Balance,
+    token1Balance,
+    token0,
+    token1,
+    poolState,
+  } = await getV3PoolData({
     address: poolOrHook,
     context,
   });
@@ -40,8 +50,16 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
   let assetLiquidity;
   let numeraireLiquidity;
   if (ethPrice?.price) {
-    assetLiquidity = poolState.asset === token0 ? (token0Balance * price / WAD) * ethPrice.price / CHAINLINK_ETH_DECIMALS : (token1Balance * price / WAD) * ethPrice.price / CHAINLINK_ETH_DECIMALS;
-    numeraireLiquidity = poolState.numeraire === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS);
+    assetLiquidity =
+      poolState.asset === token0
+        ? (((token0Balance * price) / WAD) * ethPrice.price) /
+          CHAINLINK_ETH_DECIMALS
+        : (((token1Balance * price) / WAD) * ethPrice.price) /
+          CHAINLINK_ETH_DECIMALS;
+    numeraireLiquidity =
+      poolState.numeraire === token0
+        ? (token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS
+        : (token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
   } else {
     assetLiquidity = 0n;
     numeraireLiquidity = 0n;
@@ -85,7 +103,17 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
   const address = event.log.address;
   const { tickLower, tickUpper, amount, owner } = event.args;
 
-  const { slot0Data, liquidity, price, fee, token0Balance, token1Balance, token0, token1, poolState } = await getV3PoolData({
+  const {
+    slot0Data,
+    liquidity,
+    price,
+    fee,
+    token0Balance,
+    token1Balance,
+    token0,
+    token1,
+    poolState,
+  } = await getV3PoolData({
     address,
     context,
   });
@@ -95,8 +123,18 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
   let assetLiquidity;
   let numeraireLiquidity;
   if (ethPrice?.price) {
-    assetLiquidity = poolState.asset === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) * price / WAD : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) * price / WAD;
-    numeraireLiquidity = poolState.numeraire === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS);
+    assetLiquidity =
+      poolState.asset === token0
+        ? (((token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS) *
+            price) /
+          WAD
+        : (((token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS) *
+            price) /
+          WAD;
+    numeraireLiquidity =
+      poolState.numeraire === token0
+        ? (token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS
+        : (token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
   } else {
     assetLiquidity = 0n;
     numeraireLiquidity = 0n;
@@ -137,7 +175,10 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
       createdAt: event.block.timestamp,
       chainId: BigInt(network.chainId),
     })
-    .onConflictDoUpdate((row) => ({ liquidity: row.liquidity + amount, dollarLiquidity: dollarLiquidity }));
+    .onConflictDoUpdate((row) => ({
+      liquidity: row.liquidity + amount,
+      dollarLiquidity: dollarLiquidity,
+    }));
 });
 
 ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
@@ -145,7 +186,17 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
   const address = event.log.address;
   const { tickLower, tickUpper, owner, amount } = event.args;
 
-  const { slot0Data, liquidity, price, fee, token0Balance, token1Balance, token0, token1, poolState } = await getV3PoolData({
+  const {
+    slot0Data,
+    liquidity,
+    price,
+    fee,
+    token0Balance,
+    token1Balance,
+    token0,
+    token1,
+    poolState,
+  } = await getV3PoolData({
     address,
     context,
   });
@@ -155,15 +206,24 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
   let assetLiquidity;
   let numeraireLiquidity;
   if (ethPrice?.price) {
-    assetLiquidity = poolState.asset === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) * price / WAD : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) * price / WAD;
-    numeraireLiquidity = poolState.numeraire === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS);
+    assetLiquidity =
+      poolState.asset === token0
+        ? (((token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS) *
+            price) /
+          WAD
+        : (((token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS) *
+            price) /
+          WAD;
+    numeraireLiquidity =
+      poolState.numeraire === token0
+        ? (token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS
+        : (token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
   } else {
     assetLiquidity = 0n;
     numeraireLiquidity = 0n;
   }
 
   const dollarLiquidity = assetLiquidity + numeraireLiquidity;
-
 
   await db
     .insert(pool)
@@ -209,7 +269,17 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   const address = event.log.address;
   const { amount0, amount1 } = event.args;
 
-  const { slot0Data, liquidity, price, fee, token0Balance, token1Balance, token0, token1, poolState } = await getV3PoolData({
+  const {
+    slot0Data,
+    liquidity,
+    price,
+    fee,
+    token0Balance,
+    token1Balance,
+    token0,
+    token1,
+    poolState,
+  } = await getV3PoolData({
     address,
     context,
   });
@@ -219,8 +289,18 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   let assetLiquidity;
   let numeraireLiquidity;
   if (ethPrice?.price) {
-    assetLiquidity = poolState.asset === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) * price / WAD : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) * price / WAD;
-    numeraireLiquidity = poolState.numeraire === token0 ? (token0Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS) : (token1Balance * ethPrice.price / CHAINLINK_ETH_DECIMALS);
+    assetLiquidity =
+      poolState.asset === token0
+        ? (((token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS) *
+            price) /
+          WAD
+        : (((token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS) *
+            price) /
+          WAD;
+    numeraireLiquidity =
+      poolState.numeraire === token0
+        ? (token0Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS
+        : (token1Balance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
   } else {
     assetLiquidity = 0n;
     numeraireLiquidity = 0n;

@@ -1,6 +1,10 @@
 import { Address } from "viem";
 import { Context } from "ponder:registry";
-import { DERC20ABI, UniswapV3InitializerABI, UniswapV3PoolABI } from "@app/abis";
+import {
+  DERC20ABI,
+  UniswapV3InitializerABI,
+  UniswapV3PoolABI,
+} from "@app/abis";
 import { addresses } from "@app/types/addresses";
 import { computeV3Price } from "./computeV3Price";
 

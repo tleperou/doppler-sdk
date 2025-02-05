@@ -1,8 +1,21 @@
 import { Context, ponder } from "ponder:registry";
 import { Address, zeroAddress } from "viem";
 import { DERC20ABI } from "../abis";
-import { CHAINLINK_ETH_DECIMALS, secondsInDay, secondsInHour, WAD } from "@app/utils/constants";
-import { token, hourBucket, asset, userAsset, user, ethPrice, dailyVolume } from "ponder.schema";
+import {
+  CHAINLINK_ETH_DECIMALS,
+  secondsInDay,
+  secondsInHour,
+  WAD,
+} from "@app/utils/constants";
+import {
+  token,
+  hourBucket,
+  asset,
+  userAsset,
+  user,
+  ethPrice,
+  dailyVolume,
+} from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
 import { addresses } from "@app/types/addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
@@ -92,9 +105,9 @@ export const insertOrUpdateDailyVolume = async ({
 
   let dollarVolume;
   if (tokenIn === addresses.shared.weth) {
-    dollarVolume = amountIn * price.price / CHAINLINK_ETH_DECIMALS;
+    dollarVolume = (amountIn * price.price) / CHAINLINK_ETH_DECIMALS;
   } else {
-    dollarVolume = amountOut * price.price / CHAINLINK_ETH_DECIMALS;
+    dollarVolume = (amountOut * price.price) / CHAINLINK_ETH_DECIMALS;
   }
 
   return await db
@@ -112,12 +125,21 @@ export const insertOrUpdateDailyVolume = async ({
       ],
     })
     .onConflictDoUpdate((row) => {
-      const checkpoints = [...(row.checkpoints as Checkpoint[]), {
-        timestamp: timestamp.toString(),
-        volume: String(dollarVolume),
-      }];
-      const updatedCheckpoints = checkpoints.filter((checkpoint) => BigInt(checkpoint.timestamp) >= timestamp - BigInt(secondsInDay));
-      const volume = updatedCheckpoints.reduce((acc, checkpoint) => acc + BigInt(checkpoint.volume), BigInt(0));
+      const checkpoints = [
+        ...(row.checkpoints as Checkpoint[]),
+        {
+          timestamp: timestamp.toString(),
+          volume: String(dollarVolume),
+        },
+      ];
+      const updatedCheckpoints = checkpoints.filter(
+        (checkpoint) =>
+          BigInt(checkpoint.timestamp) >= timestamp - BigInt(secondsInDay)
+      );
+      const volume = updatedCheckpoints.reduce(
+        (acc, checkpoint) => acc + BigInt(checkpoint.volume),
+        BigInt(0)
+      );
       return {
         volume,
         checkpoints: updatedCheckpoints,
@@ -312,4 +334,3 @@ ponder.on("ChainlinkEthPriceFeed:block", async ({ event, context }) => {
     })
     .onConflictDoNothing();
 });
-
