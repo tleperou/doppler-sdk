@@ -85,9 +85,30 @@ export const hourBucket = onchainTable(
   })
 );
 
+export const hourBucketUsd = onchainTable(
+  "hour_bucket_usd",
+  (t) => ({
+    hourId: t.integer().notNull(),
+    pool: t.hex().notNull(),
+    open: t.bigint().notNull(),
+    close: t.bigint().notNull(),
+    low: t.bigint().notNull(),
+    high: t.bigint().notNull(),
+    average: t.bigint().notNull(),
+    count: t.integer().notNull(),
+    chainId: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pool, table.hourId, table.chainId],
+    }),
+  })
+);
+
 export const dailyVolume = onchainTable("daily_volume", (t) => ({
   pool: t.hex().notNull().primaryKey(),
-  volume: t.bigint().notNull(),
+  volumeUsd: t.bigint().notNull(),
+  volumeNumeraire: t.bigint().notNull(),
   chainId: t.bigint().notNull(),
   checkpoints: t.jsonb().notNull(),
   lastUpdated: t.bigint().notNull(),
@@ -243,6 +264,13 @@ export const userAssetRelations = relations(userAsset, ({ one }) => ({
 export const hourBucketRelations = relations(hourBucket, ({ one }) => ({
   pool: one(pool, {
     fields: [hourBucket.pool],
+    references: [pool.address],
+  }),
+}));
+
+export const hourBucketUsdRelations = relations(hourBucketUsd, ({ one }) => ({
+  pool: one(pool, {
+    fields: [hourBucketUsd.pool],
     references: [pool.address],
   }),
 }));
