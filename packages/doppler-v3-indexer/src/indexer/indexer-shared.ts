@@ -24,7 +24,8 @@ import { PoolState } from "@app/utils/v3-utils/getV3PoolData";
 
 interface Checkpoint {
   timestamp: string;
-  volume: string;
+  volumeUsd: string;
+  volumeNumeraire: string;
 }
 
 export const computeDollarLiquidity = async ({
@@ -120,6 +121,56 @@ export const insertOrUpdateHourBucket = async ({
   }
 };
 
+export const insertOrUpdateHourBucketUsd = async ({
+  poolAddress,
+  price,
+  timestamp,
+  context,
+}: {
+  poolAddress: Address;
+  price: bigint;
+  timestamp: bigint;
+  context: Context;
+}) => {
+  const { db, network } = context;
+  const hourId = Math.floor(Number(timestamp) / secondsInHour) * secondsInHour;
+
+  const ethPrice = await fetchEthPrice(timestamp, context);
+
+  if (!ethPrice) {
+    console.error("No price found for timestamp", timestamp);
+    return;
+  }
+
+  const usdPrice = (price * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
+
+  try {
+    await db
+      .insert(hourBucket)
+      .values({
+        hourId,
+        pool: poolAddress,
+        open: usdPrice,
+        close: usdPrice,
+        low: usdPrice,
+        high: usdPrice,
+        average: usdPrice,
+        count: 1,
+        chainId: BigInt(network.chainId),
+      })
+      .onConflictDoUpdate((row) => ({
+        close: usdPrice,
+        low: row.low < usdPrice ? row.low : usdPrice,
+        high: row.high > usdPrice ? row.high : usdPrice,
+        average:
+          (row.average * BigInt(row.count) + usdPrice) / BigInt(row.count + 1),
+        count: row.count + 1,
+      }));
+  } catch (e) {
+    console.error("error inserting hour bucket", e);
+  }
+};
+
 export const insertOrUpdateDailyVolume = async ({
   tokenIn,
   poolAddress,
@@ -144,45 +195,56 @@ export const insertOrUpdateDailyVolume = async ({
     return;
   }
 
-  let dollarVolume;
+  let volumeUsd;
+  let volumeNumeraire;
   if (tokenIn === addresses.shared.weth) {
-    dollarVolume = (amountIn * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeUsd = (amountIn * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeNumeraire = amountIn;
   } else {
-    dollarVolume = (amountOut * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeUsd = (amountOut * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeNumeraire = amountOut;
   }
 
   return await db
     .insert(dailyVolume)
     .values({
       pool: poolAddress,
-      volume: dollarVolume,
+      volumeUsd: volumeUsd,
+      volumeNumeraire: volumeNumeraire,
       chainId: BigInt(network.chainId),
       lastUpdated: timestamp,
       checkpoints: [
         {
           timestamp: timestamp.toString(),
-          volume: dollarVolume.toString(),
+          volumeUsd: volumeUsd.toString(),
+          volumeNumeraire: volumeNumeraire.toString(),
         },
       ],
     })
     .onConflictDoUpdate((row) => {
-      const checkpoints = [
+      const checkpoints: Checkpoint[] = [
         ...(row.checkpoints as Checkpoint[]),
         {
           timestamp: timestamp.toString(),
-          volume: String(dollarVolume),
+          volumeUsd: String(volumeUsd),
+          volumeNumeraire: String(volumeNumeraire),
         },
       ];
       const updatedCheckpoints = checkpoints.filter(
         (checkpoint) =>
           BigInt(checkpoint.timestamp) >= timestamp - BigInt(secondsInDay)
       );
-      const volume = updatedCheckpoints.reduce(
-        (acc, checkpoint) => acc + BigInt(checkpoint.volume),
+      const totalVolumeUsd = updatedCheckpoints.reduce(
+        (acc, checkpoint) => acc + BigInt(checkpoint.volumeUsd),
+        BigInt(0)
+      );
+      const totalVolumeNumeraire = updatedCheckpoints.reduce(
+        (acc, checkpoint) => acc + BigInt(checkpoint.volumeNumeraire),
         BigInt(0)
       );
       return {
-        volume,
+        volumeUsd: totalVolumeUsd,
+        volumeNumeraire: totalVolumeNumeraire,
         checkpoints: updatedCheckpoints,
         lastUpdated: timestamp,
       };
@@ -194,11 +256,13 @@ export const insertTokenIfNotExists = async ({
   timestamp,
   context,
   isDerc20 = false,
+  poolAddress,
 }: {
   address: Address;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
+  poolAddress?: Address;
 }) => {
   const { db, network } = context;
   const existingToken = await db.find(token, {
@@ -209,6 +273,7 @@ export const insertTokenIfNotExists = async ({
 
   const chainId = BigInt(network.chainId);
 
+  // ignore pool field for native tokens
   if (address === zeroAddress) {
     return await db.insert(token).values({
       address,
@@ -222,31 +287,68 @@ export const insertTokenIfNotExists = async ({
       isDerc20: false,
     });
   } else {
-    const [nameResult, symbolResult, decimalsResult, totalSupplyResult] =
-      await context.client.multicall({
-        contracts: [
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "name",
-          },
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "symbol",
-          },
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "decimals",
-          },
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "totalSupply",
-          },
-        ],
-      });
+    const [
+      nameResult,
+      symbolResult,
+      decimalsResult,
+      totalSupplyResult,
+      tokenURIResult,
+    ] = await context.client.multicall({
+      contracts: [
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "name",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "symbol",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "decimals",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "totalSupply",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "tokenURI",
+        },
+      ],
+    });
+
+    const tokenURI = tokenURIResult?.result;
+    let image: string | undefined;
+    if (tokenURI?.startsWith("ipfs://")) {
+      try {
+        const cid = tokenURI.replace("ipfs://", "");
+        // TODO: Use a better IPFS gateway
+        const response = await fetch(`https://ipfs.io/ipfs/${cid}`);
+        const data = await response.json();
+
+        if (
+          data &&
+          typeof data === "object" &&
+          "image" in data &&
+          typeof data.image === "string"
+        ) {
+          if (data.image.startsWith("ipfs://")) {
+            image = data.image;
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Failed to fetch IPFS metadata for token ${address}:`,
+          error
+        );
+      }
+    }
 
     return await context.db
       .insert(token)
@@ -260,6 +362,9 @@ export const insertTokenIfNotExists = async ({
         firstSeenAt: timestamp,
         lastSeenAt: timestamp,
         isDerc20,
+        image,
+        pool: isDerc20 ? poolAddress : undefined,
+        derc20Data: isDerc20 ? address : undefined,
       })
       .onConflictDoNothing();
   }
@@ -284,9 +389,11 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       createdAt: event.block.timestamp,
       migratedAt: event.block.timestamp,
+      migrated: true,
     })
     .onConflictDoUpdate((row) => ({
       migratedAt: event.block.timestamp,
+      migrated: true,
     }));
 });
 
@@ -294,13 +401,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { db, network } = context;
   const { address } = event.log;
   const { from, to, value } = event.args;
-
-  await insertTokenIfNotExists({
-    address,
-    timestamp: event.block.timestamp,
-    context,
-    isDerc20: true,
-  });
 
   await db
     .insert(user)

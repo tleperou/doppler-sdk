@@ -22,13 +22,17 @@ export const token = onchainTable(
     symbol: t.text().notNull(),
     decimals: t.integer().notNull(),
     totalSupply: t.bigint().notNull(),
+    image: t.text(),
     isDerc20: t.boolean().notNull(),
+    derc20Data: t.hex(),
     firstSeenAt: t.bigint().notNull(),
     lastSeenAt: t.bigint().notNull(),
+    pool: t.hex(),
   }),
   (table) => ({
     addressIdx: index().on(table.address),
     chainIdIdx: index().on(table.chainId),
+    poolIdx: index().on(table.pool),
   })
 );
 
@@ -53,6 +57,7 @@ export const asset = onchainTable(
     integrator: t.hex().notNull(),
     createdAt: t.bigint().notNull(),
     migratedAt: t.bigint(),
+    migrated: t.boolean().notNull().default(false),
   }),
   (table) => ({
     addressIdx: index().on(table.address),
@@ -80,9 +85,30 @@ export const hourBucket = onchainTable(
   })
 );
 
+export const hourBucketUsd = onchainTable(
+  "hour_bucket_usd",
+  (t) => ({
+    hourId: t.integer().notNull(),
+    pool: t.hex().notNull(),
+    open: t.bigint().notNull(),
+    close: t.bigint().notNull(),
+    low: t.bigint().notNull(),
+    high: t.bigint().notNull(),
+    average: t.bigint().notNull(),
+    count: t.integer().notNull(),
+    chainId: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pool, table.hourId, table.chainId],
+    }),
+  })
+);
+
 export const dailyVolume = onchainTable("daily_volume", (t) => ({
   pool: t.hex().notNull().primaryKey(),
-  volume: t.bigint().notNull(),
+  volumeUsd: t.bigint().notNull(),
+  volumeNumeraire: t.bigint().notNull(),
   chainId: t.bigint().notNull(),
   checkpoints: t.jsonb().notNull(),
   lastUpdated: t.bigint().notNull(),
@@ -212,6 +238,15 @@ export const positionRelations = relations(position, ({ one }) => ({
   pool: one(pool, { fields: [position.pool], references: [pool.address] }),
 }));
 
+// tokens have one pool
+export const tokenRelations = relations(token, ({ one }) => ({
+  pool: one(pool, { fields: [token.pool], references: [pool.address] }),
+  derc20Data: one(asset, {
+    fields: [token.derc20Data],
+    references: [asset.address],
+  }),
+}));
+
 // users have many assets and positions
 export const userRelations = relations(user, ({ many }) => ({
   userAssets: many(userAsset),
@@ -229,6 +264,13 @@ export const userAssetRelations = relations(userAsset, ({ one }) => ({
 export const hourBucketRelations = relations(hourBucket, ({ one }) => ({
   pool: one(pool, {
     fields: [hourBucket.pool],
+    references: [pool.address],
+  }),
+}));
+
+export const hourBucketUsdRelations = relations(hourBucketUsd, ({ one }) => ({
+  pool: one(pool, {
+    fields: [hourBucketUsd.pool],
     references: [pool.address],
   }),
 }));

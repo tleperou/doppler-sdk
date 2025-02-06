@@ -15,7 +15,6 @@ export interface DopplerV4Addresses {
   migrator: Address;
   poolManager: Address;
   dopplerDeployer: Address;
-  basicRouter: Address;
   universalRouter: Address;
   stateView: Address;
 }

@@ -14,8 +14,8 @@ import { addresses } from "./src/types/addresses";
 const unichainSepoliaChainId = 1301;
 const mainnetChainId = 1;
 
-const unichainSepoliaStartingBlock = 11410729;
-const mainnetStartingBlock = 21737500;
+const unichainSepoliaStartingBlock = 11932039;
+const mainnetStartingBlock = 21782000;
 
 export default createConfig({
   networks: {

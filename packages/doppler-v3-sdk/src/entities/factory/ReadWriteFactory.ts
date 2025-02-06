@@ -17,14 +17,15 @@ const DEFAULT_END_TICK = 200040;
 const DEFAULT_NUM_POSITIONS = 10;
 const DEFAULT_FEE = 3000; // 0.3% fee tier
 const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
-const DEFAULT_INITIAL_SUPPLY_INT = 1_000_000_000;
-const DEFAULT_NUM_TOKENS_TO_SELL_INT = 900_000_000;
-const DEFAULT_YEARLY_MINT_CAP_INT = 100_000_000;
-const DEFAULT_PRE_MINT_INT = 9_000_000; // 0.9% of the total supply
+const DEFAULT_INITIAL_SUPPLY_WAD = parseEther("1000000000");
+const DEFAULT_NUM_TOKENS_TO_SELL_WAD = parseEther("900000000");
+const DEFAULT_YEARLY_MINT_RATE_WAD = parseEther("0.02");
+const DEFAULT_PRE_MINT_WAD = parseEther("9000000"); // 0.9% of the total supply
+const DEFAULT_MAX_SHARE_TO_BE_SOLD = parseEther("0.35");
 
-// String-based defaults for percentage values (must sum to <= 1)
-const DEFAULT_MAX_SHARE_TO_BE_SOLD = "0.2";
-const DEFAULT_MAX_SHARE_TO_BE_BOND = "0.5";
+const DEFAULT_INITIAL_VOTING_DELAY = 7200;
+const DEFAULT_INITIAL_VOTING_PERIOD = 50400;
+const DEFAULT_INITIAL_PROPOSAL_THRESHOLD = BigInt(0);
 
 /**
  * Parameters required for creating a new Doppler V3 pool
@@ -72,7 +73,6 @@ export interface V3PoolConfig {
   endTick: number;
   numPositions: number;
   maxShareToBeSold: bigint;
-  maxShareToBond: bigint;
   fee: number;
 }
 
@@ -94,7 +94,7 @@ export interface SaleConfig {
  * @property amounts Corresponding vesting amounts
  */
 export interface VestingConfig {
-  yearlyMintCap: bigint;
+  yearlyMintRate: bigint;
   vestingDuration: bigint;
   recipients: Address[];
   amounts: bigint[];
@@ -110,6 +110,18 @@ export interface TokenConfig {
   name: string;
   symbol: string;
   tokenURI: string;
+}
+
+/**
+ * Governance configuration parameters
+ * @property initialVotingDelay Initial voting delay in seconds
+ * @property initialVotingPeriod Initial voting period in seconds
+ * @property initialProposalThreshold Initial proposal threshold
+ */
+export interface GovernanceConfig {
+  initialVotingDelay: number;
+  initialVotingPeriod: number;
+  initialProposalThreshold: bigint;
 }
 
 /**
@@ -146,6 +158,7 @@ export interface CreateV3PoolParams {
   saleConfig?: Partial<SaleConfig>;
   v3PoolConfig?: Partial<V3PoolConfig>;
   vestingConfig: VestingConfig | "default";
+  governanceConfig?: Partial<GovernanceConfig>;
 }
 
 /**
@@ -153,11 +166,13 @@ export interface CreateV3PoolParams {
  * @property defaultV3PoolConfig Default pool configuration
  * @property defaultVestingConfig Default vesting schedule
  * @property defaultSaleConfig Default sale parameters
+ * @property defaultGovernanceConfig Default governance parameters
  */
 export interface DefaultConfigs {
   defaultV3PoolConfig?: V3PoolConfig;
   defaultVestingConfig?: VestingConfig;
   defaultSaleConfig?: SaleConfig;
+  defaultGovernanceConfig?: GovernanceConfig;
 }
 
 /**
@@ -168,7 +183,7 @@ export class ReadWriteFactory extends ReadFactory {
   declare defaultV3PoolConfig: V3PoolConfig;
   declare defaultVestingConfig: VestingConfig;
   declare defaultSaleConfig: SaleConfig;
-
+  declare defaultGovernanceConfig: GovernanceConfig;
   /**
    * Create a new ReadWriteFactory instance
    * @param address Contract address
@@ -187,21 +202,26 @@ export class ReadWriteFactory extends ReadFactory {
       startTick: DEFAULT_START_TICK,
       endTick: DEFAULT_END_TICK,
       numPositions: DEFAULT_NUM_POSITIONS,
-      maxShareToBeSold: parseEther(DEFAULT_MAX_SHARE_TO_BE_SOLD),
-      maxShareToBond: parseEther(DEFAULT_MAX_SHARE_TO_BE_BOND),
+      maxShareToBeSold: DEFAULT_MAX_SHARE_TO_BE_SOLD,
       fee: DEFAULT_FEE,
     };
 
     this.defaultVestingConfig = defaultConfigs?.defaultVestingConfig ?? {
-      yearlyMintCap: parseEther(DEFAULT_YEARLY_MINT_CAP_INT.toString()),
+      yearlyMintRate: DEFAULT_YEARLY_MINT_RATE_WAD,
       vestingDuration: DEFAULT_VESTING_DURATION,
       recipients: [],
       amounts: [],
     };
 
     this.defaultSaleConfig = defaultConfigs?.defaultSaleConfig ?? {
-      initialSupply: parseEther(DEFAULT_INITIAL_SUPPLY_INT.toString()),
-      numTokensToSell: parseEther(DEFAULT_NUM_TOKENS_TO_SELL_INT.toString()),
+      initialSupply: DEFAULT_INITIAL_SUPPLY_WAD,
+      numTokensToSell: DEFAULT_NUM_TOKENS_TO_SELL_WAD,
+    };
+
+    this.defaultGovernanceConfig = defaultConfigs?.defaultGovernanceConfig ?? {
+      initialVotingDelay: DEFAULT_INITIAL_VOTING_DELAY,
+      initialVotingPeriod: DEFAULT_INITIAL_VOTING_PERIOD,
+      initialProposalThreshold: DEFAULT_INITIAL_PROPOSAL_THRESHOLD,
     };
   }
 
@@ -239,6 +259,20 @@ export class ReadWriteFactory extends ReadFactory {
   }
 
   /**
+   * Get merged governance configuration
+   * @param governanceConfig Optional partial governance config
+   * @returns Complete GovernanceConfig
+   */
+  private getMergedGovernanceConfig(
+    governanceConfig?: Partial<GovernanceConfig>
+  ): GovernanceConfig {
+    return this.mergeWithDefaults(
+      governanceConfig,
+      this.defaultGovernanceConfig
+    );
+  }
+
+  /**
    * Get merged vesting configuration
    * @param config Vesting config or "default" preset
    * @param userAddress User address for default recipient
@@ -254,9 +288,7 @@ export class ReadWriteFactory extends ReadFactory {
       ...base,
       recipients: config === "default" ? [userAddress] : [...base.recipients],
       amounts:
-        config === "default"
-          ? [parseEther(DEFAULT_PRE_MINT_INT.toString())]
-          : [...base.amounts],
+        config === "default" ? [DEFAULT_PRE_MINT_WAD] : [...base.amounts],
     };
   }
 
@@ -304,7 +336,6 @@ export class ReadWriteFactory extends ReadFactory {
         { type: "int24" },
         { type: "uint16" },
         { type: "uint256" },
-        { type: "uint256" },
       ],
       [
         v3PoolConfig.fee,
@@ -312,7 +343,6 @@ export class ReadWriteFactory extends ReadFactory {
         v3PoolConfig.endTick,
         v3PoolConfig.numPositions,
         v3PoolConfig.maxShareToBeSold,
-        v3PoolConfig.maxShareToBond,
       ]
     );
   }
@@ -340,7 +370,7 @@ export class ReadWriteFactory extends ReadFactory {
       [
         tokenConfig.name,
         tokenConfig.symbol,
-        vestingConfig.yearlyMintCap,
+        vestingConfig.yearlyMintRate,
         vestingConfig.vestingDuration,
         vestingConfig.recipients,
         vestingConfig.amounts,
@@ -354,8 +384,24 @@ export class ReadWriteFactory extends ReadFactory {
    * @param tokenConfig Token metadata
    * @returns ABI-encoded governance data
    */
-  private encodeGovernanceFactoryData(tokenConfig: TokenConfig): Hex {
-    return encodeAbiParameters([{ type: "string" }], [tokenConfig.name]);
+  private encodeGovernanceFactoryData(
+    tokenConfig: TokenConfig,
+    governanceConfig: GovernanceConfig
+  ): Hex {
+    return encodeAbiParameters(
+      [
+        { type: "string" },
+        { type: "uint48" },
+        { type: "uint32" },
+        { type: "uint256" },
+      ],
+      [
+        tokenConfig.name,
+        Number(governanceConfig.initialVotingDelay),
+        Number(governanceConfig.initialVotingPeriod),
+        governanceConfig.initialProposalThreshold,
+      ]
+    );
   }
 
   /**
@@ -382,6 +428,9 @@ export class ReadWriteFactory extends ReadFactory {
     );
     const v3PoolConfig = this.getMergedV3PoolConfig(params.v3PoolConfig);
     const saleConfig = this.getMergedSaleConfig(params.saleConfig);
+    const governanceConfig = this.getMergedGovernanceConfig(
+      params.governanceConfig
+    );
 
     // Validate tick configuration
     if (v3PoolConfig.startTick > v3PoolConfig.endTick) {
@@ -392,7 +441,10 @@ export class ReadWriteFactory extends ReadFactory {
 
     // Generate unique salt and encode contract data
     const salt = this.generateRandomSalt(userAddress) as Hex;
-    const governanceFactoryData = this.encodeGovernanceFactoryData(tokenConfig);
+    const governanceFactoryData = this.encodeGovernanceFactoryData(
+      tokenConfig,
+      governanceConfig
+    );
     const tokenFactoryData = this.encodeTokenFactoryData(
       tokenConfig,
       vestingConfig
@@ -490,6 +542,7 @@ export class ReadWriteFactory extends ReadFactory {
     defaultV3PoolConfig?: Partial<V3PoolConfig>;
     defaultVestingConfig?: Partial<VestingConfig>;
     defaultSaleConfig?: Partial<SaleConfig>;
+    defaultGovernanceConfig?: Partial<GovernanceConfig>;
   }) {
     this.defaultV3PoolConfig = this.mergeWithDefaults(
       configs.defaultV3PoolConfig || {},
@@ -504,6 +557,11 @@ export class ReadWriteFactory extends ReadFactory {
     this.defaultSaleConfig = this.mergeWithDefaults(
       configs.defaultSaleConfig || {},
       this.defaultSaleConfig
+    );
+
+    this.defaultGovernanceConfig = this.mergeWithDefaults(
+      configs.defaultGovernanceConfig || {},
+      this.defaultGovernanceConfig
     );
   }
 }
