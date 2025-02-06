@@ -26,10 +26,12 @@ export const token = onchainTable(
     image: t.text(),
     firstSeenAt: t.bigint().notNull(),
     lastSeenAt: t.bigint().notNull(),
+    pool: t.hex(),
   }),
   (table) => ({
     addressIdx: index().on(table.address),
     chainIdIdx: index().on(table.chainId),
+    poolIdx: index().on(table.pool),
   })
 );
 
@@ -211,6 +213,11 @@ export const poolRelations = relations(pool, ({ one, many }) => ({
 // positions have one pool
 export const positionRelations = relations(position, ({ one }) => ({
   pool: one(pool, { fields: [position.pool], references: [pool.address] }),
+}));
+
+// tokens have one pool
+export const tokenRelations = relations(token, ({ one }) => ({
+  pool: one(pool, { fields: [token.pool], references: [pool.address] }),
 }));
 
 // users have many assets and positions

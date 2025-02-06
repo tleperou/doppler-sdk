@@ -194,11 +194,13 @@ export const insertTokenIfNotExists = async ({
   timestamp,
   context,
   isDerc20 = false,
+  poolAddress,
 }: {
   address: Address;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
+  poolAddress?: Address;
 }) => {
   const { db, network } = context;
   const existingToken = await db.find(token, {
@@ -209,6 +211,7 @@ export const insertTokenIfNotExists = async ({
 
   const chainId = BigInt(network.chainId);
 
+  // ignore pool field for native tokens
   if (address === zeroAddress) {
     return await db.insert(token).values({
       address,
@@ -298,6 +301,7 @@ export const insertTokenIfNotExists = async ({
         lastSeenAt: timestamp,
         isDerc20,
         image,
+        pool: isDerc20 ? poolAddress : undefined,
       })
       .onConflictDoNothing();
   }
@@ -332,13 +336,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { db, network } = context;
   const { address } = event.log;
   const { from, to, value } = event.args;
-
-  await insertTokenIfNotExists({
-    address,
-    timestamp: event.block.timestamp,
-    context,
-    isDerc20: true,
-  });
 
   await db
     .insert(user)

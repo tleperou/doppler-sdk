@@ -6,7 +6,6 @@ import {
   insertOrUpdateHourBucket,
   insertTokenIfNotExists,
   insertOrUpdateDailyVolume,
-  fetchEthPrice,
   computeDollarLiquidity,
 } from "./indexer-shared";
 
@@ -50,6 +49,14 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     timestamp: event.block.timestamp,
     context,
     isDerc20: false,
+  });
+
+  await insertTokenIfNotExists({
+    address: assetId,
+    timestamp: event.block.timestamp,
+    context,
+    isDerc20: true,
+    poolAddress: poolOrHook,
   });
 
   await context.db
@@ -171,8 +178,6 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
     address,
     context,
   });
-
-  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
 
   const dollarLiquidity = await computeDollarLiquidity({
     token0Balance,
