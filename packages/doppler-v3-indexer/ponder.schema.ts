@@ -23,6 +23,7 @@ export const token = onchainTable(
     decimals: t.integer().notNull(),
     totalSupply: t.bigint().notNull(),
     isDerc20: t.boolean().notNull(),
+    image: t.text(),
     firstSeenAt: t.bigint().notNull(),
     lastSeenAt: t.bigint().notNull(),
   }),

@@ -7,10 +7,11 @@ export const DERC20ABI = [
       { name: "initialSupply", type: "uint256", internalType: "uint256" },
       { name: "recipient", type: "address", internalType: "address" },
       { name: "owner_", type: "address", internalType: "address" },
-      { name: "yearlyMintCap_", type: "uint256", internalType: "uint256" },
+      { name: "yearlyMintRate_", type: "uint256", internalType: "uint256" },
       { name: "vestingDuration_", type: "uint256", internalType: "uint256" },
       { name: "recipients_", type: "address[]", internalType: "address[]" },
       { name: "amounts_", type: "uint256[]", internalType: "uint256[]" },
+      { name: "tokenURI_", type: "string", internalType: "string" },
     ],
     stateMutability: "nonpayable",
   },
@@ -57,6 +58,13 @@ export const DERC20ABI = [
   },
   {
     type: "function",
+    name: "burn",
+    inputs: [{ name: "amount", type: "uint256", internalType: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "checkpoints",
     inputs: [
       { name: "account", type: "address", internalType: "address" },
@@ -80,13 +88,6 @@ export const DERC20ABI = [
     name: "clock",
     inputs: [],
     outputs: [{ name: "", type: "uint48", internalType: "uint48" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "currentAnnualMint",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
   {
@@ -189,6 +190,13 @@ export const DERC20ABI = [
   },
   {
     type: "function",
+    name: "lastMintTimestamp",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "lockPool",
     inputs: [{ name: "pool_", type: "address", internalType: "address" }],
     outputs: [],
@@ -196,20 +204,10 @@ export const DERC20ABI = [
   },
   {
     type: "function",
-    name: "mint",
-    inputs: [
-      { name: "to", type: "address", internalType: "address" },
-      { name: "value", type: "uint256", internalType: "uint256" },
-    ],
+    name: "mintInflation",
+    inputs: [],
     outputs: [],
     stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "mintStartDate",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
-    stateMutability: "view",
   },
   {
     type: "function",
@@ -221,7 +219,7 @@ export const DERC20ABI = [
   {
     type: "function",
     name: "nonces",
-    inputs: [{ name: "owner", type: "address", internalType: "address" }],
+    inputs: [{ name: "owner_", type: "address", internalType: "address" }],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
@@ -284,6 +282,13 @@ export const DERC20ABI = [
   },
   {
     type: "function",
+    name: "tokenURI",
+    inputs: [],
+    outputs: [{ name: "", type: "string", internalType: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "totalSupply",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
@@ -326,6 +331,20 @@ export const DERC20ABI = [
   },
   {
     type: "function",
+    name: "updateMintRate",
+    inputs: [{ name: "newMintRate", type: "uint256", internalType: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "vestedTotalAmount",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "vestingDuration",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
@@ -340,7 +359,7 @@ export const DERC20ABI = [
   },
   {
     type: "function",
-    name: "yearlyMintCap",
+    name: "yearlyMintRate",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
@@ -536,7 +555,6 @@ export const DERC20ABI = [
     ],
   },
   { type: "error", name: "ERC6372InconsistentClock", inputs: [] },
-  { type: "error", name: "ExceedsYearlyMintCap", inputs: [] },
   {
     type: "error",
     name: "InvalidAccountNonce",
@@ -562,7 +580,24 @@ export const DERC20ABI = [
       { name: "limit", type: "uint256", internalType: "uint256" },
     ],
   },
+  {
+    type: "error",
+    name: "MaxTotalVestedExceeded",
+    inputs: [
+      { name: "amount", type: "uint256", internalType: "uint256" },
+      { name: "limit", type: "uint256", internalType: "uint256" },
+    ],
+  },
+  {
+    type: "error",
+    name: "MaxYearlyMintRateExceeded",
+    inputs: [
+      { name: "amount", type: "uint256", internalType: "uint256" },
+      { name: "limit", type: "uint256", internalType: "uint256" },
+    ],
+  },
   { type: "error", name: "MintingNotStartedYet", inputs: [] },
+  { type: "error", name: "NoMintableAmount", inputs: [] },
   {
     type: "error",
     name: "OwnableInvalidOwner",
@@ -588,6 +623,7 @@ export const DERC20ABI = [
     name: "StringTooLong",
     inputs: [{ name: "str", type: "string", internalType: "string" }],
   },
+  { type: "error", name: "VestingNotStartedYet", inputs: [] },
   {
     type: "error",
     name: "VotesExpiredSignature",

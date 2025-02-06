@@ -222,31 +222,68 @@ export const insertTokenIfNotExists = async ({
       isDerc20: false,
     });
   } else {
-    const [nameResult, symbolResult, decimalsResult, totalSupplyResult] =
-      await context.client.multicall({
-        contracts: [
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "name",
-          },
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "symbol",
-          },
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "decimals",
-          },
-          {
-            abi: DERC20ABI,
-            address,
-            functionName: "totalSupply",
-          },
-        ],
-      });
+    const [
+      nameResult,
+      symbolResult,
+      decimalsResult,
+      totalSupplyResult,
+      tokenURIResult,
+    ] = await context.client.multicall({
+      contracts: [
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "name",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "symbol",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "decimals",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "totalSupply",
+        },
+        {
+          abi: DERC20ABI,
+          address,
+          functionName: "tokenURI",
+        },
+      ],
+    });
+
+    const tokenURI = tokenURIResult?.result;
+    let image: string | undefined;
+    if (tokenURI?.startsWith("ipfs://")) {
+      try {
+        const cid = tokenURI.replace("ipfs://", "");
+        // TODO: Use a better IPFS gateway
+        const response = await fetch(`https://ipfs.io/ipfs/${cid}`);
+        const data = await response.json();
+
+        if (
+          data &&
+          typeof data === "object" &&
+          "image" in data &&
+          typeof data.image === "string"
+        ) {
+          if (data.image.startsWith("ipfs://")) {
+            image = data.image;
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Failed to fetch IPFS metadata for token ${address}:`,
+          error
+        );
+      }
+    }
 
     return await context.db
       .insert(token)
@@ -260,6 +297,7 @@ export const insertTokenIfNotExists = async ({
         firstSeenAt: timestamp,
         lastSeenAt: timestamp,
         isDerc20,
+        image,
       })
       .onConflictDoNothing();
   }
