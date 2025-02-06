@@ -22,8 +22,9 @@ export const token = onchainTable(
     symbol: t.text().notNull(),
     decimals: t.integer().notNull(),
     totalSupply: t.bigint().notNull(),
-    isDerc20: t.boolean().notNull(),
     image: t.text(),
+    isDerc20: t.boolean().notNull(),
+    derc20Data: t.hex(),
     firstSeenAt: t.bigint().notNull(),
     lastSeenAt: t.bigint().notNull(),
     pool: t.hex(),
@@ -56,6 +57,7 @@ export const asset = onchainTable(
     integrator: t.hex().notNull(),
     createdAt: t.bigint().notNull(),
     migratedAt: t.bigint(),
+    migrated: t.boolean().notNull().default(false),
   }),
   (table) => ({
     addressIdx: index().on(table.address),
@@ -218,6 +220,10 @@ export const positionRelations = relations(position, ({ one }) => ({
 // tokens have one pool
 export const tokenRelations = relations(token, ({ one }) => ({
   pool: one(pool, { fields: [token.pool], references: [pool.address] }),
+  derc20Data: one(asset, {
+    fields: [token.derc20Data],
+    references: [asset.address],
+  }),
 }));
 
 // users have many assets and positions

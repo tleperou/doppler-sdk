@@ -302,6 +302,7 @@ export const insertTokenIfNotExists = async ({
         isDerc20,
         image,
         pool: isDerc20 ? poolAddress : undefined,
+        derc20Data: isDerc20 ? address : undefined,
       })
       .onConflictDoNothing();
   }
@@ -326,9 +327,11 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
       chainId: BigInt(network.chainId),
       createdAt: event.block.timestamp,
       migratedAt: event.block.timestamp,
+      migrated: true,
     })
     .onConflictDoUpdate((row) => ({
       migratedAt: event.block.timestamp,
+      migrated: true,
     }));
 });
 
