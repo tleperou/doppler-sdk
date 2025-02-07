@@ -13,6 +13,11 @@ import {
   DopplerData,
 } from '@/entities/factory';
 import { sortsBefore } from '@uniswap/v4-sdk';
+import {
+  DEFAULT_INITIAL_VOTING_DELAY,
+  DEFAULT_INITIAL_VOTING_PERIOD,
+  DEFAULT_INITIAL_PROPOSAL_THRESHOLD,
+} from '@/constants';
 
 /**
  * Validates and builds pool configuration from user-friendly parameters
@@ -62,7 +67,7 @@ export function buildConfig(
     symbol: params.symbol,
     initialSupply: params.totalSupply,
     airlock,
-    yearlyMintCap: 0n,
+    yearlyMintRate: 0n,
     vestingDuration: 0n,
     recipients: [],
     amounts: [],
@@ -85,6 +90,8 @@ export function buildConfig(
     gamma,
     isToken0: false,
     numPDSlugs: BigInt(params.numPdSlugs ?? DEFAULT_PD_SLUGS),
+    fee: params.fee,
+    tickSpacing: params.tickSpacing,
   };
 
   const mineParams: MineV4Params = {
@@ -104,8 +111,18 @@ export function buildConfig(
     mine(mineParams);
 
   const governanceFactoryData = encodeAbiParameters(
-    [{ type: 'string' }],
-    [params.name]
+    [
+      { type: 'string' },
+      { type: 'uint48' },
+      { type: 'uint32' },
+      { type: 'uint256' },
+    ],
+    [
+      params.name,
+      DEFAULT_INITIAL_VOTING_DELAY,
+      DEFAULT_INITIAL_VOTING_PERIOD,
+      DEFAULT_INITIAL_PROPOSAL_THRESHOLD,
+    ]
   );
 
   const createArgs: CreateParams = {

@@ -4,6 +4,7 @@ import {
   Drift,
   ContractWriteOptions,
   OnMinedParam,
+  FunctionArgs,
 } from '@delvtech/drift';
 import { ReadFactory, AirlockABI } from './ReadFactory';
 import { Address, Hex } from 'viem';
@@ -34,7 +35,7 @@ export class ReadWriteFactory extends ReadFactory {
   }
 
   async create(
-    params: CreateParams,
+    params: FunctionArgs<AirlockABI, 'create'>['createData'],
     options?: ContractWriteOptions & OnMinedParam
   ): Promise<Hex> {
     return this.airlock.write('create', { createData: params }, options);

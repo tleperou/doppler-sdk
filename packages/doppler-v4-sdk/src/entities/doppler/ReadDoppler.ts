@@ -1,4 +1,10 @@
-import { ReadContract, ReadAdapter, Drift, createDrift } from '@delvtech/drift';
+import {
+  ReadContract,
+  ReadAdapter,
+  Drift,
+  createDrift,
+  FunctionReturn,
+} from '@delvtech/drift';
 import { Address } from 'abitype';
 import { dopplerAbi, stateViewAbi } from '@/abis';
 import { encodePacked, Hex, keccak256 } from 'viem';
@@ -18,8 +24,8 @@ export class ReadDoppler {
   poolId: Hex;
 
   constructor(
-    dopplerAddress: `0x${string}`,
-    stateViewAddress: `0x${string}`,
+    dopplerAddress: Hex,
+    stateViewAddress: Hex,
     drift: Drift<ReadAdapter> = createDrift()
   ) {
     this.address = dopplerAddress;
@@ -33,29 +39,17 @@ export class ReadDoppler {
     });
   }
 
-  async getState(): Promise<{
-    lastEpoch: number;
-    tickAccumulator: bigint;
-    totalTokensSold: bigint;
-    totalProceeds: bigint;
-    totalTokensSoldLastEpoch: bigint;
-    feesAccrued: bigint;
-  }> {
+  async getState(): Promise<FunctionReturn<DopplerABI, 'state'>> {
     return this.doppler.read('state');
   }
 
   async getPosition(
     salt: Hex
-  ): Promise<{ tickLower: number; tickUpper: number }> {
+  ): Promise<FunctionReturn<DopplerABI, 'positions'>> {
     return this.doppler.read('positions', { salt });
   }
 
-  async getSlot0(id: Hex): Promise<{
-    tick: number;
-    sqrtPriceX96: bigint;
-    protocolFee: number;
-    lpFee: number;
-  }> {
+  async getSlot0(id: Hex): Promise<FunctionReturn<StateViewABI, 'getSlot0'>> {
     return this.stateView.read('getSlot0', { poolId: id });
   }
 

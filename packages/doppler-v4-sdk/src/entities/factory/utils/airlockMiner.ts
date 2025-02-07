@@ -45,6 +45,8 @@ export interface DopplerData {
   gamma: number;
   isToken0: boolean;
   numPDSlugs: bigint;
+  fee: number;
+  tickSpacing: number;
 }
 
 export interface TokenFactoryData {
@@ -52,7 +54,7 @@ export interface TokenFactoryData {
   symbol: string;
   airlock: Address;
   initialSupply: bigint;
-  yearlyMintCap: bigint;
+  yearlyMintRate: bigint;
   vestingDuration: bigint;
   recipients: Address[];
   amounts: bigint[];
@@ -86,6 +88,8 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
     epochLength,
     gamma,
     numPDSlugs,
+    fee,
+    tickSpacing,
   } = params.poolInitializerData;
 
   const poolInitializerData = encodeAbiParameters(
@@ -101,8 +105,9 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       { type: 'int24' },
       { type: 'bool' },
       { type: 'uint256' },
+      { type: 'uint24' },
+      { type: 'int24' },
     ],
-
     [
       initialPrice,
       minimumProceeds,
@@ -115,6 +120,8 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       gamma,
       isToken0,
       numPDSlugs,
+      fee,
+      tickSpacing,
     ]
   );
 
@@ -160,7 +167,7 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
   const {
     name,
     symbol,
-    yearlyMintCap,
+    yearlyMintRate,
     vestingDuration,
     recipients,
     amounts,
@@ -180,7 +187,7 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
     [
       name,
       symbol,
-      yearlyMintCap,
+      yearlyMintRate,
       vestingDuration,
       recipients,
       amounts,
@@ -209,7 +216,7 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
       initialSupply,
       airlock,
       airlock,
-      yearlyMintCap,
+      yearlyMintRate,
       vestingDuration,
       recipients,
       amounts,

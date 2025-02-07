@@ -25,6 +25,12 @@ export interface TokenConfig {
   totalSupply: bigint;
 }
 
+export interface GovernanceConfig {
+  initialVotingDelay: number;
+  initialVotingPeriod: number;
+  initialProposalThreshold: bigint;
+}
+
 export interface DeploymentConfigParams {
   assetToken: Address;
   quoteToken: Address;
@@ -109,6 +115,7 @@ export interface DopplerDeploymentConfig {
   token: TokenConfig;
   hook: DeploymentConfigParams;
   pool: PoolConfig;
+  governance: GovernanceConfig;
 }
 
 export interface DeployerParams {
