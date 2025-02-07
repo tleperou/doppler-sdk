@@ -21,6 +21,7 @@ import { addresses } from "@app/types/addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { and, gte, lt } from "drizzle-orm";
 import { PoolState } from "@app/utils/v3-utils/getV3PoolData";
+import { hourBucketUsd } from "ponder:schema";
 
 interface Checkpoint {
   timestamp: string;
@@ -146,7 +147,7 @@ export const insertOrUpdateHourBucketUsd = async ({
 
   try {
     await db
-      .insert(hourBucket)
+      .insert(hourBucketUsd)
       .values({
         hourId,
         pool: poolAddress,
