@@ -4,6 +4,8 @@ import { asset, pool } from "ponder.schema";
 import { getV4PoolData } from "@app/utils/v4-utils";
 
 ponder.on("UniswapV4Initializer:Create", async ({ event, context }) => {
+  return;
+  // TODO: FIX THE STATEVIEW RETURNING 0???
   const { poolOrHook: hook, asset: assetId, numeraire } = event.args;
   const { db, network } = context;
   const assetData = await getAssetData(assetId, context);

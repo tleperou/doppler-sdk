@@ -45,7 +45,11 @@ export const getV4PoolData = async ({
     hooks: poolKey[4],
   };
 
+  console.log("key", key);
+
   const poolId = getPoolId(key);
+  console.log("poolId", poolId);
+  console.log("stateView", stateView);
 
   const [slot0, liquidity] = await client.multicall({
     contracts: [
@@ -77,7 +81,11 @@ export const getV4PoolData = async ({
 
   const liquidityResult = liquidity?.result ?? 0n;
 
+  console.log("liquidityResult", liquidityResult);
+
   const assetData0 = await getAssetData(key.currency0, context);
+
+  console.log(slot0);
 
   const baseToken =
     assetData0.poolInitializer != zeroAddress ? key.currency0 : key.currency1;
@@ -87,6 +95,8 @@ export const getV4PoolData = async ({
     address: baseToken,
     functionName: "decimals",
   });
+
+  console.log("baseTokenDecimals", baseTokenDecimals);
 
   const price = await computeV4Price({
     isToken0,
