@@ -58,8 +58,8 @@ export default createConfig({
       abi: DERC20ABI,
       network: "unichainSepolia",
       address: factory({
-        address: addresses.shared.airlock,
-        event: getAbiItem({ abi: AirlockABI, name: "Create" }),
+        address: addresses.v3.v3Initializer,
+        event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
         parameter: "asset",
       }),
       startBlock: unichainSepoliaStartingBlock,

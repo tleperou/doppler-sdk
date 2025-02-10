@@ -277,7 +277,7 @@ export const insertTokenIfNotExists = async ({
   // ignore pool field for native tokens
   if (address === zeroAddress) {
     return await db.insert(token).values({
-      address,
+      address: address.toLowerCase() as `0x${string}`,
       chainId,
       name: "Ether",
       symbol: "ETH",
@@ -354,7 +354,7 @@ export const insertTokenIfNotExists = async ({
     return await context.db
       .insert(token)
       .values({
-        address,
+        address: address.toLowerCase() as `0x${string}`,
         chainId,
         name: nameResult?.result ?? `Unknown Token (${address})`,
         symbol: symbolResult?.result ?? "???",
@@ -367,7 +367,9 @@ export const insertTokenIfNotExists = async ({
         pool: isDerc20 ? poolAddress : undefined,
         derc20Data: isDerc20 ? address : undefined,
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate((row) => ({
+        pool: row.pool,
+      }));
   }
 };
 
@@ -401,59 +403,89 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { db, network } = context;
   const { address } = event.log;
+  const { timestamp } = event.block;
   const { from, to, value } = event.args;
 
+  const tokenData = await insertTokenIfNotExists({
+    address,
+    timestamp,
+    context,
+    isDerc20: true,
+  });
+
+  const toUser = await db.find(userAsset, {
+    userId: to.toLowerCase() as `0x${string}`,
+    assetId: address.toLowerCase() as `0x${string}`,
+    chainId: BigInt(network.chainId),
+  });
+
   await db
     .insert(user)
     .values({
-      address: to,
-      createdAt: event.block.timestamp,
-      lastSeenAt: event.block.timestamp,
+      address: to.toLowerCase() as `0x${string}`,
+      createdAt: timestamp,
+      lastSeenAt: timestamp,
     })
-    .onConflictDoUpdate((row) => ({
-      lastSeenAt: event.block.timestamp,
+    .onConflictDoUpdate((_) => ({
+      lastSeenAt: timestamp,
     }));
 
   await db
     .insert(user)
     .values({
-      address: from,
-      createdAt: event.block.timestamp,
-      lastSeenAt: event.block.timestamp,
+      address: from.toLowerCase() as `0x${string}`,
+      createdAt: timestamp,
+      lastSeenAt: timestamp,
     })
-    .onConflictDoUpdate((row) => ({
-      lastSeenAt: event.block.timestamp,
+    .onConflictDoUpdate((_) => ({
+      lastSeenAt: timestamp,
     }));
 
+  // update to userAsset
   await db
     .insert(userAsset)
     .values({
-      userId: to,
-      assetId: address,
+      userId: to.toLowerCase() as `0x${string}`,
+      assetId: address.toLowerCase() as `0x${string}`,
       chainId: BigInt(network.chainId),
       balance: value,
-      createdAt: event.block.timestamp,
-      lastInteraction: event.block.timestamp,
+      createdAt: timestamp,
+      lastInteraction: timestamp,
     })
     .onConflictDoUpdate((row) => ({
       balance: row.balance + value,
-      lastInteraction: event.block.timestamp,
+      lastInteraction: timestamp,
     }));
 
-  await db
+  // update from userAsset
+  const fromAssetData = await db
     .insert(userAsset)
     .values({
-      userId: from,
-      assetId: address,
+      userId: from.toLowerCase() as `0x${string}`,
+      assetId: address.toLowerCase() as `0x${string}`,
       chainId: BigInt(network.chainId),
       balance: -value,
-      createdAt: event.block.timestamp,
-      lastInteraction: event.block.timestamp,
+      createdAt: timestamp,
+      lastInteraction: timestamp,
     })
     .onConflictDoUpdate((row) => ({
       balance: row.balance - value,
-      lastInteraction: event.block.timestamp,
+      lastInteraction: timestamp,
     }));
+
+  let holderCountDelta = 0;
+  if (!toUser || toUser.balance == 0n) {
+    holderCountDelta += 1;
+  }
+  if (fromAssetData.balance == 0n) {
+    holderCountDelta -= 1;
+  }
+
+  console.log("holderCountDelta", holderCountDelta);
+
+  await db.update(token, { address: address }).set({
+    holderCount: tokenData.holderCount + holderCountDelta,
+  });
 });
 
 ponder.on("ChainlinkEthPriceFeed:block", async ({ event, context }) => {

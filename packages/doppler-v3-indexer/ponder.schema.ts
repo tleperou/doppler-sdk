@@ -28,6 +28,7 @@ export const token = onchainTable(
     firstSeenAt: t.bigint().notNull(),
     lastSeenAt: t.bigint().notNull(),
     pool: t.hex(),
+    holderCount: t.integer().notNull().default(0),
   }),
   (table) => ({
     addressIdx: index().on(table.address),
