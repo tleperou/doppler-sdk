@@ -171,6 +171,10 @@ export const pool = onchainTable(
     type: t.text().notNull(),
     dollarLiquidity: t.bigint().notNull(),
     dailyVolume: t.hex().notNull(),
+    totalFee0: t.bigint().notNull(),
+    totalFee1: t.bigint().notNull(),
+    graduationThreshold: t.bigint().notNull(),
+    graduationBalance: t.bigint().notNull(),
   }),
   (table) => ({
     pk: primaryKey({
@@ -185,6 +189,12 @@ export const pool = onchainTable(
     quoteTokenIdx: index().on(table.quoteToken),
   })
 );
+
+export const poolConfig = onchainTable("pool_config", (t) => ({
+  pool: t.hex().notNull().primaryKey(),
+  tickLower: t.integer().notNull(),
+  tickUpper: t.integer().notNull(),
+}));
 
 export const userAsset = onchainTable(
   "user_asset",
@@ -230,6 +240,10 @@ export const poolRelations = relations(pool, ({ one, many }) => ({
   dailyVolume: one(dailyVolume, {
     fields: [pool.address],
     references: [dailyVolume.pool],
+  }),
+  poolConfig: one(poolConfig, {
+    fields: [pool.address],
+    references: [poolConfig.pool],
   }),
   hourBuckets: many(hourBucket),
   hourBucketUsds: many(hourBucketUsd),

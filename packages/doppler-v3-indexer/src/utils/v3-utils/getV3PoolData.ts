@@ -111,11 +111,13 @@ export const getV3PoolData = async ({
   const token0BalanceResult = token0Balance?.result ?? 0n;
   const token1BalanceResult = token1Balance?.result ?? 0n;
 
+  const isToken0 = token0Result.toLowerCase() === poolState.asset.toLowerCase();
+
   const price = await computeV3Price({
     sqrtPriceX96: slot0Data.sqrtPrice,
-    token0: token0Result,
     baseToken: poolState.asset,
     context,
+    isToken0,
   });
 
   return {

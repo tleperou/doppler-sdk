@@ -8,23 +8,6 @@ import {
 } from "@delvtech/drift";
 import { Address } from "viem";
 import { quoterV2Abi } from "../../abis";
-import { fixed } from "../../fixedpoint";
-import { FixedPoint } from "@delvtech/fixed-point-wasm";
-
-/**
- * Represents a formatted fixed-point amount, typically used for precise decimal calculations
- */
-export type FormattedAmount = string | FixedPoint;
-
-/**
- * Options for formatting quoted amounts with token decimal precision
- */
-export type QuoteOptions = {
-  /** Number of decimals for the token being quoted */
-  tokenDecimals: number;
-  /** Number of decimals to format to */
-  formatDecimals: number;
-};
 
 /**
  * Type alias for QuoterV2 contract ABI
@@ -71,25 +54,13 @@ export class ReadQuoter {
    * @param options - Formatting options for the output amount, defaults to 18 decimals
    * @returns Promise resolving to:
    * - Raw contract return values
-   * - Formatted output amount (FixedPoint representation)
    */
   async quoteExactInput(
-    params: FunctionArgs<QuoterV2ABI, "quoteExactInputSingle">["params"],
-    options: QuoteOptions = { tokenDecimals: 18, formatDecimals: 4 }
-  ): Promise<
-    FunctionReturn<QuoterV2ABI, "quoteExactInputSingle"> & {
-      formattedAmountOut: FormattedAmount;
-    }
-  > {
-    const result = await this.quoter.simulateWrite("quoteExactInputSingle", {
+    params: FunctionArgs<QuoterV2ABI, "quoteExactInputSingle">["params"]
+  ): Promise<FunctionReturn<QuoterV2ABI, "quoteExactInputSingle">> {
+    return await this.quoter.simulateWrite("quoteExactInputSingle", {
       params: { ...params },
     });
-    return {
-      ...result,
-      formattedAmountOut: fixed(result.amountOut, options?.tokenDecimals)
-        .toFixed(options?.formatDecimals)
-        .format(),
-    };
   }
 
   /**
@@ -98,24 +69,12 @@ export class ReadQuoter {
    * @param options - Formatting options for the input amount, defaults to 18 decimals
    * @returns Promise resolving to:
    * - Raw contract return values
-   * - Formatted input amount (FixedPoint representation)
    */
   async quoteExactOutput(
-    params: FunctionArgs<QuoterV2ABI, "quoteExactOutputSingle">["params"],
-    options: QuoteOptions = { tokenDecimals: 18, formatDecimals: 4 }
-  ): Promise<
-    FunctionReturn<QuoterV2ABI, "quoteExactOutputSingle"> & {
-      formattedAmountIn: FormattedAmount;
-    }
-  > {
-    const result = await this.quoter.simulateWrite("quoteExactOutputSingle", {
+    params: FunctionArgs<QuoterV2ABI, "quoteExactOutputSingle">["params"]
+  ): Promise<FunctionReturn<QuoterV2ABI, "quoteExactOutputSingle">> {
+    return await this.quoter.simulateWrite("quoteExactOutputSingle", {
       params: { ...params },
     });
-    return {
-      ...result,
-      formattedAmountIn: fixed(result.amountIn, options?.tokenDecimals)
-        .toFixed(options?.formatDecimals)
-        .format(),
-    };
   }
 }

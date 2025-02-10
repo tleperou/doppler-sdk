@@ -7,15 +7,13 @@ export const computeV3Price = async ({
   sqrtPriceX96,
   baseToken,
   context,
-  token0,
+  isToken0,
 }: {
   sqrtPriceX96: bigint;
   baseToken: Address;
   context: Context;
-  token0: Address;
+  isToken0: boolean;
 }) => {
-  const isToken0 = token0.toLowerCase() === baseToken.toLowerCase();
-
   const baseTokenDecimals = await context.client.readContract({
     abi: DERC20ABI,
     address: baseToken,
