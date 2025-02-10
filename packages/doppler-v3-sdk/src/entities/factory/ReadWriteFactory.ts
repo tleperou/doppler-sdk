@@ -12,8 +12,8 @@ import { Address, encodeAbiParameters, Hex, parseEther } from "viem";
 
 // Constants for default configuration values
 const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
-const DEFAULT_START_TICK = 167520;
-const DEFAULT_END_TICK = 200040;
+const DEFAULT_START_TICK = 167000;
+const DEFAULT_END_TICK = 200000;
 const DEFAULT_NUM_POSITIONS = 10;
 const DEFAULT_FEE = 10_000; // 1% fee tier
 const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
@@ -492,22 +492,17 @@ export class ReadWriteFactory extends ReadFactory {
   public async encodeCreateData(
     params: CreateV3PoolParams
   ): Promise<CreateParams> {
-    const { createParams, v3PoolConfig } = this.encode(params);
-    const { asset } = await this.simulateCreate(createParams);
-    const isToken0 = Number(asset) < Number(params.numeraire);
+    let isToken0 = true;
+    let createParams: CreateParams;
 
-    let createParamsCopy = { ...createParams };
-    if (isToken0) {
-      // Adjust ticks for token order
-      v3PoolConfig.startTick = -v3PoolConfig.endTick;
-      v3PoolConfig.endTick = -v3PoolConfig.startTick;
-      createParamsCopy = {
-        ...createParamsCopy,
-        poolInitializerData: this.encodePoolInitializerData(v3PoolConfig),
-      };
+    while (isToken0) {
+      const encoded = this.encode(params);
+      createParams = encoded.createParams;
+      const { asset } = await this.simulateCreate(createParams);
+      isToken0 = Number(asset) < Number(params.numeraire);
     }
 
-    return createParamsCopy;
+    return createParams!;
   }
 
   /**
