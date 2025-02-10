@@ -71,10 +71,10 @@ export const computeGraduationThresholdDelta = async ({
   isToken0: boolean;
 }): Promise<bigint> => {
   if (
-    tickLower <= MIN_TICK + 60 ||
-    tickLower >= MAX_TICK - 60 ||
-    tickUpper <= MIN_TICK + 60 ||
-    tickUpper >= MAX_TICK - 60
+    tickLower <= MIN_TICK + 100 ||
+    tickLower >= MAX_TICK - 100 ||
+    tickUpper <= MIN_TICK + 100 ||
+    tickUpper >= MAX_TICK - 100
   ) {
     return 0n;
   }
