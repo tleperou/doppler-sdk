@@ -231,6 +231,8 @@ export const poolRelations = relations(pool, ({ one, many }) => ({
     fields: [pool.address],
     references: [dailyVolume.pool],
   }),
+  hourBuckets: many(hourBucket),
+  hourBucketUsds: many(hourBucketUsd),
 }));
 
 // positions have one pool
