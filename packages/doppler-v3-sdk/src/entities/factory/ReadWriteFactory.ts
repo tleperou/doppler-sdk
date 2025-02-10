@@ -15,7 +15,7 @@ const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
 const DEFAULT_START_TICK = 167520;
 const DEFAULT_END_TICK = 200040;
 const DEFAULT_NUM_POSITIONS = 10;
-const DEFAULT_FEE = 3000; // 0.3% fee tier
+const DEFAULT_FEE = 10_000; // 1% fee tier
 const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
 const DEFAULT_INITIAL_SUPPLY_WAD = parseEther("1000000000");
 const DEFAULT_NUM_TOKENS_TO_SELL_WAD = parseEther("900000000");
@@ -499,8 +499,8 @@ export class ReadWriteFactory extends ReadFactory {
     let createParamsCopy = { ...createParams };
     if (isToken0) {
       // Adjust ticks for token order
-      v3PoolConfig.startTick = -v3PoolConfig.startTick;
-      v3PoolConfig.endTick = -v3PoolConfig.endTick;
+      v3PoolConfig.startTick = -v3PoolConfig.endTick;
+      v3PoolConfig.endTick = -v3PoolConfig.startTick;
       createParamsCopy = {
         ...createParamsCopy,
         poolInitializerData: this.encodePoolInitializerData(v3PoolConfig),
