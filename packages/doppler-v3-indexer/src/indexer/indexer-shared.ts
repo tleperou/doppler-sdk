@@ -481,8 +481,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     holderCountDelta -= 1;
   }
 
-  console.log("holderCountDelta", holderCountDelta);
-
   await db.update(token, { address: address }).set({
     holderCount: tokenData.holderCount + holderCountDelta,
   });
