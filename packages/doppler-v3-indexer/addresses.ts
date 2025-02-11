@@ -107,7 +107,7 @@ export const configs: IndexerConfigs = {
   },
   unichain: {
     v3: {
-      v3Initializer: zeroAddress as Address,
+      v3Initializer: "0xaA47D2977d622DBdFD33eeF6a8276727c52EB4e5" as Address,
     },
     v4: {
       poolManager: "0x1F98400000000000000000000000000000000004" as Address,
@@ -116,11 +116,12 @@ export const configs: IndexerConfigs = {
       stateView: zeroAddress as Address,
     },
     shared: {
-      airlock: zeroAddress as Address,
-      tokenFactory: zeroAddress as Address,
+      airlock: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
+      tokenFactory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
       universalRouter: "0xef740bf23acae26f6492b10de645d6b98dc8eaf3" as Address,
-      governanceFactory: zeroAddress as Address,
-      migrator: zeroAddress as Address,
+      governanceFactory:
+        "0xb4deE32EB70A5E55f3D2d861F49Fb3D79f7a14d9" as Address,
+      migrator: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
       weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,

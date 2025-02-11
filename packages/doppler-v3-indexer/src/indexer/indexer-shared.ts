@@ -272,10 +272,8 @@ export const insertTokenIfNotExists = async ({
   const existingToken = await db.find(token, {
     address,
   });
-  console.log("existingToken", existingToken);
 
   if (existingToken?.isDerc20 && !existingToken?.pool && poolAddress) {
-    console.log("here?");
     await db.update(token, { address }).set({
       pool: poolAddress,
     });
@@ -361,8 +359,6 @@ export const insertTokenIfNotExists = async ({
         );
       }
     }
-
-    console.log(nameResult?.result, symbolResult?.result);
 
     return await context.db
       .insert(token)

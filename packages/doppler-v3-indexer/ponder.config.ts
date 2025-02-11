@@ -12,7 +12,7 @@ import {
 import { CHAIN_IDS, configs, Network } from "./addresses";
 
 // have this read from environment variable
-const network: Network = "unichainSepolia";
+const network: Network = "unichain";
 const { v3, v4, shared, oracleStartBlock, startBlock } = configs[network];
 
 export default createConfig({
