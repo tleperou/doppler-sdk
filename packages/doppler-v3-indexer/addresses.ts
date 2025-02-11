@@ -11,8 +11,8 @@ export const CHAIN_IDS = {
 const unichainSepoliaStartBlock = 11932039;
 const mainnetStartBlockUnichainSepolia = 21782000;
 
-const unichainStartBlock = 8532822;
-const mainnetStartBlockUnichain = 21823000;
+const unichainStartBlock = 8536880;
+const mainnetStartBlockUnichain = 21823900;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
@@ -107,7 +107,7 @@ export const configs: IndexerConfigs = {
   },
   unichain: {
     v3: {
-      v3Initializer: "0xaA47D2977d622DBdFD33eeF6a8276727c52EB4e5" as Address,
+      v3Initializer: "0xCe3099B2F07029b086E5e92a1573C5f5A3071783" as Address,
     },
     v4: {
       poolManager: "0x1F98400000000000000000000000000000000004" as Address,
@@ -116,12 +116,12 @@ export const configs: IndexerConfigs = {
       stateView: zeroAddress as Address,
     },
     shared: {
-      airlock: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
-      tokenFactory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
+      airlock: "0x8b4C7DB9121FC885689C0A50D5a1429F15AEc2a0" as Address,
+      tokenFactory: "0xC99b485499f78995C6F1640dbB1413c57f8BA684" as Address,
       universalRouter: "0xef740bf23acae26f6492b10de645d6b98dc8eaf3" as Address,
       governanceFactory:
-        "0xb4deE32EB70A5E55f3D2d861F49Fb3D79f7a14d9" as Address,
-      migrator: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+        "0xa82c66b6ddEb92089015C3565E05B5c9750b2d4B" as Address,
+      migrator: "0x014E1c0bd34f3B10546E554CB33B3293fECDD056" as Address,
       weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,
