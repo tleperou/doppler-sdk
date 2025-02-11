@@ -328,6 +328,10 @@ export const poolRelations = relations(pool, ({ one, many }) => ({
   }),
   hourBuckets: many(hourBucket),
   hourBucketUsds: many(hourBucketUsd),
+  thirtyMinuteBuckets: many(thirtyMinuteBucket),
+  thirtyMinuteBucketUsds: many(thirtyMinuteBucketUsd),
+  fifteenMinuteBuckets: many(fifteenMinuteBucket),
+  fifteenMinuteBucketUsds: many(fifteenMinuteBucketUsd),
 }));
 
 // positions have one pool
@@ -371,3 +375,43 @@ export const hourBucketUsdRelations = relations(hourBucketUsd, ({ one }) => ({
     references: [pool.address],
   }),
 }));
+
+export const thirtyMinuteBucketRelations = relations(
+  thirtyMinuteBucket,
+  ({ one }) => ({
+    pool: one(pool, {
+      fields: [thirtyMinuteBucket.pool],
+      references: [pool.address],
+    }),
+  })
+);
+
+export const thirtyMinuteBucketUsdRelations = relations(
+  thirtyMinuteBucketUsd,
+  ({ one }) => ({
+    pool: one(pool, {
+      fields: [thirtyMinuteBucketUsd.pool],
+      references: [pool.address],
+    }),
+  })
+);
+
+export const fifteenMinuteBucketRelations = relations(
+  fifteenMinuteBucket,
+  ({ one }) => ({
+    pool: one(pool, {
+      fields: [fifteenMinuteBucket.pool],
+      references: [pool.address],
+    }),
+  })
+);
+
+export const fifteenMinuteBucketUsdRelations = relations(
+  fifteenMinuteBucketUsd,
+  ({ one }) => ({
+    pool: one(pool, {
+      fields: [fifteenMinuteBucketUsd.pool],
+      references: [pool.address],
+    }),
+  })
+);
