@@ -17,47 +17,50 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   const address = event.log.address;
   const { amount0In, amount1In, amount0Out, amount1Out } = event.args;
 
-  const { token0, token1, totalSupply, token0Balance, token1Balance } =
-    await getPairData({
-      address,
-      context,
-    });
+  const { token0, token1, token0Balance, token1Balance } = await getPairData({
+    address,
+    context,
+  });
 
   const assetAddr =
     token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
       ? token1
       : token0;
 
-  const quoteAddr =
-    token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
-      ? token0
-      : token1;
-
-  const tokenIn = amount0In > 0n ? token0 : token1;
-
-  if (
-    !assetAddr ||
-    !quoteAddr ||
-    !tokenIn ||
-    !token0Balance ||
-    !token1Balance
-  ) {
+  if (!assetAddr) {
+    console.error("UniswapV2Pair:Swap - Asset address not found");
     return;
   }
 
   const { pool: poolAddr } = await getAssetData(assetAddr, context);
 
+  const isToken0 =
+    token0?.toLowerCase() != configs[network.name].shared.weth.toLowerCase();
+
+  const quoteAddr = isToken0 ? token1 : token0;
+  const tokenIn = amount0In > 0n ? token0 : token1;
+
+  if (!quoteAddr || !tokenIn || !token0Balance || !token1Balance) {
+    console.error(
+      "UniswapV2Pair:Swap - Quote address or token in or token0 balance or token1 balance not found"
+    );
+    return;
+  }
+
+  const assetBalance = isToken0 ? token0Balance : token1Balance;
+  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+
   const price = await computeV2Price({
-    reserve0: token0Balance,
-    reserve1: token1Balance,
+    assetBalance,
+    quoteBalance,
     baseToken: assetAddr,
     quoteToken: quoteAddr,
     context,
   });
 
   const dollarLiquidity = await computeDollarLiquidity({
-    assetBalance: token0Balance,
-    quoteBalance: token1Balance,
+    assetBalance,
+    quoteBalance,
     price,
     timestamp: event.block.timestamp,
     context,

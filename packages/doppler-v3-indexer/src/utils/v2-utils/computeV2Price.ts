@@ -1,16 +1,17 @@
 import { Address } from "viem";
 import { DERC20ABI } from "@app/abis";
 import { Context } from "ponder:registry";
+import { WAD } from "../constants";
 
 export const computeV2Price = async ({
-  reserve0,
-  reserve1,
+  assetBalance,
+  quoteBalance,
   baseToken,
   quoteToken,
   context,
 }: {
-  reserve0: bigint;
-  reserve1: bigint;
+  assetBalance: bigint;
+  quoteBalance: bigint;
   baseToken: Address;
   quoteToken: Address;
   context: Context;
@@ -28,11 +29,5 @@ export const computeV2Price = async ({
     }),
   ]);
 
-  const baseScale = 10 ** baseDecimals;
-  const quoteScale = 10 ** quoteDecimals;
-
-  const numerator = reserve1 * BigInt(baseScale);
-  const denominator = reserve0 * BigInt(quoteScale);
-
-  return denominator === 0n ? 0n : numerator / denominator;
+  return (quoteBalance * WAD) / assetBalance;
 };
