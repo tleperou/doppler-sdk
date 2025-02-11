@@ -7,5 +7,6 @@ export const computeV2Price = async ({
   assetBalance: bigint;
   quoteBalance: bigint;
 }) => {
-  return (quoteBalance * WAD) / assetBalance;
+  const quote = (WAD * assetBalance) / quoteBalance;
+  return quote;
 };
