@@ -126,6 +126,6 @@ export const configs: IndexerConfigs = {
     },
     oracle: oracleAddresses,
     startBlock: unichainStartBlock,
-    oracleStartBlock: unichainStartBlock,
+    oracleStartBlock: mainnetStartBlockUnichain,
   },
 };
