@@ -8,6 +8,7 @@ import {
   DERC20ABI,
   DopplerABI,
   PoolManagerABI,
+  UniswapV2PairABI,
 } from "./src/abis";
 import { CHAIN_IDS, configs, Network } from "./addresses";
 
@@ -73,6 +74,16 @@ export default createConfig({
         address: v3.v3Initializer,
         event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
         parameter: "poolOrHook",
+      }),
+      startBlock,
+    },
+    UniswapV2Pair: {
+      abi: UniswapV2PairABI,
+      network,
+      address: factory({
+        address: v3.v3Initializer,
+        event: getAbiItem({ abi: AirlockABI, name: "Migrate" }),
+        parameter: "pool",
       }),
       startBlock,
     },
