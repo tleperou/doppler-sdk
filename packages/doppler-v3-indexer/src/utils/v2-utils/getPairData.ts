@@ -11,44 +11,39 @@ export const getPairData = async ({
 }) => {
   const { client } = context;
 
-  const [token0, token1, totalSupply, token0Balance, token1Balance] =
-    await client.multicall({
-      contracts: [
-        {
-          abi: UniswapV2PairABI,
-          address,
-          functionName: "token0",
-        },
-        {
-          abi: UniswapV2PairABI,
-          address,
-          functionName: "token1",
-        },
-        {
-          abi: UniswapV2PairABI,
-          address,
-          functionName: "totalSupply",
-        },
-        {
-          abi: DERC20ABI,
-          address,
-          functionName: "balanceOf",
-          args: [address],
-        },
-        {
-          abi: DERC20ABI,
-          address,
-          functionName: "balanceOf",
-          args: [address],
-        },
-      ],
-    });
+  const [token0, token1, totalSupply, reserves] = await client.multicall({
+    contracts: [
+      {
+        abi: UniswapV2PairABI,
+        address,
+        functionName: "token0",
+      },
+      {
+        abi: UniswapV2PairABI,
+        address,
+        functionName: "token1",
+      },
+      {
+        abi: UniswapV2PairABI,
+        address,
+        functionName: "totalSupply",
+      },
+      {
+        abi: UniswapV2PairABI,
+        address,
+        functionName: "getReserves",
+      },
+    ],
+  });
+
+  const reserve0 = reserves.result?.[0];
+  const reserve1 = reserves.result?.[1];
 
   return {
     token0: token0.result,
     token1: token1.result,
     totalSupply: totalSupply.result,
-    token0Balance: token0Balance.result,
-    token1Balance: token1Balance.result,
+    reserve0,
+    reserve1,
   };
 };
