@@ -10,6 +10,7 @@ import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
 import { getAssetData } from "@app/utils/getAssetData";
 import { getPairData } from "@app/utils/v2-utils/getPairData";
 import { configs } from "../../addresses";
+import { eq } from "ponder";
 
 ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   const { db, network } = context;
@@ -21,26 +22,38 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     context,
   });
 
-  const amountIn = amount0In > 0n ? amount0In : amount1In;
-  const amountOut = amount0Out > 0n ? amount0Out : amount1Out;
+  if (!token0 || !token1 || !reserve0 || !reserve1) {
+    console.error(
+      "UniswapV2Pair:Swap - Token0 or token1 or reserve0 or reserve1 not found"
+    );
+    return;
+  }
+  let assetData;
 
-  const assetAddr =
-    token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
-      ? token1
-      : token0;
+  assetData = await db.find(asset, {
+    address: token0,
+  });
 
-  if (!assetAddr) {
-    console.error("UniswapV2Pair:Swap - Asset address not found");
+  if (!assetData) {
+    assetData = await db.find(asset, {
+      address: token1,
+    });
+  }
+
+  if (!assetData) {
+    console.error("UniswapV2Pair:Swap - Asset data not found");
     return;
   }
 
-  const { pool: poolAddr } = await getAssetData(assetAddr, context);
+  const amountIn = amount0In > 0n ? amount0In : amount1In;
+  const amountOut = amount0Out > 0n ? amount0Out : amount1Out;
 
-  const isToken0 =
-    token0?.toLowerCase() != configs[network.name].shared.weth.toLowerCase();
+  const isToken0 = assetData.address.toLowerCase() === token0.toLowerCase();
+  const quoteAddr = assetData.numeraire.toLowerCase();
+  const assetAddr = assetData.address.toLowerCase();
+  const poolAddress = assetData.poolAddress;
 
-  const quoteAddr = isToken0 ? token1 : token0;
-  const tokenIn = amount0In > 0n ? token0 : token1;
+  const tokenIn = isToken0 ? token0 : token1;
 
   if (!quoteAddr || !tokenIn || !reserve0 || !reserve1) {
     console.error(
@@ -66,14 +79,14 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   });
 
   await updateBuckets({
-    poolAddress: poolAddr,
+    poolAddress,
     price,
     timestamp: event.block.timestamp,
     context,
   });
 
   await insertOrUpdateDailyVolume({
-    poolAddress: poolAddr,
+    poolAddress,
     amountIn,
     amountOut,
     timestamp: event.block.timestamp,
@@ -83,10 +96,10 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
 
   await db
     .update(pool, {
-      address: poolAddr,
+      address: poolAddress,
       chainId: BigInt(network.chainId),
-      baseToken: assetAddr,
-      quoteToken: quoteAddr,
+      baseToken: assetAddr as `0x${string}`,
+      quoteToken: quoteAddr as `0x${string}`,
     })
     .set({
       price,

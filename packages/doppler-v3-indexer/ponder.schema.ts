@@ -46,7 +46,7 @@ export const asset = onchainTable(
   "asset",
   (t) => ({
     address: t.hex().primaryKey(),
-    pool: t.hex().notNull(),
+    poolAddress: t.hex().notNull(),
     chainId: t.bigint().notNull(),
     numeraire: t.hex().notNull(),
     timelock: t.hex().notNull(),
@@ -299,7 +299,7 @@ export const userAsset = onchainTable(
 
 // assets have one pool
 export const assetRelations = relations(asset, ({ one, many }) => ({
-  pool: one(pool, { fields: [asset.pool], references: [pool.address] }),
+  pool: one(pool, { fields: [asset.poolAddress], references: [pool.address] }),
   userAssets: many(userAsset),
 }));
 

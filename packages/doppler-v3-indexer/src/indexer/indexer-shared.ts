@@ -22,7 +22,7 @@ import { getAssetData } from "@app/utils/getAssetData";
 import { configs } from "addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { and, gte, lt, lte } from "drizzle-orm";
-import { PoolState } from "@app/utils/v3-utils/getV3PoolData";
+
 import {
   hourBucketUsd,
   thirtyMinuteBucket,
@@ -637,6 +637,7 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
     .insert(asset)
     .values({
       ...assetData,
+      poolAddress: assetData.pool,
       address: assetId.toLowerCase() as `0x${string}`,
       chainId: BigInt(network.chainId),
       createdAt: timestamp,

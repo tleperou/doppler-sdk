@@ -107,6 +107,7 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     .insert(asset)
     .values({
       ...assetData,
+      poolAddress: poolOrHook,
       address: assetId.toLowerCase() as `0x${string}`,
       createdAt: event.block.timestamp,
       migratedAt: null,
