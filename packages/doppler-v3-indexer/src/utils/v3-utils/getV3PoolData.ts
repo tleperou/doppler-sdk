@@ -5,7 +5,7 @@ import {
   UniswapV3InitializerABI,
   UniswapV3PoolABI,
 } from "@app/abis";
-import { addresses } from "@app/types/addresses";
+import { configs } from "addresses";
 import { computeV3Price } from "./computeV3Price";
 
 export type PoolState = {
@@ -141,7 +141,7 @@ const getPoolState = async ({
   context: Context;
 }) => {
   const { client } = context;
-  const { v3Initializer } = addresses.v3;
+  const { v3Initializer } = configs[context.network.name].v3;
 
   const poolData = await client.readContract({
     abi: UniswapV3InitializerABI,

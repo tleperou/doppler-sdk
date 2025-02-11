@@ -17,9 +17,9 @@ import {
   dailyVolume,
 } from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
-import { addresses } from "@app/types/addresses";
+import { configs } from "addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
-import { and, gte, lt } from "drizzle-orm";
+import { and, gte, lt, lte } from "drizzle-orm";
 import { PoolState } from "@app/utils/v3-utils/getV3PoolData";
 import { hourBucketUsd } from "ponder:schema";
 
@@ -73,8 +73,8 @@ export const fetchEthPrice = async (timestamp: bigint, context: Context) => {
   const { db } = context;
   const price = await db.sql.query.ethPrice.findFirst({
     where: and(
-      gte(ethPrice.timestamp, timestamp - 5n * 60n),
-      lt(ethPrice.timestamp, timestamp)
+      gte(ethPrice.timestamp, timestamp - 10n * 60n),
+      lte(ethPrice.timestamp, timestamp)
     ),
   });
 
@@ -100,7 +100,7 @@ export const insertOrUpdateHourBucket = async ({
       .insert(hourBucket)
       .values({
         hourId,
-        pool: poolAddress,
+        pool: poolAddress.toLowerCase() as `0x${string}`,
         open: price,
         close: price,
         low: price,
@@ -150,7 +150,7 @@ export const insertOrUpdateHourBucketUsd = async ({
       .insert(hourBucketUsd)
       .values({
         hourId,
-        pool: poolAddress,
+        pool: poolAddress.toLowerCase() as `0x${string}`,
         open: usdPrice,
         close: usdPrice,
         low: usdPrice,
@@ -198,7 +198,7 @@ export const insertOrUpdateDailyVolume = async ({
 
   let volumeUsd;
   let volumeNumeraire;
-  if (tokenIn === addresses.shared.weth) {
+  if (tokenIn === configs[network.name].shared.weth) {
     volumeUsd = (amountIn * price.price) / CHAINLINK_ETH_DECIMALS;
     volumeNumeraire = amountIn;
   } else {
@@ -209,7 +209,7 @@ export const insertOrUpdateDailyVolume = async ({
   return await db
     .insert(dailyVolume)
     .values({
-      pool: poolAddress,
+      pool: poolAddress.toLowerCase() as `0x${string}`,
       volumeUsd: volumeUsd,
       volumeNumeraire: volumeNumeraire,
       chainId: BigInt(network.chainId),
@@ -375,6 +375,7 @@ export const insertTokenIfNotExists = async ({
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { db, network } = context;
+  const { timestamp } = event.block;
   const { asset: assetId } = event.args;
 
   const assetData = await getAssetData(assetId, context);
@@ -388,14 +389,14 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
     .insert(asset)
     .values({
       ...assetData,
-      address: assetId,
+      address: assetId.toLowerCase() as `0x${string}`,
       chainId: BigInt(network.chainId),
-      createdAt: event.block.timestamp,
-      migratedAt: event.block.timestamp,
+      createdAt: timestamp,
+      migratedAt: timestamp,
       migrated: true,
     })
     .onConflictDoUpdate((row) => ({
-      migratedAt: event.block.timestamp,
+      migratedAt: timestamp,
       migrated: true,
     }));
 });
@@ -487,12 +488,12 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
 });
 
 ponder.on("ChainlinkEthPriceFeed:block", async ({ event, context }) => {
-  const { db, client } = context;
+  const { db, client, network } = context;
   const { timestamp } = event.block;
 
   const latestAnswer = await client.readContract({
     abi: ChainlinkOracleABI,
-    address: addresses.oracle.chainlinkEth,
+    address: configs[network.name].oracle.chainlinkEth,
     functionName: "latestAnswer",
   });
 

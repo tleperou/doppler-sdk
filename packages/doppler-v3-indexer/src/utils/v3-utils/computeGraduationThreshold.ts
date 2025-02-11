@@ -4,7 +4,7 @@ import { poolConfig } from "ponder.schema";
 import JSBI from "jsbi";
 import { Context } from "ponder:registry";
 import { Address } from "viem";
-import { addresses } from "@app/types/addresses";
+import { configs } from "addresses";
 
 const MIN_TICK = -887222;
 const MAX_TICK = 887272;
@@ -98,7 +98,8 @@ export const getPoolConfig = async ({
   poolAddress: Address;
   context: Context;
 }): Promise<{ tickLower: number; tickUpper: number }> => {
-  const { v3Initializer } = addresses.v3;
+  const { network } = context;
+  const { v3Initializer } = configs[network.name].v3;
 
   let cfg;
 

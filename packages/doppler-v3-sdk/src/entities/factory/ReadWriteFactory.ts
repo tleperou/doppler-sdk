@@ -491,18 +491,20 @@ export class ReadWriteFactory extends ReadFactory {
    */
   public async encodeCreateData(
     params: CreateV3PoolParams
-  ): Promise<CreateParams> {
+  ): Promise<{ createParams: CreateParams; asset: Address }> {
     let isToken0 = true;
-    let createParams: CreateParams;
+    let createParams!: CreateParams;
+    let asset!: Address;
 
     while (isToken0) {
       const encoded = this.encode(params);
       createParams = encoded.createParams;
-      const { asset } = await this.simulateCreate(createParams);
+      const simulateResult = await this.simulateCreate(createParams);
+      asset = simulateResult.asset;
       isToken0 = Number(asset) < Number(params.numeraire);
     }
 
-    return createParams!;
+    return { createParams, asset };
   }
 
   /**

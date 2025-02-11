@@ -5,7 +5,7 @@ import { Q192 } from "@app/utils/constants";
 import { getV4PoolData, getPoolId } from "@app/utils/v4-utils";
 import { getAssetData } from "@app/utils/getAssetData";
 import { PoolKey } from "@app/types/v4-types";
-import { addresses } from "@app/types/addresses";
+import { addresses } from "addresses";
 
 export const computeV4Price = async ({
   isToken0,
