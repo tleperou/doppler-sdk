@@ -30,7 +30,7 @@ export default createConfig({
     ChainlinkEthPriceFeed: {
       network: "mainnet",
       startBlock: oracleStartBlock,
-      interval: (60 * 4) / 12, // every 4 minutes
+      interval: (60 * 5) / 12, // every 5 minutes
     },
   },
   contracts: {
