@@ -25,6 +25,10 @@ export default createConfig({
       chainId: 1,
       transport: http(process.env.PONDER_RPC_URL_1),
     },
+    unichain: {
+      chainId: CHAIN_IDS[network],
+      transport: http(process.env.PONDER_RPC_URL_130),
+    },
   },
   blocks: {
     ChainlinkEthPriceFeed: {

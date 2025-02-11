@@ -1,14 +1,18 @@
 import { Address, zeroAddress } from "viem";
 
-export type Network = "unichainSepolia" | "mainnet";
+export type Network = "unichainSepolia" | "mainnet" | "unichain";
 
 export const CHAIN_IDS = {
   unichainSepolia: 1301,
+  unichain: 130,
   mainnet: 1,
 } as const;
 
-const unichainSepoliaStartingBlock = 11932039;
-const mainnetStartingBlock = 21782000;
+const unichainSepoliaStartBlock = 11932039;
+const mainnetStartBlockUnichainSepolia = 21782000;
+
+const unichainStartBlock = 0;
+const mainnetStartBlockUnichain = 0;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
@@ -76,8 +80,8 @@ export const configs: IndexerConfigs = {
       weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,
-    startBlock: unichainSepoliaStartingBlock,
-    oracleStartBlock: mainnetStartingBlock,
+    startBlock: unichainSepoliaStartBlock,
+    oracleStartBlock: mainnetStartBlockUnichainSepolia,
   },
   mainnet: {
     v3: {
@@ -98,7 +102,29 @@ export const configs: IndexerConfigs = {
       weth: zeroAddress as Address,
     },
     oracle: oracleAddresses,
-    startBlock: mainnetStartingBlock,
-    oracleStartBlock: mainnetStartingBlock,
+    startBlock: mainnetStartBlockUnichain,
+    oracleStartBlock: mainnetStartBlockUnichainSepolia,
+  },
+  unichain: {
+    v3: {
+      v3Initializer: zeroAddress as Address,
+    },
+    v4: {
+      poolManager: "0x1F98400000000000000000000000000000000004" as Address,
+      dopplerDeployer: zeroAddress as Address,
+      v4Initializer: zeroAddress as Address,
+      stateView: zeroAddress as Address,
+    },
+    shared: {
+      airlock: zeroAddress as Address,
+      tokenFactory: zeroAddress as Address,
+      universalRouter: "0xef740bf23acae26f6492b10de645d6b98dc8eaf3" as Address,
+      governanceFactory: zeroAddress as Address,
+      migrator: zeroAddress as Address,
+      weth: "0x4200000000000000000000000000000000000006" as Address,
+    },
+    oracle: oracleAddresses,
+    startBlock: unichainStartBlock,
+    oracleStartBlock: unichainStartBlock,
   },
 };
