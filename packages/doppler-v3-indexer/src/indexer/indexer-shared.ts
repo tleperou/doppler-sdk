@@ -273,6 +273,12 @@ export const insertTokenIfNotExists = async ({
     address,
   });
 
+  if (existingToken?.isDerc20 && !existingToken?.pool && poolAddress) {
+    await db.update(token, { address }).set({
+      pool: poolAddress,
+    });
+  }
+
   if (existingToken) return existingToken;
 
   const chainId = BigInt(network.chainId);
