@@ -11,8 +11,8 @@ export const CHAIN_IDS = {
 const unichainSepoliaStartBlock = 11932039;
 const mainnetStartBlockUnichainSepolia = 21782000;
 
-const unichainStartBlock = 0;
-const mainnetStartBlockUnichain = 0;
+const unichainStartBlock = 8532822;
+const mainnetStartBlockUnichain = 21823000;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
