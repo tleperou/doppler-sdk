@@ -69,6 +69,15 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     context,
   });
 
+  await insertOrUpdateDailyVolume({
+    poolAddress: poolOrHook,
+    amountIn: 0n,
+    amountOut: 0n,
+    timestamp: event.block.timestamp,
+    context,
+    tokenIn: assetId,
+  });
+
   await context.db
     .insert(pool)
     .values({
