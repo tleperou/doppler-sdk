@@ -129,7 +129,6 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     token0Balance,
     token1Balance,
     token0,
-    token1,
     poolState,
   } = await getV3PoolData({
     address,
