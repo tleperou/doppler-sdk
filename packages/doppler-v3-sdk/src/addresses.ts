@@ -1,4 +1,4 @@
-import { Address } from "viem";
+import { Address, zeroAddress } from "viem";
 import { DopplerV3Addresses } from "./types";
 
 export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
@@ -12,5 +12,16 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     universalRouter: "0xf70536B3bcC1bD1a972dc186A2cf84cC6da6Be5D" as Address,
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x6Dd37329A1A225a6Fca658265D460423DCafBF89" as Address,
+  },
+  // unichain
+  130: {
+    airlock: zeroAddress as Address,
+    tokenFactory: zeroAddress as Address,
+    v3Initializer: zeroAddress as Address,
+    governanceFactory: zeroAddress as Address,
+    liquidityMigrator: zeroAddress as Address,
+    universalRouter: "0xef740bf23acae26f6492b10de645d6b98dc8eaf3" as Address,
+    permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
+    quoterV2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658" as Address,
   },
 };
