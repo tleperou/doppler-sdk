@@ -106,6 +106,86 @@ export const hourBucketUsd = onchainTable(
   })
 );
 
+export const thirtyMinuteBucket = onchainTable(
+  "thirty_minute_bucket",
+  (t) => ({
+    thirtyMinuteId: t.integer().notNull(),
+    pool: t.hex().notNull(),
+    open: t.bigint().notNull(),
+    close: t.bigint().notNull(),
+    low: t.bigint().notNull(),
+    high: t.bigint().notNull(),
+    average: t.bigint().notNull(),
+    count: t.integer().notNull(),
+    chainId: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pool, table.thirtyMinuteId, table.chainId],
+    }),
+  })
+);
+
+export const thirtyMinuteBucketUsd = onchainTable(
+  "thirty_minute_bucket_usd",
+  (t) => ({
+    thirtyMinuteId: t.integer().notNull(),
+    pool: t.hex().notNull(),
+    open: t.bigint().notNull(),
+    close: t.bigint().notNull(),
+    low: t.bigint().notNull(),
+    high: t.bigint().notNull(),
+    average: t.bigint().notNull(),
+    count: t.integer().notNull(),
+    chainId: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pool, table.thirtyMinuteId, table.chainId],
+    }),
+  })
+);
+
+export const fifteenMinuteBucket = onchainTable(
+  "fifteen_minute_bucket",
+  (t) => ({
+    fifteenMinuteId: t.integer().notNull(),
+    pool: t.hex().notNull(),
+    open: t.bigint().notNull(),
+    close: t.bigint().notNull(),
+    low: t.bigint().notNull(),
+    high: t.bigint().notNull(),
+    average: t.bigint().notNull(),
+    count: t.integer().notNull(),
+    chainId: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pool, table.fifteenMinuteId, table.chainId],
+    }),
+  })
+);
+
+export const fifteenMinuteBucketUsd = onchainTable(
+  "fifteen_minute_bucket_usd",
+  (t) => ({
+    fifteenMinuteId: t.integer().notNull(),
+    pool: t.hex().notNull(),
+    open: t.bigint().notNull(),
+    close: t.bigint().notNull(),
+    low: t.bigint().notNull(),
+    high: t.bigint().notNull(),
+    average: t.bigint().notNull(),
+    count: t.integer().notNull(),
+    chainId: t.bigint().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.pool, table.fifteenMinuteId, table.chainId],
+    }),
+  })
+);
+
 export const dailyVolume = onchainTable("daily_volume", (t) => ({
   pool: t.hex().notNull().primaryKey(),
   volumeUsd: t.bigint().notNull(),

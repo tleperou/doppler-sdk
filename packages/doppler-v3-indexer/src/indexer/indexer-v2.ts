@@ -2,10 +2,9 @@ import { ponder } from "ponder:registry";
 import { getV3PoolData } from "@app/utils/v3-utils";
 import { asset, position, pool, poolConfig } from "ponder.schema";
 import {
-  insertOrUpdateHourBucket,
-  insertOrUpdateHourBucketUsd,
   insertOrUpdateDailyVolume,
   computeDollarLiquidity,
+  updateBuckets,
 } from "./indexer-shared";
 import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
 import { getAssetData } from "@app/utils/getAssetData";
@@ -21,6 +20,9 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     address,
     context,
   });
+
+  const amountIn = amount0In > 0n ? amount0In : amount1In;
+  const amountOut = amount0Out > 0n ? amount0Out : amount1Out;
 
   const assetAddr =
     token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
@@ -66,14 +68,7 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     context,
   });
 
-  await insertOrUpdateHourBucket({
-    poolAddress: poolAddr,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
-
-  await insertOrUpdateHourBucketUsd({
+  await updateBuckets({
     poolAddress: poolAddr,
     price,
     timestamp: event.block.timestamp,
@@ -82,8 +77,8 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
 
   await insertOrUpdateDailyVolume({
     poolAddress: poolAddr,
-    amountIn: amount0In,
-    amountOut: amount0Out,
+    amountIn,
+    amountOut,
     timestamp: event.block.timestamp,
     context,
     tokenIn,

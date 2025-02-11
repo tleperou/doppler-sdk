@@ -3,8 +3,7 @@ import { getV3PoolData } from "@app/utils/v3-utils";
 import { asset, position, pool, poolConfig } from "ponder.schema";
 import { getAssetData } from "@app/utils/getAssetData";
 import {
-  insertOrUpdateHourBucket,
-  insertOrUpdateHourBucketUsd,
+  updateBuckets,
   insertTokenIfNotExists,
   insertOrUpdateDailyVolume,
   computeDollarLiquidity,
@@ -341,14 +340,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
 
   const quoteDelta = isToken0 ? amount1 - fee1 : amount0 - fee0;
 
-  await insertOrUpdateHourBucket({
-    poolAddress: address,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
-
-  await insertOrUpdateHourBucketUsd({
+  await updateBuckets({
     poolAddress: address,
     price,
     timestamp: event.block.timestamp,
