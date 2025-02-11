@@ -24,12 +24,12 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   });
 
   const assetAddr =
-    token0?.toLowerCase() === configs.unichainSepolia.shared.weth.toLowerCase()
+    token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
       ? token1
       : token0;
 
   const quoteAddr =
-    token0?.toLowerCase() === configs.unichainSepolia.shared.weth.toLowerCase()
+    token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
       ? token0
       : token1;
 
