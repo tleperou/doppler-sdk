@@ -5,6 +5,7 @@ import {
   insertOrUpdateHourBucket,
   insertOrUpdateHourBucketUsd,
   insertOrUpdateDailyVolume,
+  computeDollarLiquidity,
 } from "./indexer-shared";
 import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
 import { getAssetData } from "@app/utils/getAssetData";
@@ -16,12 +17,11 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   const address = event.log.address;
   const { amount0In, amount1In, amount0Out, amount1Out } = event.args;
 
-  console.log("SWAPPING V2 POOL");
-
-  const { token0, token1, totalSupply } = await getPairData({
-    address,
-    context,
-  });
+  const { token0, token1, totalSupply, token0Balance, token1Balance } =
+    await getPairData({
+      address,
+      context,
+    });
 
   const assetAddr =
     token0?.toLowerCase() === configs[network.name].shared.weth.toLowerCase()
@@ -35,22 +35,33 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
 
   const tokenIn = amount0In > 0n ? token0 : token1;
 
-  if (!assetAddr || !quoteAddr || !tokenIn) {
+  if (
+    !assetAddr ||
+    !quoteAddr ||
+    !tokenIn ||
+    !token0Balance ||
+    !token1Balance
+  ) {
     return;
   }
 
   const { pool: poolAddr } = await getAssetData(assetAddr, context);
 
   const price = await computeV2Price({
-    reserve0: amount0In,
-    reserve1: amount1In,
-    baseToken: address,
-    quoteToken: address,
+    reserve0: token0Balance,
+    reserve1: token1Balance,
+    baseToken: assetAddr,
+    quoteToken: quoteAddr,
     context,
   });
 
-  console.log("COMPUTED PRICE");
-  console.log(price);
+  const dollarLiquidity = await computeDollarLiquidity({
+    assetBalance: token0Balance,
+    quoteBalance: token1Balance,
+    price,
+    timestamp: event.block.timestamp,
+    context,
+  });
 
   await insertOrUpdateHourBucket({
     poolAddress: poolAddr,
@@ -84,6 +95,7 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     })
     .set({
       price,
+      dollarLiquidity,
     });
 });
 

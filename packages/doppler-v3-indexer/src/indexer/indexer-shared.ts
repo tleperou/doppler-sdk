@@ -30,6 +30,37 @@ interface Checkpoint {
 }
 
 export const computeDollarLiquidity = async ({
+  assetBalance,
+  quoteBalance,
+  price,
+  timestamp,
+  context,
+}: {
+  assetBalance: bigint;
+  quoteBalance: bigint;
+  price: bigint;
+  timestamp: bigint;
+  context: Context;
+}) => {
+  const ethPrice = await fetchEthPrice(timestamp, context);
+
+  let assetLiquidity;
+  let numeraireLiquidity;
+  if (ethPrice?.price) {
+    assetLiquidity =
+      (((assetBalance * price) / WAD) * ethPrice.price) /
+      CHAINLINK_ETH_DECIMALS;
+    numeraireLiquidity =
+      (quoteBalance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
+  } else {
+    assetLiquidity = 0n;
+    numeraireLiquidity = 0n;
+  }
+
+  return assetLiquidity + numeraireLiquidity;
+};
+
+const computeDollarLiquidityV2 = async ({
   token0Balance,
   token1Balance,
   poolState,
@@ -65,8 +96,6 @@ export const computeDollarLiquidity = async ({
     assetLiquidity = 0n;
     numeraireLiquidity = 0n;
   }
-
-  return assetLiquidity + numeraireLiquidity;
 };
 
 export const fetchEthPrice = async (timestamp: bigint, context: Context) => {

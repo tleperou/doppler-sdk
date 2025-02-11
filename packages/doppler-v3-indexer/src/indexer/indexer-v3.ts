@@ -39,11 +39,14 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     context,
   });
 
+  const isToken0 = token0 === poolState.asset;
+
+  const assetBalance = isToken0 ? token0Balance : token1Balance;
+  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+
   const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
+    assetBalance,
+    quoteBalance,
     price,
     timestamp: event.block.timestamp,
     context,
@@ -133,11 +136,14 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     context,
   });
 
+  const isToken0 = token0 === poolState.asset;
+
+  const assetBalance = isToken0 ? token0Balance : token1Balance;
+  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+
   const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
+    assetBalance,
+    quoteBalance,
     price,
     timestamp: event.block.timestamp,
     context,
@@ -216,11 +222,14 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
     context,
   });
 
+  const isToken0 = token0 === poolState.asset;
+
+  const assetBalance = isToken0 ? token0Balance : token1Balance;
+  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+
   const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
+    assetBalance,
+    quoteBalance,
     price,
     timestamp: event.block.timestamp,
     context,
@@ -298,17 +307,18 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     context,
   });
 
+  const isToken0 = token0 === poolState.asset;
+
+  const assetBalance = isToken0 ? token0Balance : token1Balance;
+  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+
   const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
+    assetBalance,
+    quoteBalance,
     price,
     timestamp: event.block.timestamp,
     context,
   });
-
-  const isToken0 = token0 === poolState.asset;
 
   let amountIn;
   let amountOut;
