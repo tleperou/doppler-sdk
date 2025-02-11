@@ -107,7 +107,7 @@ export const configs: IndexerConfigs = {
   },
   unichain: {
     v3: {
-      v3Initializer: "0xCe3099B2F07029b086E5e92a1573C5f5A3071783" as Address,
+      v3Initializer: "0x9F4e56be80f08ba1A2445645EFa6d231E27b43ec" as Address,
     },
     v4: {
       poolManager: "0x1F98400000000000000000000000000000000004" as Address,
@@ -116,12 +116,12 @@ export const configs: IndexerConfigs = {
       stateView: zeroAddress as Address,
     },
     shared: {
-      airlock: "0x8b4C7DB9121FC885689C0A50D5a1429F15AEc2a0" as Address,
-      tokenFactory: "0xC99b485499f78995C6F1640dbB1413c57f8BA684" as Address,
+      airlock: "0x77EbfBAE15AD200758E9E2E61597c0B07d731254" as Address,
+      tokenFactory: "0x43d0D97EC9241A8F05A264f94B82A1d2E600f2B3" as Address,
       universalRouter: "0xef740bf23acae26f6492b10de645d6b98dc8eaf3" as Address,
       governanceFactory:
-        "0xa82c66b6ddEb92089015C3565E05B5c9750b2d4B" as Address,
-      migrator: "0x014E1c0bd34f3B10546E554CB33B3293fECDD056" as Address,
+        "0x99C94B9Df930E1E21a4E4a2c105dBff21bF5c5aE" as Address,
+      migrator: "0xf6023127f6E937091D5B605680056A6D27524bad" as Address,
       weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,
