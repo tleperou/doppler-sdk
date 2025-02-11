@@ -198,11 +198,14 @@ export const insertOrUpdateDailyVolume = async ({
 
   let volumeUsd;
   let volumeNumeraire;
-  if (tokenIn === configs[network.name].shared.weth) {
+  if (
+    tokenIn.toLowerCase() ===
+    (configs[network.name].shared.weth.toLowerCase() as `0x${string}`)
+  ) {
     volumeUsd = (amountIn * price.price) / CHAINLINK_ETH_DECIMALS;
     volumeNumeraire = amountIn;
   } else {
-    volumeUsd = (amountOut * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeUsd = (-amountOut * price.price) / CHAINLINK_ETH_DECIMALS;
     volumeNumeraire = amountOut;
   }
 

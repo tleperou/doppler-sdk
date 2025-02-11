@@ -73,7 +73,7 @@ export const configs: IndexerConfigs = {
       governanceFactory:
         "0x1E4332EEfAE9e4967C2D186f7b2d439D778e81cC" as Address,
       migrator: "0x44C448E38A2C3D206c9132E7f645510dFbBC946b" as Address,
-      weth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" as Address,
+      weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,
     startBlock: unichainSepoliaStartingBlock,

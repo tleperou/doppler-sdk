@@ -299,7 +299,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     context,
   });
 
-  const isToken0 = token0.toLowerCase() === poolState.asset.toLowerCase();
+  const isToken0 = token0 === poolState.asset;
 
   let amountIn;
   let amountOut;

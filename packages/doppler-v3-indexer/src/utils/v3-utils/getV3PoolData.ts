@@ -123,8 +123,8 @@ export const getV3PoolData = async ({
   return {
     slot0Data,
     liquidity: liquidityResult,
-    token0: token0Result,
-    token1: token1Result,
+    token0: token0Result.toLowerCase() as `0x${string}`,
+    token1: token1Result.toLowerCase() as `0x${string}`,
     fee: feeResult,
     poolState,
     price,
