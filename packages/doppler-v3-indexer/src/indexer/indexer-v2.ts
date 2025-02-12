@@ -1,13 +1,11 @@
 import { ponder } from "ponder:registry";
-import { getV3PoolData } from "@app/utils/v3-utils";
-import { asset, position, pool, poolConfig } from "ponder.schema";
+import { asset, pool } from "ponder.schema";
 import {
+  insertOrUpdateBuckets,
   insertOrUpdateDailyVolume,
-  computeDollarLiquidity,
-  updateBuckets,
-} from "./indexer-shared";
+} from "./shared/timeseries";
+import { computeDollarLiquidity } from "./indexer-shared";
 import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
-import { getAssetData } from "@app/utils/getAssetData";
 import { getPairData } from "@app/utils/v2-utils/getPairData";
 import { configs } from "../../addresses";
 import { eq } from "ponder";
@@ -78,7 +76,7 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     context,
   });
 
-  await updateBuckets({
+  await insertOrUpdateBuckets({
     poolAddress,
     price,
     timestamp: event.block.timestamp,
@@ -98,8 +96,6 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     .update(pool, {
       address: poolAddress,
       chainId: BigInt(network.chainId),
-      baseToken: assetAddr as `0x${string}`,
-      quoteToken: quoteAddr as `0x${string}`,
     })
     .set({
       price,

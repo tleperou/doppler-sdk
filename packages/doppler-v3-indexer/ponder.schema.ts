@@ -46,6 +46,7 @@ export const asset = onchainTable(
   "asset",
   (t) => ({
     address: t.hex().primaryKey(),
+    isToken0: t.boolean().notNull(),
     poolAddress: t.hex().notNull(),
     chainId: t.bigint().notNull(),
     numeraire: t.hex().notNull(),
@@ -198,7 +199,7 @@ export const dailyVolume = onchainTable("daily_volume", (t) => ({
 export const position = onchainTable(
   "position",
   (t) => ({
-    owner: t.text().notNull(),
+    owner: t.hex().notNull(),
     pool: t.hex().notNull(),
     tickLower: t.integer().notNull(),
     tickUpper: t.integer().notNull(),
@@ -208,13 +209,7 @@ export const position = onchainTable(
   }),
   (table) => ({
     pk: primaryKey({
-      columns: [
-        table.owner,
-        table.pool,
-        table.tickLower,
-        table.tickUpper,
-        table.chainId,
-      ],
+      columns: [table.pool, table.tickLower, table.tickUpper, table.chainId],
     }),
     ownerIdx: index().on(table.owner),
     poolIdx: index().on(table.pool),
@@ -256,15 +251,11 @@ export const pool = onchainTable(
     totalFee1: t.bigint().notNull(),
     graduationThreshold: t.bigint().notNull(),
     graduationBalance: t.bigint().notNull(),
+    isToken0: t.boolean().notNull(),
   }),
   (table) => ({
     pk: primaryKey({
-      columns: [
-        table.address,
-        table.chainId,
-        table.baseToken,
-        table.quoteToken,
-      ],
+      columns: [table.address, table.chainId],
     }),
     baseTokenIdx: index().on(table.baseToken),
     quoteTokenIdx: index().on(table.quoteToken),
