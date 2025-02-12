@@ -50,33 +50,33 @@ export const insertOrUpdateBuckets = async ({
     context,
   });
 
-  await insertOrUpdateThirtyMinuteBucket({
-    poolAddress,
-    price,
-    timestamp,
-    context,
-  });
+  //   await insertOrUpdateThirtyMinuteBucket({
+  //     poolAddress,
+  //     price,
+  //     timestamp,
+  //     context,
+  //   });
 
-  await insertOrUpdateThirtyMinuteBucketUsd({
-    poolAddress,
-    price,
-    timestamp,
-    context,
-  });
+  //   await insertOrUpdateThirtyMinuteBucketUsd({
+  //     poolAddress,
+  //     price,
+  //     timestamp,
+  //     context,
+  //   });
 
-  await insertOrUpdateFifteenMinuteBucket({
-    poolAddress,
-    price,
-    timestamp,
-    context,
-  });
+  //   await insertOrUpdateFifteenMinuteBucket({
+  //     poolAddress,
+  //     price,
+  //     timestamp,
+  //     context,
+  //   });
 
-  await insertOrUpdateFifteenMinuteBucketUsd({
-    poolAddress,
-    price,
-    timestamp,
-    context,
-  });
+  //   await insertOrUpdateFifteenMinuteBucketUsd({
+  //     poolAddress,
+  //     price,
+  //     timestamp,
+  //     context,
+  //   });
 };
 
 const insertOrUpdateThirtyMinuteBucket = async ({
