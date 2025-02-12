@@ -44,7 +44,9 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   // Determine token relationships
   const isToken0 = assetData.address.toLowerCase() === token0.toLowerCase();
   const { numeraire, poolAddress } = assetData;
-  const tokenIn = isToken0 ? token0 : token1;
+
+  const tokenIn = amount0In > 0 ? token0 : token1;
+
   const assetBalance = isToken0 ? reserve0 : reserve1;
   const quoteBalance = isToken0 ? reserve1 : reserve0;
 

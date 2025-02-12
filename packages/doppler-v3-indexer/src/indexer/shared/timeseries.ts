@@ -58,35 +58,36 @@ export const insertOrUpdateBuckets = async ({
       ethPrice,
       context,
     }),
-    insertOrUpdateThirtyMinuteBucket({
-      poolAddress,
-      price,
-      timestamp,
-      context,
-    }),
 
-    insertOrUpdateThirtyMinuteBucketUsd({
-      poolAddress,
-      price,
-      timestamp,
-      ethPrice,
-      context,
-    }),
+    // insertOrUpdateThirtyMinuteBucket({
+    //   poolAddress,
+    //   price,
+    //   timestamp,
+    //   context,
+    // }),
 
-    insertOrUpdateFifteenMinuteBucket({
-      poolAddress,
-      price,
-      timestamp,
-      context,
-    }),
+    // insertOrUpdateThirtyMinuteBucketUsd({
+    //   poolAddress,
+    //   price,
+    //   timestamp,
+    //   ethPrice,
+    //   context,
+    // }),
 
-    insertOrUpdateFifteenMinuteBucketUsd({
-      poolAddress,
-      price,
-      timestamp,
-      ethPrice,
-      context,
-    }),
+    // insertOrUpdateFifteenMinuteBucket({
+    //   poolAddress,
+    //   price,
+    //   timestamp,
+    //   context,
+    // }),
+
+    // insertOrUpdateFifteenMinuteBucketUsd({
+    //   poolAddress,
+    //   price,
+    //   timestamp,
+    //   ethPrice,
+    //   context,
+    // }),
   ]);
 };
 
@@ -379,8 +380,9 @@ export const insertOrUpdateDailyVolume = async ({
     volumeUsd = (amountIn * ethPrice) / CHAINLINK_ETH_DECIMALS;
     volumeNumeraire = amountIn;
   } else {
-    volumeUsd = (-amountOut * ethPrice) / CHAINLINK_ETH_DECIMALS;
-    volumeNumeraire = amountOut;
+    const uintAmountOut = amountOut > 0n ? amountOut : -amountOut;
+    volumeUsd = (uintAmountOut * ethPrice) / CHAINLINK_ETH_DECIMALS;
+    volumeNumeraire = uintAmountOut;
   }
 
   return await db
