@@ -1,5 +1,5 @@
 import { Context } from "ponder:registry";
-import { asset } from "ponder.schema";
+import { asset } from "ponder:schema";
 import { Address } from "viem";
 import { getAssetData } from "@app/utils/getAssetData";
 
@@ -24,29 +24,21 @@ export const insertAssetIfNotExists = async ({
   const chainId = BigInt(network.chainId);
   const assetData = await getAssetData(assetAddress, context);
 
-  if (!assetData) {
-    console.error("Asset data not found");
-    return;
-  }
-
   const id = assetAddress.toLowerCase() as `0x${string}`;
 
   const isToken0 =
     assetAddress.toLowerCase() < assetData.numeraire.toLowerCase();
 
-  return await db
-    .insert(asset)
-    .values({
-      ...assetData,
-      poolAddress: assetData.pool,
-      address: id,
-      chainId,
-      isToken0,
-      createdAt: timestamp,
-      migratedAt: null,
-      migrated: true,
-    })
-    .onConflictDoNothing();
+  return await db.insert(asset).values({
+    ...assetData,
+    poolAddress: assetData.pool,
+    address: id,
+    chainId,
+    isToken0,
+    createdAt: timestamp,
+    migratedAt: null,
+    migrated: false,
+  });
 };
 
 export const updateAsset = async ({

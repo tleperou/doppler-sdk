@@ -1,52 +1,13 @@
-import { Context, ponder } from "ponder:registry";
-import { CHAINLINK_ETH_DECIMALS, WAD } from "@app/utils/constants";
+import { ponder } from "ponder:registry";
 import { token, userAsset, user, ethPrice } from "ponder.schema";
 import { configs } from "addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
-import { fetchEthPrice } from "./shared/oracle";
-import { insertAssetIfNotExists, updateAsset } from "./shared/entities/asset";
+import { updateAsset } from "./shared/entities/asset";
 import { insertTokenIfNotExists } from "./shared/entities/token";
-
-export const computeDollarLiquidity = async ({
-  assetBalance,
-  quoteBalance,
-  price,
-  timestamp,
-  context,
-}: {
-  assetBalance: bigint;
-  quoteBalance: bigint;
-  price: bigint;
-  timestamp: bigint;
-  context: Context;
-}) => {
-  const ethPrice = await fetchEthPrice(timestamp, context);
-
-  let assetLiquidity;
-  let numeraireLiquidity;
-  if (ethPrice?.price) {
-    assetLiquidity =
-      (((assetBalance * price) / WAD) * ethPrice.price) /
-      CHAINLINK_ETH_DECIMALS;
-    numeraireLiquidity =
-      (quoteBalance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
-  } else {
-    assetLiquidity = 0n;
-    numeraireLiquidity = 0n;
-  }
-
-  return assetLiquidity + numeraireLiquidity;
-};
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
   const { asset: assetId } = event.args;
-
-  await insertAssetIfNotExists({
-    assetAddress: assetId,
-    timestamp,
-    context,
-  });
 
   await updateAsset({
     assetAddress: assetId,

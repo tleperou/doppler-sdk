@@ -33,15 +33,15 @@ export const insertPoolIfNotExists = async ({
     liquidity,
     price,
     fee,
-    token0Balance,
-    token1Balance,
+    reserve0,
+    reserve1,
     token0,
     poolState,
   } = poolData;
 
   const dollarLiquidity = await computeDollarLiquidity({
-    assetBalance: token0Balance,
-    quoteBalance: token1Balance,
+    assetBalance: reserve0,
+    quoteBalance: reserve1,
     price,
     timestamp,
     context,

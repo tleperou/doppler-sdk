@@ -14,6 +14,7 @@ import { insertPoolIfNotExists, updatePool } from "./shared/entities/pool";
 import { insertAssetIfNotExists } from "./shared/entities/asset";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { insertOrUpdateBuckets } from "./shared/timeseries";
+import { getV3PoolReserves } from "@app/utils/v3-utils/getV3PoolData";
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
   const { poolOrHook, asset: assetId, numeraire } = event.args;
@@ -77,21 +78,20 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     context,
   });
 
-  const { price, token0Balance, token1Balance, token0, poolState } =
-    await getV3PoolData({
-      address,
-      context,
-    });
+  const { reserve0, reserve1 } = await getV3PoolReserves({
+    address,
+    token0: poolEntity.baseToken,
+    token1: poolEntity.quoteToken,
+    context,
+  });
 
-  const isToken0 = token0 === poolState.asset;
-
-  const assetBalance = isToken0 ? token0Balance : token1Balance;
-  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
+  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
 
   const dollarLiquidity = await computeDollarLiquidity({
     assetBalance,
     quoteBalance,
-    price,
+    price: poolEntity.price,
     timestamp: event.block.timestamp,
     context,
   });
@@ -102,7 +102,7 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     tickLower,
     tickUpper,
     liquidity: amount,
-    isToken0: token0.toLowerCase() === poolState.asset.toLowerCase(),
+    isToken0: poolEntity.isToken0,
   });
 
   await updatePool({
@@ -126,7 +126,7 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     context,
   });
 
-  if (positionEntity?.createdAt != event.block.timestamp) {
+  if (positionEntity.createdAt != event.block.timestamp) {
     await updatePosition({
       poolAddress: address,
       tickLower,
@@ -149,16 +149,14 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
     context,
   });
 
-  const { liquidity, price, token0Balance, token1Balance, token0, poolState } =
+  const { liquidity, price, reserve0, reserve1, token0, poolState } =
     await getV3PoolData({
       address,
       context,
     });
 
-  const isToken0 = token0 === poolState.asset;
-
-  const assetBalance = isToken0 ? token0Balance : token1Balance;
-  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
+  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
 
   const dollarLiquidity = await computeDollarLiquidity({
     assetBalance,
@@ -212,7 +210,6 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
 });
 
 ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
-  const { db, network } = context;
   const address = event.log.address;
   const { amount0, amount1 } = event.args;
 
@@ -227,8 +224,8 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     liquidity,
     price,
     fee,
-    token0Balance,
-    token1Balance,
+    reserve0,
+    reserve1,
     token0,
     token1,
   } = await getV3PoolData({
@@ -236,9 +233,8 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     context,
   });
 
-  const isToken0 = poolEntity.isToken0;
-  const assetBalance = isToken0 ? token0Balance : token1Balance;
-  const quoteBalance = isToken0 ? token1Balance : token0Balance;
+  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
+  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
 
   const dollarLiquidity = await computeDollarLiquidity({
     assetBalance,
@@ -267,7 +263,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     fee0 = 0n;
   }
 
-  const quoteDelta = isToken0 ? amount1 - fee1 : amount0 - fee0;
+  const quoteDelta = poolEntity.isToken0 ? amount1 - fee1 : amount0 - fee0;
 
   await insertOrUpdateBuckets({
     poolAddress: address,
