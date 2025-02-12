@@ -1,53 +1,24 @@
 import { ponder } from "ponder:registry";
 import { getV3PoolData } from "@app/utils/v3-utils";
-import { asset, position, pool, poolConfig } from "ponder.schema";
-import { getAssetData } from "@app/utils/getAssetData";
-import {
-  insertOrUpdateHourBucket,
-  insertOrUpdateHourBucketUsd,
-  insertTokenIfNotExists,
-  insertOrUpdateDailyVolume,
-  computeDollarLiquidity,
-} from "./indexer-shared";
 import {
   computeGraduationThresholdDelta,
   insertPoolConfigIfNotExists,
 } from "@app/utils/v3-utils/computeGraduationThreshold";
+import {
+  insertPositionIfNotExists,
+  updatePosition,
+} from "./shared/entities/position";
+import { insertTokenIfNotExists } from "./shared/entities/token";
+import { insertOrUpdateDailyVolume } from "./shared/timeseries";
+import { insertPoolIfNotExists, updatePool } from "./shared/entities/pool";
+import { insertAssetIfNotExists } from "./shared/entities/asset";
+import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
+import { insertOrUpdateBuckets } from "./shared/timeseries";
+import { getV3PoolReserves } from "@app/utils/v3-utils/getV3PoolData";
+import { fetchEthPrice } from "./shared/oracle";
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
-  const { network } = context;
   const { poolOrHook, asset: assetId, numeraire } = event.args;
-
-  const assetData = await getAssetData(assetId, context);
-
-  if (!assetData) {
-    console.error("UniswapV3Initializer:Create - Asset data not found");
-    return;
-  }
-
-  const {
-    slot0Data,
-    liquidity,
-    price,
-    fee,
-    token0Balance,
-    token1Balance,
-    token0,
-    poolState,
-  } = await getV3PoolData({
-    address: poolOrHook,
-    context,
-  });
-
-  const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
 
   await insertTokenIfNotExists({
     address: numeraire,
@@ -69,79 +40,72 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
     context,
   });
 
-  await insertOrUpdateDailyVolume({
+  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
+
+  const poolEntity = await insertPoolIfNotExists({
     poolAddress: poolOrHook,
-    amountIn: 0n,
-    amountOut: 0n,
     timestamp: event.block.timestamp,
     context,
-    tokenIn: assetId,
   });
 
-  await context.db
-    .insert(pool)
-    .values({
-      ...slot0Data,
-      address: poolOrHook,
-      liquidity: liquidity,
-      createdAt: event.block.timestamp,
-      asset: assetId,
-      baseToken: assetId,
-      quoteToken: numeraire,
-      price,
-      type: "v3",
-      chainId: BigInt(network.chainId),
-      fee,
-      dollarLiquidity,
-      dailyVolume: poolOrHook,
-      graduationThreshold: 0n,
-      graduationBalance: 0n,
-      totalFee0: 0n,
-      totalFee1: 0n,
-    })
-    .onConflictDoNothing();
+  await insertAssetIfNotExists({
+    assetAddress: assetId,
+    timestamp: event.block.timestamp,
+    context,
+  });
 
-  await context.db
-    .insert(asset)
-    .values({
-      ...assetData,
-      address: assetId.toLowerCase() as `0x${string}`,
-      createdAt: event.block.timestamp,
-      migratedAt: null,
-      chainId: BigInt(network.chainId),
-    })
-    .onConflictDoNothing();
+  if (ethPrice) {
+    await insertOrUpdateBuckets({
+      poolAddress: poolOrHook,
+      price: poolEntity.price,
+      timestamp: event.block.timestamp,
+      ethPrice,
+      context,
+    });
+
+    await insertOrUpdateDailyVolume({
+      poolAddress: poolOrHook,
+      amountIn: 0n,
+      amountOut: 0n,
+      timestamp: event.block.timestamp,
+      context,
+      tokenIn: assetId,
+      ethPrice,
+    });
+  }
 });
 
 ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
-  const { db, network } = context;
   const address = event.log.address;
   const { tickLower, tickUpper, amount, owner } = event.args;
 
-  const {
-    slot0Data,
-    liquidity,
-    price,
-    fee,
-    token0Balance,
-    token1Balance,
-    token0,
-    token1,
-    poolState,
-  } = await getV3PoolData({
-    address,
-    context,
-  });
-
-  const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
-    price,
+  const poolEntity = await insertPoolIfNotExists({
+    poolAddress: address,
     timestamp: event.block.timestamp,
     context,
   });
+
+  const { reserve0, reserve1 } = await getV3PoolReserves({
+    address,
+    token0: poolEntity.baseToken,
+    token1: poolEntity.quoteToken,
+    context,
+  });
+
+  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
+  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
+
+  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
+
+  let dollarLiquidity;
+  if (ethPrice) {
+    dollarLiquidity = await computeDollarLiquidity({
+      assetBalance,
+      quoteBalance,
+      price: poolEntity.price,
+      ethPrice,
+    });
+  }
 
   const graduationThresholdDelta = await computeGraduationThresholdDelta({
     poolAddress: address,
@@ -149,82 +113,79 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     tickLower,
     tickUpper,
     liquidity: amount,
-    isToken0: token0.toLowerCase() === poolState.asset.toLowerCase(),
+    isToken0: poolEntity.isToken0,
   });
 
-  await db
-    .insert(pool)
-    .values({
-      ...slot0Data,
-      address,
-      liquidity,
-      createdAt: event.block.timestamp,
-      asset: poolState.asset,
-      baseToken: poolState.asset,
-      quoteToken: poolState.numeraire,
-      price,
-      type: "v3",
-      chainId: BigInt(network.chainId),
-      fee,
-      dollarLiquidity,
-      dailyVolume: address,
-      graduationThreshold: graduationThresholdDelta,
-      graduationBalance: 0n,
-      totalFee0: 0n,
-      totalFee1: 0n,
-    })
-    .onConflictDoUpdate((row) => ({
-      liquidity: row.liquidity + amount,
-      dollarLiquidity: dollarLiquidity,
-      graduationThreshold: row.graduationThreshold + graduationThresholdDelta,
-    }));
-
-  await db
-    .insert(position)
-    .values({
-      owner: owner,
-      pool: address,
-      tickLower: tickLower,
-      tickUpper: tickUpper,
-      liquidity: amount,
-      createdAt: event.block.timestamp,
-      chainId: BigInt(network.chainId),
-    })
-    .onConflictDoUpdate((row) => ({
-      liquidity: row.liquidity + amount,
-      dollarLiquidity: dollarLiquidity,
-    }));
-});
-
-ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
-  const { db, network } = context;
-  const address = event.log.address;
-  const { tickLower, tickUpper, owner, amount } = event.args;
-
-  const {
-    slot0Data,
-    liquidity,
-    price,
-    fee,
-    token0Balance,
-    token1Balance,
-    token0,
-    token1,
-    poolState,
-  } = await getV3PoolData({
-    address,
+  await updatePool({
+    poolAddress: address,
     context,
+    update: dollarLiquidity
+      ? {
+          graduationThreshold:
+            poolEntity.graduationThreshold + graduationThresholdDelta,
+          liquidity: poolEntity.liquidity + amount,
+          dollarLiquidity: dollarLiquidity,
+        }
+      : {
+          graduationThreshold:
+            poolEntity.graduationThreshold + graduationThresholdDelta,
+          liquidity: poolEntity.liquidity + amount,
+        },
   });
 
-  const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
-    price,
+  const positionEntity = await insertPositionIfNotExists({
+    poolAddress: address,
+    tickLower,
+    tickUpper,
+    liquidity: amount,
+    owner,
     timestamp: event.block.timestamp,
     context,
   });
+
+  if (positionEntity.createdAt != event.block.timestamp) {
+    await updatePosition({
+      poolAddress: address,
+      tickLower,
+      tickUpper,
+      context,
+      update: {
+        liquidity: positionEntity.liquidity + amount,
+      },
+    });
+  }
+});
+
+ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
+  const address = event.log.address;
+  const { tickLower, tickUpper, owner, amount } = event.args;
+
+  const poolEntity = await insertPoolIfNotExists({
+    poolAddress: address,
+    timestamp: event.block.timestamp,
+    context,
+  });
+
+  const { liquidity, price, reserve0, reserve1, token0, poolState } =
+    await getV3PoolData({
+      address,
+      context,
+    });
+
+  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
+  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
+
+  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
+
+  let dollarLiquidity;
+  if (ethPrice) {
+    dollarLiquidity = await computeDollarLiquidity({
+      assetBalance,
+      quoteBalance,
+      price,
+      ethPrice,
+    });
+  }
 
   const graduationThresholdDelta = await computeGraduationThresholdDelta({
     poolAddress: address,
@@ -234,81 +195,73 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
     liquidity,
     isToken0: token0.toLowerCase() === poolState.asset.toLowerCase(),
   });
-  await db
-    .insert(pool)
-    .values({
-      ...slot0Data,
-      address,
-      liquidity,
-      createdAt: event.block.timestamp,
-      asset: poolState.asset,
-      baseToken: poolState.asset,
-      quoteToken: poolState.numeraire,
-      price,
-      type: "v3",
-      chainId: BigInt(network.chainId),
-      fee,
-      dollarLiquidity,
-      dailyVolume: address,
-      graduationThreshold: -graduationThresholdDelta,
-      graduationBalance: 0n,
-      totalFee0: 0n,
-      totalFee1: 0n,
-    })
-    .onConflictDoUpdate((row) => ({
-      liquidity: row.liquidity - amount,
-      dollarLiquidity: dollarLiquidity,
-      graduationThreshold: row.graduationThreshold - graduationThresholdDelta,
-    }));
 
-  await db
-    .insert(position)
-    .values({
-      owner: owner,
-      pool: address,
-      tickLower: tickLower,
-      tickUpper: tickUpper,
-      liquidity: amount,
-      createdAt: event.block.timestamp,
-      chainId: BigInt(network.chainId),
-    })
-    .onConflictDoUpdate((row) => ({
-      liquidity: row.liquidity - amount,
-      dollarLiquidity: dollarLiquidity,
-    }));
+  await updatePool({
+    poolAddress: address,
+    context,
+    update: dollarLiquidity
+      ? {
+          liquidity: liquidity - amount,
+          dollarLiquidity: dollarLiquidity,
+          graduationThreshold:
+            poolEntity.graduationThreshold - graduationThresholdDelta,
+        }
+      : {
+          liquidity: liquidity - amount,
+          graduationThreshold:
+            poolEntity.graduationThreshold - graduationThresholdDelta,
+        },
+  });
+
+  const positionEntity = await insertPositionIfNotExists({
+    poolAddress: address,
+    tickLower,
+    tickUpper,
+    liquidity: amount,
+    owner,
+    timestamp: event.block.timestamp,
+    context,
+  });
+
+  await updatePosition({
+    poolAddress: address,
+    tickLower,
+    tickUpper,
+    context,
+    update: {
+      liquidity: positionEntity.liquidity - amount,
+    },
+  });
 });
 
 ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
-  const { db, network } = context;
   const address = event.log.address;
   const { amount0, amount1 } = event.args;
+
+  const poolEntity = await insertPoolIfNotExists({
+    poolAddress: address,
+    timestamp: event.block.timestamp,
+    context,
+  });
 
   const {
     slot0Data,
     liquidity,
     price,
     fee,
-    token0Balance,
-    token1Balance,
+    reserve0,
+    reserve1,
     token0,
     token1,
-    poolState,
   } = await getV3PoolData({
     address,
     context,
   });
 
-  const dollarLiquidity = await computeDollarLiquidity({
-    token0Balance,
-    token1Balance,
-    poolState,
-    token0,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
+  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
 
-  const isToken0 = token0 === poolState.asset;
+  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
+  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
 
   let amountIn;
   let amountOut;
@@ -329,59 +282,47 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     fee0 = 0n;
   }
 
-  const quoteDelta = isToken0 ? amount1 - fee1 : amount0 - fee0;
+  const quoteDelta = poolEntity.isToken0 ? amount1 - fee1 : amount0 - fee0;
 
-  await insertOrUpdateHourBucket({
+  let dollarLiquidity;
+  if (ethPrice) {
+    await insertOrUpdateBuckets({
+      poolAddress: address,
+      price,
+      timestamp: event.block.timestamp,
+      ethPrice,
+      context,
+    });
+
+    await insertOrUpdateDailyVolume({
+      poolAddress: address,
+      amountIn,
+      amountOut,
+      timestamp: event.block.timestamp,
+      context,
+      tokenIn,
+      ethPrice,
+    });
+
+    dollarLiquidity = await computeDollarLiquidity({
+      assetBalance,
+      quoteBalance,
+      price,
+      ethPrice,
+    });
+  }
+
+  await updatePool({
     poolAddress: address,
-    price,
-    timestamp: event.block.timestamp,
     context,
-  });
-
-  await insertOrUpdateHourBucketUsd({
-    poolAddress: address,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
-
-  await insertOrUpdateDailyVolume({
-    poolAddress: address,
-    amountIn,
-    amountOut,
-    timestamp: event.block.timestamp,
-    context,
-    tokenIn,
-  });
-
-  await db
-    .insert(pool)
-    .values({
-      address,
-      ...slot0Data,
-      liquidity: liquidity,
-      createdAt: event.block.timestamp,
-      baseToken: poolState.asset,
-      quoteToken: poolState.numeraire,
-      price: price,
-      asset: poolState.asset,
-      type: "v3",
-      chainId: BigInt(network.chainId),
-      fee,
-      dollarLiquidity,
-      dailyVolume: address,
-      graduationThreshold: 0n,
-      graduationBalance: quoteDelta,
-      totalFee0: fee0,
-      totalFee1: fee1,
-    })
-    .onConflictDoUpdate((row) => ({
+    update: {
       liquidity: liquidity,
       price: price,
       dollarLiquidity: dollarLiquidity,
-      totalFee0: row.totalFee0 + fee0,
-      totalFee1: row.totalFee1 + fee1,
-      graduationBalance: row.graduationBalance + quoteDelta,
+      totalFee0: poolEntity.totalFee0 + fee0,
+      totalFee1: poolEntity.totalFee1 + fee1,
+      graduationBalance: poolEntity.graduationBalance + quoteDelta,
       ...slot0Data,
-    }));
+    },
+  });
 });

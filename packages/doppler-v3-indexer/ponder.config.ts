@@ -8,12 +8,14 @@ import {
   DERC20ABI,
   DopplerABI,
   PoolManagerABI,
+  UniswapV2PairABI,
 } from "./src/abis";
 import { CHAIN_IDS, configs, Network } from "./addresses";
+import { UniswapV2FactoryABI } from "@app/abis/UniswapV2Factory";
 
 // have this read from environment variable
 const network: Network = "unichain";
-const { v3, v4, shared, oracleStartBlock, startBlock } = configs[network];
+const { v2, v3, v4, shared, oracleStartBlock, startBlock } = configs[network];
 
 export default createConfig({
   networks: {
@@ -73,6 +75,16 @@ export default createConfig({
         address: v3.v3Initializer,
         event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
         parameter: "poolOrHook",
+      }),
+      startBlock,
+    },
+    UniswapV2Pair: {
+      abi: UniswapV2PairABI,
+      network,
+      address: factory({
+        address: v2.factory,
+        event: getAbiItem({ abi: UniswapV2FactoryABI, name: "PairCreated" }),
+        parameter: "pair",
       }),
       startBlock,
     },

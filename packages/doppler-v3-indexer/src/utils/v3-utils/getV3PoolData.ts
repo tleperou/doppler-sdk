@@ -32,8 +32,8 @@ export type V3PoolData = {
   poolState: PoolState;
   price: bigint;
   fee: number;
-  token0Balance: bigint;
-  token1Balance: bigint;
+  reserve0: bigint;
+  reserve1: bigint;
 };
 
 export const getV3PoolData = async ({
@@ -89,30 +89,16 @@ export const getV3PoolData = async ({
 
   const token0Result = token0?.result ?? "0x";
   const token1Result = token1?.result ?? "0x";
-  const feeResult = fee?.result ?? 3000;
+  const feeResult = fee?.result ?? 10_000;
 
-  const [token0Balance, token1Balance] = await client.multicall({
-    contracts: [
-      {
-        abi: DERC20ABI,
-        address: token0Result,
-        functionName: "balanceOf",
-        args: [address],
-      },
-      {
-        abi: DERC20ABI,
-        address: token1Result,
-        functionName: "balanceOf",
-        args: [address],
-      },
-    ],
+  const { reserve0, reserve1 } = await getV3PoolReserves({
+    token0: token0Result,
+    token1: token1Result,
+    address,
+    context,
   });
 
-  const token0BalanceResult = token0Balance?.result ?? 0n;
-  const token1BalanceResult = token1Balance?.result ?? 0n;
-
   const isToken0 = token0Result.toLowerCase() === poolState.asset.toLowerCase();
-
   const price = await computeV3Price({
     sqrtPriceX96: slot0Data.sqrtPrice,
     baseToken: poolState.asset,
@@ -128,8 +114,46 @@ export const getV3PoolData = async ({
     fee: feeResult,
     poolState,
     price,
-    token0Balance: token0BalanceResult,
-    token1Balance: token1BalanceResult,
+    reserve0,
+    reserve1,
+  };
+};
+
+export const getV3PoolReserves = async ({
+  token0,
+  token1,
+  address,
+  context,
+}: {
+  token0: Address;
+  token1: Address;
+  address: Address;
+  context: Context;
+}) => {
+  const { client } = context;
+  const [r0, r1] = await client.multicall({
+    contracts: [
+      {
+        abi: DERC20ABI,
+        address: token0,
+        functionName: "balanceOf",
+        args: [address],
+      },
+      {
+        abi: DERC20ABI,
+        address: token1,
+        functionName: "balanceOf",
+        args: [address],
+      },
+    ],
+  });
+
+  const reserve0 = r0?.result ?? 0n;
+  const reserve1 = r1?.result ?? 0n;
+
+  return {
+    reserve0,
+    reserve1,
   };
 };
 

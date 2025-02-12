@@ -11,12 +11,13 @@ export const CHAIN_IDS = {
 const unichainSepoliaStartBlock = 11932039;
 const mainnetStartBlockUnichainSepolia = 21782000;
 
-const unichainStartBlock = 0;
-const mainnetStartBlockUnichain = 0;
+const unichainStartBlock = 8536880;
+const mainnetStartBlockUnichain = 21823900;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
 export type DopplerConfig = {
+  v2: V2Addresses;
   v3: V3Addresses;
   v4: V4Addresses;
   shared: SharedAddresses;
@@ -45,6 +46,10 @@ export type V3Addresses = {
   v3Initializer: Address;
 };
 
+export type V2Addresses = {
+  factory: Address;
+};
+
 export type OracleAddresses = {
   mainnetEthUsdc: Address;
   weth: Address;
@@ -61,6 +66,9 @@ export const oracleAddresses: OracleAddresses = {
 
 export const configs: IndexerConfigs = {
   unichainSepolia: {
+    v2: {
+      factory: "0x5C69bEe701ef814a2B6a3EDD4B165e154b09Fcd3" as Address,
+    },
     v3: {
       v3Initializer: "0x7Fb9a622186B4660A5988C223ebb9d3690dD5007" as Address,
     },
@@ -84,6 +92,9 @@ export const configs: IndexerConfigs = {
     oracleStartBlock: mainnetStartBlockUnichainSepolia,
   },
   mainnet: {
+    v2: {
+      factory: zeroAddress as Address,
+    },
     v3: {
       v3Initializer: zeroAddress as Address,
     },
@@ -106,8 +117,11 @@ export const configs: IndexerConfigs = {
     oracleStartBlock: mainnetStartBlockUnichainSepolia,
   },
   unichain: {
+    v2: {
+      factory: "0x1f98400000000000000000000000000000000002" as Address,
+    },
     v3: {
-      v3Initializer: "0xaA47D2977d622DBdFD33eeF6a8276727c52EB4e5" as Address,
+      v3Initializer: "0x9F4e56be80f08ba1A2445645EFa6d231E27b43ec" as Address,
     },
     v4: {
       poolManager: "0x1F98400000000000000000000000000000000004" as Address,
@@ -116,16 +130,16 @@ export const configs: IndexerConfigs = {
       stateView: zeroAddress as Address,
     },
     shared: {
-      airlock: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
-      tokenFactory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
+      airlock: "0x77EbfBAE15AD200758E9E2E61597c0B07d731254" as Address,
+      tokenFactory: "0x43d0D97EC9241A8F05A264f94B82A1d2E600f2B3" as Address,
       universalRouter: "0xef740bf23acae26f6492b10de645d6b98dc8eaf3" as Address,
       governanceFactory:
-        "0xb4deE32EB70A5E55f3D2d861F49Fb3D79f7a14d9" as Address,
-      migrator: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+        "0x99C94B9Df930E1E21a4E4a2c105dBff21bF5c5aE" as Address,
+      migrator: "0xf6023127f6E937091D5B605680056A6D27524bad" as Address,
       weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,
     startBlock: unichainStartBlock,
-    oracleStartBlock: unichainStartBlock,
+    oracleStartBlock: mainnetStartBlockUnichain,
   },
 };
