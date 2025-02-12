@@ -12,7 +12,7 @@ import { insertTokenIfNotExists } from "./shared/entities/token";
 import { insertOrUpdateDailyVolume } from "./shared/timeseries";
 import { insertPoolIfNotExists, updatePool } from "./shared/entities/pool";
 import { insertAssetIfNotExists } from "./shared/entities/asset";
-import { computeDollarLiquidity } from "./indexer-shared";
+import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { insertOrUpdateBuckets } from "./shared/timeseries";
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {

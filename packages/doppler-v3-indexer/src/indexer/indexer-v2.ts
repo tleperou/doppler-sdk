@@ -4,11 +4,9 @@ import {
   insertOrUpdateBuckets,
   insertOrUpdateDailyVolume,
 } from "./shared/timeseries";
-import { computeDollarLiquidity } from "./indexer-shared";
 import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
 import { getPairData } from "@app/utils/v2-utils/getPairData";
-import { configs } from "../../addresses";
-import { eq } from "ponder";
+import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 
 ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   const { db, network } = context;

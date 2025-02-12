@@ -1,5 +1,5 @@
 import { getV3PoolData } from "@app/utils/v3-utils";
-import { computeDollarLiquidity } from "../../indexer-shared";
+import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { pool } from "ponder:schema";
 import { Address } from "viem";
 import { Context } from "ponder:registry";
