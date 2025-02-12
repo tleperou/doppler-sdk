@@ -4,10 +4,18 @@ import { configs } from "addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { updateAsset } from "./shared/entities/asset";
 import { insertTokenIfNotExists } from "./shared/entities/token";
+import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
-  const { asset: assetId } = event.args;
+  const { asset: assetId, pool: poolId } = event.args;
+
+  await insertV2PoolIfNotExists({
+    assetAddress: assetId,
+    poolAddress: poolId,
+    timestamp,
+    context,
+  });
 
   await updateAsset({
     assetAddress: assetId,

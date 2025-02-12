@@ -1,5 +1,5 @@
 import { ponder } from "ponder:registry";
-import { asset, pool } from "ponder.schema";
+import { asset, pool, v2Pool } from "ponder.schema";
 import {
   insertOrUpdateBuckets,
   insertOrUpdateDailyVolume,
@@ -8,107 +8,92 @@ import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
 import { getPairData } from "@app/utils/v2-utils/getPairData";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { fetchEthPrice } from "./shared/oracle";
+import { updateV2Pool } from "./shared/entities";
+import { CHAINLINK_ETH_DECIMALS } from "@app/utils/constants";
 
 ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   const { db, network } = context;
-  const address = event.log.address;
+  const { address } = event.log;
+  const { timestamp } = event.block;
   const { amount0In, amount1In, amount0Out, amount1Out } = event.args;
 
-  const { token0, token1, reserve0, reserve1 } = await getPairData({
-    address,
-    context,
-  });
+  // Early exit if pool not found
+  const v2PoolData = await db.find(v2Pool, { address });
+  if (!v2PoolData) return;
 
-  if (!token0 || !token1 || !reserve0 || !reserve1) {
+  // Fetch pair data
+  const pairData = await getPairData({ address, context });
+  if (!pairData) return;
+  const { token0, token1, reserve0, reserve1 } = pairData;
+
+  // Find associated asset data
+  const assetData =
+    (await db.find(asset, { address: token0 })) ||
+    (await db.find(asset, { address: token1 }));
+  if (!assetData) {
     console.error(
-      "UniswapV2Pair:Swap - Token0 or token1 or reserve0 or reserve1 not found"
+      `UniswapV2Pair:Swap - Asset data not found for pair ${address}`
     );
     return;
   }
-  let assetData;
 
-  assetData = await db.find(asset, {
-    address: token0,
-  });
+  // Calculate swap amounts
+  const amountIn = amount0In > 0 ? amount0In : amount1In;
+  const amountOut = amount0Out > 0 ? amount0Out : amount1Out;
 
-  if (!assetData) {
-    assetData = await db.find(asset, {
-      address: token1,
-    });
-  }
-
-  if (!assetData) {
-    console.error("UniswapV2Pair:Swap - Asset data not found");
-    return;
-  }
-
-  const amountIn = amount0In > 0n ? amount0In : amount1In;
-  const amountOut = amount0Out > 0n ? amount0Out : amount1Out;
-
+  // Determine token relationships
   const isToken0 = assetData.address.toLowerCase() === token0.toLowerCase();
-  const quoteAddr = assetData.numeraire.toLowerCase();
-  const assetAddr = assetData.address.toLowerCase();
-  const poolAddress = assetData.poolAddress;
-
+  const { numeraire, poolAddress } = assetData;
   const tokenIn = isToken0 ? token0 : token1;
-
-  if (!quoteAddr || !tokenIn || !reserve0 || !reserve1) {
-    console.error(
-      "UniswapV2Pair:Swap - Quote address or token in or token0 balance or token1 balance not found"
-    );
-    return;
-  }
-
   const assetBalance = isToken0 ? reserve0 : reserve1;
   const quoteBalance = isToken0 ? reserve1 : reserve0;
 
-  const price = await computeV2Price({
-    assetBalance,
-    quoteBalance,
-  });
+  if (!numeraire || !tokenIn || !reserve0 || !reserve1) {
+    console.error(`Missing required data for swap in pool ${address}`);
+    return;
+  }
 
-  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
+  const price = await computeV2Price({ assetBalance, quoteBalance });
+  const ethPrice = await fetchEthPrice(timestamp, context);
 
   let dollarLiquidity;
   if (ethPrice) {
-    await insertOrUpdateBuckets({
-      poolAddress,
-      price,
-      timestamp: event.block.timestamp,
-      ethPrice,
-      context,
-    });
-    await insertOrUpdateDailyVolume({
-      poolAddress,
-      amountIn,
-      amountOut,
-      timestamp: event.block.timestamp,
-      context,
-      tokenIn,
-      ethPrice,
-    });
+    await Promise.all([
+      insertOrUpdateBuckets({
+        poolAddress,
+        price,
+        timestamp,
+        ethPrice,
+        context,
+      }),
+      insertOrUpdateDailyVolume({
+        poolAddress,
+        amountIn,
+        amountOut,
+        timestamp,
+        context,
+        tokenIn,
+        ethPrice,
+      }),
+    ]);
+
     dollarLiquidity = await computeDollarLiquidity({
       assetBalance,
       quoteBalance,
       price,
       ethPrice,
     });
+    await updateV2Pool({
+      poolAddress: address,
+      context,
+      update: { price: (price * ethPrice) / CHAINLINK_ETH_DECIMALS },
+    });
   }
 
-  const update = dollarLiquidity
-    ? {
-        price,
-        dollarLiquidity,
-      }
-    : {
-        price,
-      };
-
+  // Prepare and execute final update
+  const update = dollarLiquidity ? { price, dollarLiquidity } : { price };
   await db
-    .update(pool, {
-      address: poolAddress,
-      chainId: BigInt(network.chainId),
-    })
+    .update(pool, { address: poolAddress, chainId: BigInt(network.chainId) })
     .set(update);
 });
 

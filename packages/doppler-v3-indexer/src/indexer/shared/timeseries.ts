@@ -43,48 +43,51 @@ export const insertOrUpdateBuckets = async ({
     return;
   }
 
-  await insertOrUpdateHourBucket({
-    poolAddress,
-    price,
-    timestamp,
-    context,
-  });
+  await Promise.all([
+    insertOrUpdateHourBucket({
+      poolAddress,
+      price,
+      timestamp,
+      context,
+    }),
 
-  await insertOrUpdateHourBucketUsd({
-    poolAddress,
-    price,
-    timestamp,
-    ethPrice,
-    context,
-  });
+    insertOrUpdateHourBucketUsd({
+      poolAddress,
+      price,
+      timestamp,
+      ethPrice,
+      context,
+    }),
+    insertOrUpdateThirtyMinuteBucket({
+      poolAddress,
+      price,
+      timestamp,
+      context,
+    }),
 
-  //   await insertOrUpdateThirtyMinuteBucket({
-  //     poolAddress,
-  //     price,
-  //     timestamp,
-  //     context,
-  //   });
+    insertOrUpdateThirtyMinuteBucketUsd({
+      poolAddress,
+      price,
+      timestamp,
+      ethPrice,
+      context,
+    }),
 
-  //   await insertOrUpdateThirtyMinuteBucketUsd({
-  //     poolAddress,
-  //     price,
-  //     timestamp,
-  //     context,
-  //   });
+    insertOrUpdateFifteenMinuteBucket({
+      poolAddress,
+      price,
+      timestamp,
+      context,
+    }),
 
-  //   await insertOrUpdateFifteenMinuteBucket({
-  //     poolAddress,
-  //     price,
-  //     timestamp,
-  //     context,
-  //   });
-
-  //   await insertOrUpdateFifteenMinuteBucketUsd({
-  //     poolAddress,
-  //     price,
-  //     timestamp,
-  //     context,
-  //   });
+    insertOrUpdateFifteenMinuteBucketUsd({
+      poolAddress,
+      price,
+      timestamp,
+      ethPrice,
+      context,
+    }),
+  ]);
 };
 
 const insertOrUpdateThirtyMinuteBucket = async ({

@@ -55,6 +55,7 @@ export const asset = onchainTable(
     liquidityMigrator: t.hex().notNull(),
     poolInitializer: t.hex().notNull(),
     migrationPool: t.hex().notNull(),
+    v2Pool: t.hex(),
     numTokensToSell: t.bigint().notNull(),
     integrator: t.hex().notNull(),
     createdAt: t.bigint().notNull(),
@@ -262,6 +263,22 @@ export const pool = onchainTable(
   })
 );
 
+export const v2Pool = onchainTable("v2_pool", (t) => ({
+  address: t.hex().notNull().primaryKey(),
+  chainId: t.bigint().notNull(),
+  baseToken: t.hex().notNull(),
+  quoteToken: t.hex().notNull(),
+  reserveBaseToken: t.bigint().notNull(),
+  reserveQuoteToken: t.bigint().notNull(),
+  totalFeeBaseToken: t.bigint().notNull(),
+  totalFeeQuoteToken: t.bigint().notNull(),
+  price: t.bigint().notNull(),
+  v3Pool: t.hex().notNull(),
+  migratedAt: t.bigint(),
+  migrated: t.boolean().notNull(),
+  isToken0: t.boolean().notNull(),
+}));
+
 export const poolConfig = onchainTable("pool_config", (t) => ({
   pool: t.hex().notNull().primaryKey(),
   tickLower: t.integer().notNull(),
@@ -323,6 +340,13 @@ export const poolRelations = relations(pool, ({ one, many }) => ({
   thirtyMinuteBucketUsds: many(thirtyMinuteBucketUsd),
   fifteenMinuteBuckets: many(fifteenMinuteBucket),
   fifteenMinuteBucketUsds: many(fifteenMinuteBucketUsd),
+}));
+
+export const v2PoolRelations = relations(v2Pool, ({ one }) => ({
+  pool: one(pool, {
+    fields: [v2Pool.address],
+    references: [pool.address],
+  }),
 }));
 
 // positions have one pool

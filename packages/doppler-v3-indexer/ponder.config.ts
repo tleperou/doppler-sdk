@@ -11,10 +11,11 @@ import {
   UniswapV2PairABI,
 } from "./src/abis";
 import { CHAIN_IDS, configs, Network } from "./addresses";
+import { UniswapV2FactoryABI } from "@app/abis/UniswapV2Factory";
 
 // have this read from environment variable
 const network: Network = "unichain";
-const { v3, v4, shared, oracleStartBlock, startBlock } = configs[network];
+const { v2, v3, v4, shared, oracleStartBlock, startBlock } = configs[network];
 
 export default createConfig({
   networks: {
@@ -81,9 +82,9 @@ export default createConfig({
       abi: UniswapV2PairABI,
       network,
       address: factory({
-        address: v3.v3Initializer,
-        event: getAbiItem({ abi: AirlockABI, name: "Migrate" }),
-        parameter: "pool",
+        address: v2.factory,
+        event: getAbiItem({ abi: UniswapV2FactoryABI, name: "PairCreated" }),
+        parameter: "pair",
       }),
       startBlock,
     },

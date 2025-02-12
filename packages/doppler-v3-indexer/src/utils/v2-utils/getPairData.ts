@@ -1,6 +1,6 @@
 import { DERC20ABI, UniswapV2PairABI } from "@app/abis";
 import { Context } from "ponder:registry";
-import { Hex } from "viem";
+import { Address, Hex } from "viem";
 
 export const getPairData = async ({
   address,
@@ -11,7 +11,7 @@ export const getPairData = async ({
 }) => {
   const { client } = context;
 
-  const [token0, token1, totalSupply, reserves] = await client.multicall({
+  const [token0Result, token1Result] = await client.multicall({
     contracts: [
       {
         abi: UniswapV2PairABI,
@@ -23,26 +23,40 @@ export const getPairData = async ({
         address,
         functionName: "token1",
       },
+    ],
+  });
+
+  const token0 = token0Result.result;
+  const token1 = token1Result.result;
+
+  const [reserve0Result, reserve1Result] = await client.multicall({
+    contracts: [
       {
-        abi: UniswapV2PairABI,
-        address,
-        functionName: "totalSupply",
+        abi: DERC20ABI,
+        address: token0 as Address,
+        functionName: "balanceOf",
+        args: [address],
       },
       {
-        abi: UniswapV2PairABI,
-        address,
-        functionName: "getReserves",
+        abi: DERC20ABI,
+        address: token1 as Address,
+        functionName: "balanceOf",
+        args: [address],
       },
     ],
   });
 
-  const reserve0 = reserves.result?.[0];
-  const reserve1 = reserves.result?.[1];
+  const reserve0 = reserve0Result.result;
+  const reserve1 = reserve1Result.result;
+
+  if (!token0 || !token1 || !reserve0 || !reserve1) {
+    console.error("Pair data not found");
+    return null;
+  }
 
   return {
-    token0: token0.result,
-    token1: token1.result,
-    totalSupply: totalSupply.result,
+    token0,
+    token1,
     reserve0,
     reserve1,
   };

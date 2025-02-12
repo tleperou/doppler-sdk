@@ -17,6 +17,7 @@ const mainnetStartBlockUnichain = 21823900;
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
 export type DopplerConfig = {
+  v2: V2Addresses;
   v3: V3Addresses;
   v4: V4Addresses;
   shared: SharedAddresses;
@@ -45,6 +46,10 @@ export type V3Addresses = {
   v3Initializer: Address;
 };
 
+export type V2Addresses = {
+  factory: Address;
+};
+
 export type OracleAddresses = {
   mainnetEthUsdc: Address;
   weth: Address;
@@ -61,6 +66,9 @@ export const oracleAddresses: OracleAddresses = {
 
 export const configs: IndexerConfigs = {
   unichainSepolia: {
+    v2: {
+      factory: "0x5C69bEe701ef814a2B6a3EDD4B165e154b09Fcd3" as Address,
+    },
     v3: {
       v3Initializer: "0x7Fb9a622186B4660A5988C223ebb9d3690dD5007" as Address,
     },
@@ -84,6 +92,9 @@ export const configs: IndexerConfigs = {
     oracleStartBlock: mainnetStartBlockUnichainSepolia,
   },
   mainnet: {
+    v2: {
+      factory: zeroAddress as Address,
+    },
     v3: {
       v3Initializer: zeroAddress as Address,
     },
@@ -106,6 +117,9 @@ export const configs: IndexerConfigs = {
     oracleStartBlock: mainnetStartBlockUnichainSepolia,
   },
   unichain: {
+    v2: {
+      factory: "0x1f98400000000000000000000000000000000002" as Address,
+    },
     v3: {
       v3Initializer: "0x9F4e56be80f08ba1A2445645EFa6d231E27b43ec" as Address,
     },
