@@ -3,6 +3,7 @@ import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { pool } from "ponder:schema";
 import { Address } from "viem";
 import { Context } from "ponder:registry";
+import { fetchEthPrice } from "../oracle";
 
 export const insertPoolIfNotExists = async ({
   poolAddress,
@@ -39,13 +40,17 @@ export const insertPoolIfNotExists = async ({
     poolState,
   } = poolData;
 
-  const dollarLiquidity = await computeDollarLiquidity({
-    assetBalance: reserve0,
-    quoteBalance: reserve1,
-    price,
-    timestamp,
-    context,
-  });
+  const ethPrice = await fetchEthPrice(timestamp, context);
+
+  let dollarLiquidity;
+  if (ethPrice) {
+    dollarLiquidity = await computeDollarLiquidity({
+      assetBalance: reserve0,
+      quoteBalance: reserve1,
+      price,
+      ethPrice,
+    });
+  }
 
   const isToken0 = token0.toLowerCase() === poolState.asset.toLowerCase();
 
@@ -62,7 +67,7 @@ export const insertPoolIfNotExists = async ({
     type: "v3",
     chainId: BigInt(network.chainId),
     fee,
-    dollarLiquidity,
+    dollarLiquidity: dollarLiquidity ?? 0n,
     dailyVolume: poolAddress,
     graduationThreshold: 0n,
     graduationBalance: 0n,

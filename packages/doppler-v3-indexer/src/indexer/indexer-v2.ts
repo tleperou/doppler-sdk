@@ -7,6 +7,7 @@ import {
 import { computeV2Price } from "@app/utils/v2-utils/computeV2Price";
 import { getPairData } from "@app/utils/v2-utils/getPairData";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
+import { fetchEthPrice } from "./shared/oracle";
 
 ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
   const { db, network } = context;
@@ -66,39 +67,49 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     quoteBalance,
   });
 
-  const dollarLiquidity = await computeDollarLiquidity({
-    assetBalance,
-    quoteBalance,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
+  const ethPrice = await fetchEthPrice(event.block.timestamp, context);
 
-  await insertOrUpdateBuckets({
-    poolAddress,
-    price,
-    timestamp: event.block.timestamp,
-    context,
-  });
+  let dollarLiquidity;
+  if (ethPrice) {
+    await insertOrUpdateBuckets({
+      poolAddress,
+      price,
+      timestamp: event.block.timestamp,
+      ethPrice,
+      context,
+    });
+    await insertOrUpdateDailyVolume({
+      poolAddress,
+      amountIn,
+      amountOut,
+      timestamp: event.block.timestamp,
+      context,
+      tokenIn,
+      ethPrice,
+    });
+    dollarLiquidity = await computeDollarLiquidity({
+      assetBalance,
+      quoteBalance,
+      price,
+      ethPrice,
+    });
+  }
 
-  await insertOrUpdateDailyVolume({
-    poolAddress,
-    amountIn,
-    amountOut,
-    timestamp: event.block.timestamp,
-    context,
-    tokenIn,
-  });
+  const update = dollarLiquidity
+    ? {
+        price,
+        dollarLiquidity,
+      }
+    : {
+        price,
+      };
 
   await db
     .update(pool, {
       address: poolAddress,
       chainId: BigInt(network.chainId),
     })
-    .set({
-      price,
-      dollarLiquidity,
-    });
+    .set(update);
 });
 
 // ponder.on("UniswapV2Pair:Mint", async ({ event, context }) => {

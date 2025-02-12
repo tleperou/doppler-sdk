@@ -6,29 +6,16 @@ export const computeDollarLiquidity = async ({
   assetBalance,
   quoteBalance,
   price,
-  timestamp,
-  context,
+  ethPrice,
 }: {
   assetBalance: bigint;
   quoteBalance: bigint;
   price: bigint;
-  timestamp: bigint;
-  context: Context;
+  ethPrice: bigint;
 }) => {
-  const ethPrice = await fetchEthPrice(timestamp, context);
-
-  let assetLiquidity;
-  let numeraireLiquidity;
-  if (ethPrice?.price) {
-    assetLiquidity =
-      (((assetBalance * price) / WAD) * ethPrice.price) /
-      CHAINLINK_ETH_DECIMALS;
-    numeraireLiquidity =
-      (quoteBalance * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
-  } else {
-    assetLiquidity = 0n;
-    numeraireLiquidity = 0n;
-  }
+  const assetLiquidity =
+    (((assetBalance * price) / WAD) * ethPrice) / CHAINLINK_ETH_DECIMALS;
+  const numeraireLiquidity = (quoteBalance * ethPrice) / CHAINLINK_ETH_DECIMALS;
 
   return assetLiquidity + numeraireLiquidity;
 };

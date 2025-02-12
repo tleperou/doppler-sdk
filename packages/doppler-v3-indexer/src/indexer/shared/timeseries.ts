@@ -29,13 +29,20 @@ export const insertOrUpdateBuckets = async ({
   poolAddress,
   price,
   timestamp,
+  ethPrice,
   context,
 }: {
   poolAddress: Address;
   price: bigint;
   timestamp: bigint;
+  ethPrice: bigint;
   context: Context;
 }) => {
+  if (!ethPrice) {
+    console.error("No price found for timestamp", timestamp);
+    return;
+  }
+
   await insertOrUpdateHourBucket({
     poolAddress,
     price,
@@ -47,6 +54,7 @@ export const insertOrUpdateBuckets = async ({
     poolAddress,
     price,
     timestamp,
+    ethPrice,
     context,
   });
 
@@ -125,25 +133,20 @@ const insertOrUpdateThirtyMinuteBucketUsd = async ({
   poolAddress,
   price,
   timestamp,
+  ethPrice,
   context,
 }: {
   poolAddress: Address;
   price: bigint;
   timestamp: bigint;
+  ethPrice: bigint;
   context: Context;
 }) => {
   const { db, network } = context;
   const thirtyMinuteId =
     Math.floor(Number(timestamp) / secondsIn30Minutes) * secondsIn30Minutes;
 
-  const ethPrice = await fetchEthPrice(timestamp, context);
-
-  if (!ethPrice) {
-    console.error("No price found for timestamp", timestamp);
-    return;
-  }
-
-  const usdPrice = (price * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
+  const usdPrice = (price * ethPrice) / CHAINLINK_ETH_DECIMALS;
 
   try {
     await db
@@ -218,25 +221,20 @@ const insertOrUpdateFifteenMinuteBucketUsd = async ({
   poolAddress,
   price,
   timestamp,
+  ethPrice,
   context,
 }: {
   poolAddress: Address;
   price: bigint;
   timestamp: bigint;
+  ethPrice: bigint;
   context: Context;
 }) => {
   const { db, network } = context;
   const fifteenMinuteId =
     Math.floor(Number(timestamp) / secondsIn15Minutes) * secondsIn15Minutes;
 
-  const ethPrice = await fetchEthPrice(timestamp, context);
-
-  if (!ethPrice) {
-    console.error("No price found for timestamp", timestamp);
-    return;
-  }
-
-  const usdPrice = (price * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
+  const usdPrice = (price * ethPrice) / CHAINLINK_ETH_DECIMALS;
 
   try {
     await db
@@ -310,24 +308,18 @@ const insertOrUpdateHourBucketUsd = async ({
   poolAddress,
   price,
   timestamp,
+  ethPrice,
   context,
 }: {
   poolAddress: Address;
   price: bigint;
   timestamp: bigint;
+  ethPrice: bigint;
   context: Context;
 }) => {
   const { db, network } = context;
   const hourId = Math.floor(Number(timestamp) / secondsInHour) * secondsInHour;
-
-  const ethPrice = await fetchEthPrice(timestamp, context);
-
-  if (!ethPrice) {
-    console.error("No price found for timestamp", timestamp);
-    return;
-  }
-
-  const usdPrice = (price * ethPrice.price) / CHAINLINK_ETH_DECIMALS;
+  const usdPrice = (price * ethPrice) / CHAINLINK_ETH_DECIMALS;
 
   try {
     await db
@@ -362,6 +354,7 @@ export const insertOrUpdateDailyVolume = async ({
   amountIn,
   amountOut,
   timestamp,
+  ethPrice,
   context,
 }: {
   tokenIn: Address;
@@ -369,16 +362,10 @@ export const insertOrUpdateDailyVolume = async ({
   amountIn: bigint;
   amountOut: bigint;
   timestamp: bigint;
+  ethPrice: bigint;
   context: Context;
 }) => {
   const { db, network } = context;
-
-  const price = await fetchEthPrice(timestamp, context);
-
-  if (!price) {
-    console.error("No price found for timestamp", timestamp);
-    return;
-  }
 
   let volumeUsd;
   let volumeNumeraire;
@@ -386,10 +373,10 @@ export const insertOrUpdateDailyVolume = async ({
     tokenIn.toLowerCase() ===
     (configs[network.name].shared.weth.toLowerCase() as `0x${string}`)
   ) {
-    volumeUsd = (amountIn * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeUsd = (amountIn * ethPrice) / CHAINLINK_ETH_DECIMALS;
     volumeNumeraire = amountIn;
   } else {
-    volumeUsd = (-amountOut * price.price) / CHAINLINK_ETH_DECIMALS;
+    volumeUsd = (-amountOut * ethPrice) / CHAINLINK_ETH_DECIMALS;
     volumeNumeraire = amountOut;
   }
 
