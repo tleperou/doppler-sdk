@@ -128,6 +128,7 @@ export class ReadQuoter {
 
   /**
    * Get a price quote for swapping an exact amount of ETH for tokens using Uniswap V2
+   * @param amountIn - Amount of ETH to swap
    * @param params - Arguments for the swapExactETHForTokens contract method containing:
    *  - amountOutMin: Minimum amount of output tokens to receive
    *  - path: Array of token addresses representing swap path (first address should be WETH)
@@ -137,9 +138,9 @@ export class ReadQuoter {
    *  - amounts: Array of input/output amounts at each swap step
    */
   async quoteExactInputV2ETH(
-    params: FunctionArgs<UniswapV2Router02ABI, "swapExactETHForTokens">,
-    amountIn: bigint
-  ): Promise<FunctionReturn<UniswapV2Router02ABI, "swapExactETHForTokens">> {
+    amountIn: bigint,
+    params: FunctionArgs<UniswapV2Router02ABI, "swapExactETHForTokens">
+  ): Promise<readonly bigint[]> {
     return await this.univ2Router.simulateWrite(
       "swapExactETHForTokens",
       {
@@ -153,6 +154,7 @@ export class ReadQuoter {
 
   /**
    * Get a price quote for receiving an exact amount of ETH from tokens using Uniswap V2
+   * @param amountOut - Amount of ETH to receive
    * @param params - Arguments for the swapExactTokensForETH contract method containing:
    *  - amountInMax: Maximum amount of input tokens to spend
    *  - amountOut: Exact amount of ETH to receive
@@ -163,9 +165,9 @@ export class ReadQuoter {
    *  - amounts: Array of input/output amounts at each swap step
    */
   async quoteExactOutputV2ETH(
-    params: FunctionArgs<UniswapV2Router02ABI, "swapExactTokensForETH">,
-    amountOut: bigint
-  ): Promise<FunctionReturn<UniswapV2Router02ABI, "swapExactTokensForETH">> {
+    amountOut: bigint,
+    params: FunctionArgs<UniswapV2Router02ABI, "swapExactTokensForETH">
+  ): Promise<readonly bigint[]> {
     return await this.univ2Router.simulateWrite(
       "swapExactTokensForETH",
       {
