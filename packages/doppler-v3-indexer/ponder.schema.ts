@@ -191,7 +191,6 @@ export const fifteenMinuteBucketUsd = onchainTable(
 export const dailyVolume = onchainTable("daily_volume", (t) => ({
   pool: t.hex().notNull().primaryKey(),
   volumeUsd: t.bigint().notNull(),
-  volumeNumeraire: t.bigint().notNull(),
   chainId: t.bigint().notNull(),
   checkpoints: t.jsonb().notNull(),
   lastUpdated: t.bigint().notNull(),
