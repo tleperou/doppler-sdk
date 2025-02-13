@@ -143,7 +143,7 @@ export class CommandBuilder {
     recipient: Address,
     amountIn: bigint,
     amountOutMinimum: bigint,
-    path: Hex,
+    path: Address[],
     payerIsMsgSender: boolean
   ): this {
     return this.addCommand(CommandType.V2_SWAP_EXACT_IN, [
@@ -159,7 +159,7 @@ export class CommandBuilder {
     recipient: Address,
     amountOut: bigint,
     amountInMaximum: bigint,
-    path: Hex,
+    path: Address[],
     payerIsMsgSender: boolean
   ): this {
     return this.addCommand(CommandType.V2_SWAP_EXACT_OUT, [
