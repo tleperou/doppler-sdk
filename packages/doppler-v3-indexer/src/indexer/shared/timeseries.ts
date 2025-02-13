@@ -406,8 +406,8 @@ export const insertOrUpdateDailyVolume = async ({
         ...(row.checkpoints as Checkpoint[]),
         {
           timestamp: timestamp.toString(),
-          volumeUsd: String(volumeUsd),
-          volumeNumeraire: String(volumeNumeraire),
+          volumeUsd: volumeUsd.toString(),
+          volumeNumeraire: volumeNumeraire.toString(),
         },
       ];
       const updatedCheckpoints = checkpoints.filter(
