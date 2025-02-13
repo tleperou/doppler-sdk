@@ -5,6 +5,8 @@ export enum CommandType {
   V3_SWAP_EXACT_IN = 0x00,
   V3_SWAP_EXACT_OUT = 0x01,
   PERMIT2_TRANSFER_FROM = 0x02,
+  V2_SWAP_EXACT_IN = 0x08,
+  V2_SWAP_EXACT_OUT = 0x09,
   PERMIT2_PERMIT = 0x0a,
   WRAP_ETH = 0x0b,
   UNWRAP_WETH = 0x0c,
@@ -46,13 +48,27 @@ const ABI_DEFINITION: { [key in CommandType]: any[] } = {
     { type: "bool" },
   ],
   [CommandType.PERMIT2_PERMIT]: [PERMIT_STRUCT, { type: "bytes" }],
-  [CommandType.V4_SWAP]: [{ type: "bytes" }, { type: "bytes[]" }],
-  [CommandType.WRAP_ETH]: [{ type: "address" }, { type: "uint256" }],
-  [CommandType.UNWRAP_WETH]: [{ type: "address" }, { type: "uint256" }],
   [CommandType.PERMIT2_TRANSFER_FROM]: [
     { type: "address" },
     { type: "address" },
     { type: "uint256" },
+  ],
+  [CommandType.V4_SWAP]: [{ type: "bytes" }, { type: "bytes[]" }],
+  [CommandType.WRAP_ETH]: [{ type: "address" }, { type: "uint256" }],
+  [CommandType.UNWRAP_WETH]: [{ type: "address" }, { type: "uint256" }],
+  [CommandType.V2_SWAP_EXACT_IN]: [
+    { type: "address" },
+    { type: "uint256" },
+    { type: "uint256" },
+    { type: "address[]" },
+    { type: "bool" },
+  ],
+  [CommandType.V2_SWAP_EXACT_OUT]: [
+    { type: "address" },
+    { type: "uint256" },
+    { type: "uint256" },
+    { type: "address[]" },
+    { type: "bool" },
   ],
 };
 
@@ -71,6 +87,14 @@ export class CommandBuilder {
     return this.addCommand(CommandType.PERMIT2_PERMIT, [permit, signature]);
   }
 
+  addWrapEth(recipient: Address, amount: bigint): this {
+    return this.addCommand(CommandType.WRAP_ETH, [recipient, amount]);
+  }
+
+  addUnwrapWeth(recipient: Address, amount: bigint): this {
+    return this.addCommand(CommandType.UNWRAP_WETH, [recipient, amount]);
+  }
+
   addV3SwapExactIn(
     recipient: Address,
     amountIn: bigint,
@@ -87,27 +111,19 @@ export class CommandBuilder {
     ]);
   }
 
-  addWrapEth(recipient: Address, amount: bigint): this {
-    return this.addCommand(CommandType.WRAP_ETH, [recipient, amount]);
-  }
-
-  addUnwrapWeth(recipient: Address, amount: bigint): this {
-    return this.addCommand(CommandType.UNWRAP_WETH, [recipient, amount]);
-  }
-
   addV3SwapExactOut(
     recipient: Address,
     amountOut: bigint,
     amountInMaximum: bigint,
     path: Hex,
-    unwrap: boolean
+    payerIsMsgSender: boolean
   ): this {
     return this.addCommand(CommandType.V3_SWAP_EXACT_OUT, [
       recipient,
       amountOut,
       amountInMaximum,
       path,
-      unwrap,
+      payerIsMsgSender,
     ]);
   }
 
@@ -120,6 +136,38 @@ export class CommandBuilder {
       token,
       recipient,
       amount,
+    ]);
+  }
+
+  addV2SwapExactIn(
+    recipient: Address,
+    amountIn: bigint,
+    amountOutMinimum: bigint,
+    path: Hex,
+    payerIsMsgSender: boolean
+  ): this {
+    return this.addCommand(CommandType.V2_SWAP_EXACT_IN, [
+      recipient,
+      amountIn,
+      amountOutMinimum,
+      path,
+      payerIsMsgSender,
+    ]);
+  }
+
+  addV2SwapExactOut(
+    recipient: Address,
+    amountOut: bigint,
+    amountInMaximum: bigint,
+    path: Hex,
+    payerIsMsgSender: boolean
+  ): this {
+    return this.addCommand(CommandType.V2_SWAP_EXACT_OUT, [
+      recipient,
+      amountOut,
+      amountInMaximum,
+      path,
+      payerIsMsgSender,
     ]);
   }
 
