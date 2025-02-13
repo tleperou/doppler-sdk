@@ -125,4 +125,20 @@ export class ReadQuoter {
       ...params,
     });
   }
+
+  async quoteExactInputV2ETH(
+    params: FunctionArgs<UniswapV2Router02ABI, "swapExactETHForTokens">
+  ): Promise<FunctionReturn<UniswapV2Router02ABI, "swapExactETHForTokens">> {
+    return await this.univ2Router.simulateWrite("swapExactETHForTokens", {
+      ...params,
+    });
+  }
+
+  async quoteExactOutputV2ETH(
+    params: FunctionArgs<UniswapV2Router02ABI, "swapExactTokensForETH">
+  ): Promise<FunctionReturn<UniswapV2Router02ABI, "swapExactTokensForETH">> {
+    return await this.univ2Router.simulateWrite("swapExactTokensForETH", {
+      ...params,
+    });
+  }
 }
