@@ -9,6 +9,7 @@ export type DopplerV3Addresses = {
   universalRouter: Address;
   permit2: Address;
   quoterV2: Address;
+  univ2Router02: Address;
 };
 
 export type PoolKey = {
