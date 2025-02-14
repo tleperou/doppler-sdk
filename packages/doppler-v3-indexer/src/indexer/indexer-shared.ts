@@ -5,6 +5,8 @@ import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { updateAsset } from "./shared/entities/asset";
 import { insertTokenIfNotExists } from "./shared/entities/token";
 import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
+import { updateUserAsset } from "./shared/entities/userAsset";
+import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
@@ -69,42 +71,45 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     }));
 
   // update to userAsset
-  await db
-    .insert(userAsset)
-    .values({
-      userId: to.toLowerCase() as `0x${string}`,
-      assetId: address.toLowerCase() as `0x${string}`,
-      chainId: BigInt(network.chainId),
-      balance: value,
-      createdAt: timestamp,
-      lastInteraction: timestamp,
-    })
-    .onConflictDoUpdate((row) => ({
-      balance: row.balance + value,
-      lastInteraction: timestamp,
-    }));
+  const toUserAsset = await insertUserAssetIfNotExists({
+    userId: to.toLowerCase() as `0x${string}`,
+    assetId: address.toLowerCase() as `0x${string}`,
+    timestamp,
+    context,
+  });
 
-  // update from userAsset
-  const fromAssetData = await db
-    .insert(userAsset)
-    .values({
-      userId: from.toLowerCase() as `0x${string}`,
-      assetId: address.toLowerCase() as `0x${string}`,
-      chainId: BigInt(network.chainId),
-      balance: -value,
-      createdAt: timestamp,
+  await updateUserAsset({
+    userId: to.toLowerCase() as `0x${string}`,
+    assetId: address.toLowerCase() as `0x${string}`,
+    context,
+    update: {
+      balance: toUserAsset.balance + value,
       lastInteraction: timestamp,
-    })
-    .onConflictDoUpdate((row) => ({
-      balance: row.balance - value,
+    },
+  });
+
+  const fromUserAsset = await insertUserAssetIfNotExists({
+    userId: from.toLowerCase() as `0x${string}`,
+    assetId: address.toLowerCase() as `0x${string}`,
+    timestamp,
+    context,
+  });
+
+  await updateUserAsset({
+    userId: from.toLowerCase() as `0x${string}`,
+    assetId: address.toLowerCase() as `0x${string}`,
+    context,
+    update: {
       lastInteraction: timestamp,
-    }));
+      balance: fromUserAsset.balance - value,
+    },
+  });
 
   let holderCountDelta = 0;
-  if (!toUser || toUser.balance == 0n) {
+  if (toUserAsset.balance == 0n) {
     holderCountDelta += 1;
   }
-  if (fromAssetData.balance == 0n) {
+  if (fromUserAsset.balance - value == 0n) {
     holderCountDelta -= 1;
   }
 

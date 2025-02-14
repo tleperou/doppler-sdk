@@ -22,7 +22,6 @@ import { configs } from "addresses";
 interface Checkpoint {
   timestamp: string;
   volumeUsd: string;
-  volumeNumeraire: string;
 }
 
 export const insertOrUpdateBuckets = async ({
@@ -390,41 +389,31 @@ export const insertOrUpdateDailyVolume = async ({
     .values({
       pool: poolAddress.toLowerCase() as `0x${string}`,
       volumeUsd: volumeUsd,
-      volumeNumeraire: volumeNumeraire,
       chainId: BigInt(network.chainId),
       lastUpdated: timestamp,
-      checkpoints: [
-        {
-          timestamp: timestamp.toString(),
-          volumeUsd: volumeUsd.toString(),
-          volumeNumeraire: volumeNumeraire.toString(),
-        },
-      ],
+      checkpoints: {
+        [timestamp.toString()]: volumeUsd.toString(),
+      },
     })
     .onConflictDoUpdate((row) => {
-      const checkpoints: Checkpoint[] = [
-        ...(row.checkpoints as Checkpoint[]),
-        {
-          timestamp: timestamp.toString(),
-          volumeUsd: String(volumeUsd),
-          volumeNumeraire: String(volumeNumeraire),
-        },
-      ];
-      const updatedCheckpoints = checkpoints.filter(
-        (checkpoint) =>
-          BigInt(checkpoint.timestamp) >= timestamp - BigInt(secondsInDay)
+      const checkpoints = {
+        ...(row.checkpoints as Record<string, string>),
+        [timestamp.toString()]: volumeUsd.toString(),
+      };
+
+      const updatedCheckpoints = Object.fromEntries(
+        Object.entries(checkpoints).filter(
+          ([ts]) => BigInt(ts) >= timestamp - BigInt(secondsInDay)
+        )
       );
-      const totalVolumeUsd = updatedCheckpoints.reduce(
-        (acc, checkpoint) => acc + BigInt(checkpoint.volumeUsd),
+
+      const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
+        (acc, vol) => acc + BigInt(vol),
         BigInt(0)
       );
-      const totalVolumeNumeraire = updatedCheckpoints.reduce(
-        (acc, checkpoint) => acc + BigInt(checkpoint.volumeNumeraire),
-        BigInt(0)
-      );
+
       return {
         volumeUsd: totalVolumeUsd,
-        volumeNumeraire: totalVolumeNumeraire,
         checkpoints: updatedCheckpoints,
         lastUpdated: timestamp,
       };
