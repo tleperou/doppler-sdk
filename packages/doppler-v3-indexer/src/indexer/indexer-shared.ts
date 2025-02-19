@@ -112,9 +112,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     },
   });
 
-  console.log(toUserAsset.balance, toUserBalanceEndBalance);
-  console.log(fromUserAsset.balance, fromUserBalanceEndBalance);
-
   let holderCountDelta = 0;
   if (toUserAsset.balance == 0n && toUserBalanceEndBalance > 0n) {
     holderCountDelta += 1;
@@ -122,7 +119,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   if (fromUserAsset.balance > 0n && fromUserBalanceEndBalance == 0n) {
     holderCountDelta -= 1;
   }
-  console.log(holderCountDelta);
 
   await db.update(token, { address: address }).set({
     holderCount: tokenData.holderCount + holderCountDelta,
