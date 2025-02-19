@@ -33,7 +33,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { db, client } = context;
   const { address } = event.log;
   const { timestamp } = event.block;
-  const { from, to, value } = event.args;
+  const { from, to } = event.args;
 
   const tokenData = await insertTokenIfNotExists({
     address,
@@ -64,21 +64,20 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
       lastSeenAt: timestamp,
     }));
 
-  const fromUserBalance = await client.readContract({
+  const fromUserBalanceEndBalance = await client.readContract({
     abi: DERC20ABI,
     address: address,
     functionName: "balanceOf",
     args: [from],
   });
 
-  const toUserBalance = await client.readContract({
+  const toUserBalanceEndBalance = await client.readContract({
     abi: DERC20ABI,
     address: address,
     functionName: "balanceOf",
     args: [to],
   });
 
-  // update to userAsset
   const toUserAsset = await insertUserAssetIfNotExists({
     userId: to.toLowerCase() as `0x${string}`,
     assetId: address.toLowerCase() as `0x${string}`,
@@ -91,12 +90,12 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     assetId: address.toLowerCase() as `0x${string}`,
     context,
     update: {
-      balance: toUserBalance,
+      balance: toUserBalanceEndBalance,
       lastInteraction: timestamp,
     },
   });
 
-  await insertUserAssetIfNotExists({
+  const fromUserAsset = await insertUserAssetIfNotExists({
     userId: from.toLowerCase() as `0x${string}`,
     assetId: address.toLowerCase() as `0x${string}`,
     timestamp,
@@ -109,17 +108,21 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     context,
     update: {
       lastInteraction: timestamp,
-      balance: fromUserBalance,
+      balance: fromUserBalanceEndBalance,
     },
   });
 
+  console.log(toUserAsset.balance, toUserBalanceEndBalance);
+  console.log(fromUserAsset.balance, fromUserBalanceEndBalance);
+
   let holderCountDelta = 0;
-  if (toUserAsset.balance == 0n) {
+  if (toUserAsset.balance == 0n && toUserBalanceEndBalance > 0n) {
     holderCountDelta += 1;
   }
-  if (fromUserBalance == 0n) {
+  if (fromUserAsset.balance > 0n && fromUserBalanceEndBalance == 0n) {
     holderCountDelta -= 1;
   }
+  console.log(holderCountDelta);
 
   await db.update(token, { address: address }).set({
     holderCount: tokenData.holderCount + holderCountDelta,
