@@ -18,6 +18,13 @@ const network: Network = "unichain";
 const { v2, v3, v4, shared, oracleStartBlock, startBlock } = configs[network];
 
 export default createConfig({
+  database: {
+    kind: "postgres",
+    connectionString: "postgresql://postgres:postgres@localhost:5432/default",
+    poolConfig: {
+      max: 100,
+    },
+  },
   networks: {
     unichainSepolia: {
       chainId: CHAIN_IDS[network],
