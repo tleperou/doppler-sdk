@@ -7,7 +7,7 @@ import { insertTokenIfNotExists } from "./shared/entities/token";
 import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 import { updateUserAsset } from "./shared/entities/userAsset";
 import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
-
+import { DERC20ABI } from "@app/abis/DERC20ABI";
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
   const { asset: assetId, pool: poolId } = event.args;
@@ -30,7 +30,7 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
 });
 
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
-  const { db, network } = context;
+  const { db, client } = context;
   const { address } = event.log;
   const { timestamp } = event.block;
   const { from, to, value } = event.args;
@@ -40,12 +40,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     timestamp,
     context,
     isDerc20: true,
-  });
-
-  const toUser = await db.find(userAsset, {
-    userId: to.toLowerCase() as `0x${string}`,
-    assetId: address.toLowerCase() as `0x${string}`,
-    chainId: BigInt(network.chainId),
   });
 
   await db
@@ -105,11 +99,18 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     },
   });
 
+  const fromUserBalance = await client.readContract({
+    abi: DERC20ABI,
+    address: address,
+    functionName: "balanceOf",
+    args: [from],
+  });
+
   let holderCountDelta = 0;
   if (toUserAsset.balance == 0n) {
     holderCountDelta += 1;
   }
-  if (fromUserAsset.balance - value == 0n) {
+  if (fromUserBalance == 0n) {
     holderCountDelta -= 1;
   }
 
