@@ -1,28 +1,18 @@
 import { Address } from "viem";
 import {
-  fifteenMinuteBucket,
-  fifteenMinuteBucketUsd,
-  hourBucket,
   hourBucketUsd,
-  thirtyMinuteBucket,
-  thirtyMinuteBucketUsd,
   dailyVolume,
 } from "ponder.schema";
 import { Context } from "ponder:registry";
 import {
   secondsInDay,
-  secondsIn30Minutes,
-  secondsIn15Minutes,
   secondsInHour,
   CHAINLINK_ETH_DECIMALS,
 } from "@app/utils/constants";
-import { fetchEthPrice } from "./oracle";
 import { configs } from "addresses";
-
-interface Checkpoint {
-  timestamp: string;
-  volumeUsd: string;
-}
+import { updatePool } from "./entities/pool";
+import { updateToken } from "./entities/token";
+import { updateAsset } from "./entities/asset";
 
 export const insertOrUpdateBuckets = async ({
   poolAddress,
@@ -43,13 +33,6 @@ export const insertOrUpdateBuckets = async ({
   }
 
   await Promise.all([
-    insertOrUpdateHourBucket({
-      poolAddress,
-      price,
-      timestamp,
-      context,
-    }),
-
     insertOrUpdateHourBucketUsd({
       poolAddress,
       price,
@@ -57,254 +40,7 @@ export const insertOrUpdateBuckets = async ({
       ethPrice,
       context,
     }),
-
-    // insertOrUpdateThirtyMinuteBucket({
-    //   poolAddress,
-    //   price,
-    //   timestamp,
-    //   context,
-    // }),
-
-    // insertOrUpdateThirtyMinuteBucketUsd({
-    //   poolAddress,
-    //   price,
-    //   timestamp,
-    //   ethPrice,
-    //   context,
-    // }),
-
-    // insertOrUpdateFifteenMinuteBucket({
-    //   poolAddress,
-    //   price,
-    //   timestamp,
-    //   context,
-    // }),
-
-    // insertOrUpdateFifteenMinuteBucketUsd({
-    //   poolAddress,
-    //   price,
-    //   timestamp,
-    //   ethPrice,
-    //   context,
-    // }),
   ]);
-};
-
-const insertOrUpdateThirtyMinuteBucket = async ({
-  poolAddress,
-  price,
-  timestamp,
-  context,
-}: {
-  poolAddress: Address;
-  price: bigint;
-  timestamp: bigint;
-  context: Context;
-}) => {
-  const { db, network } = context;
-  const thirtyMinuteId =
-    Math.floor(Number(timestamp) / secondsIn30Minutes) * secondsIn30Minutes;
-
-  try {
-    await db
-      .insert(thirtyMinuteBucket)
-      .values({
-        thirtyMinuteId,
-        pool: poolAddress.toLowerCase() as `0x${string}`,
-        open: price,
-        close: price,
-        low: price,
-        high: price,
-        average: price,
-        count: 1,
-        chainId: BigInt(network.chainId),
-      })
-      .onConflictDoUpdate((row) => ({
-        close: price,
-        low: row.low < price ? row.low : price,
-        high: row.high > price ? row.high : price,
-        average:
-          (row.average * BigInt(row.count) + price) / BigInt(row.count + 1),
-        count: row.count + 1,
-      }));
-  } catch (e) {
-    console.error("error inserting thirty minute bucket", e);
-  }
-};
-
-const insertOrUpdateThirtyMinuteBucketUsd = async ({
-  poolAddress,
-  price,
-  timestamp,
-  ethPrice,
-  context,
-}: {
-  poolAddress: Address;
-  price: bigint;
-  timestamp: bigint;
-  ethPrice: bigint;
-  context: Context;
-}) => {
-  const { db, network } = context;
-  const thirtyMinuteId =
-    Math.floor(Number(timestamp) / secondsIn30Minutes) * secondsIn30Minutes;
-
-  const usdPrice = (price * ethPrice) / CHAINLINK_ETH_DECIMALS;
-
-  try {
-    await db
-      .insert(thirtyMinuteBucketUsd)
-      .values({
-        thirtyMinuteId,
-        pool: poolAddress.toLowerCase() as `0x${string}`,
-        open: usdPrice,
-        close: usdPrice,
-        low: usdPrice,
-        high: usdPrice,
-        average: usdPrice,
-        count: 1,
-        chainId: BigInt(network.chainId),
-      })
-      .onConflictDoUpdate((row) => ({
-        close: usdPrice,
-        low: row.low < usdPrice ? row.low : usdPrice,
-        high: row.high > usdPrice ? row.high : usdPrice,
-        average:
-          (row.average * BigInt(row.count) + usdPrice) / BigInt(row.count + 1),
-        count: row.count + 1,
-      }));
-  } catch (e) {
-    console.error("error inserting hour bucket", e);
-  }
-};
-
-const insertOrUpdateFifteenMinuteBucket = async ({
-  poolAddress,
-  price,
-  timestamp,
-  context,
-}: {
-  poolAddress: Address;
-  price: bigint;
-  timestamp: bigint;
-  context: Context;
-}) => {
-  const { db, network } = context;
-  const fifteenMinuteId =
-    Math.floor(Number(timestamp) / secondsIn15Minutes) * secondsIn15Minutes;
-
-  try {
-    await db
-      .insert(fifteenMinuteBucket)
-      .values({
-        fifteenMinuteId,
-        pool: poolAddress.toLowerCase() as `0x${string}`,
-        open: price,
-        close: price,
-        low: price,
-        high: price,
-        average: price,
-        count: 1,
-        chainId: BigInt(network.chainId),
-      })
-      .onConflictDoUpdate((row) => ({
-        close: price,
-        low: row.low < price ? row.low : price,
-        high: row.high > price ? row.high : price,
-        average:
-          (row.average * BigInt(row.count) + price) / BigInt(row.count + 1),
-        count: row.count + 1,
-      }));
-  } catch (e) {
-    console.error("error inserting hour bucket", e);
-  }
-};
-
-const insertOrUpdateFifteenMinuteBucketUsd = async ({
-  poolAddress,
-  price,
-  timestamp,
-  ethPrice,
-  context,
-}: {
-  poolAddress: Address;
-  price: bigint;
-  timestamp: bigint;
-  ethPrice: bigint;
-  context: Context;
-}) => {
-  const { db, network } = context;
-  const fifteenMinuteId =
-    Math.floor(Number(timestamp) / secondsIn15Minutes) * secondsIn15Minutes;
-
-  const usdPrice = (price * ethPrice) / CHAINLINK_ETH_DECIMALS;
-
-  try {
-    await db
-      .insert(fifteenMinuteBucketUsd)
-      .values({
-        fifteenMinuteId,
-        pool: poolAddress.toLowerCase() as `0x${string}`,
-        open: usdPrice,
-        close: usdPrice,
-        low: usdPrice,
-        high: usdPrice,
-        average: usdPrice,
-        count: 1,
-        chainId: BigInt(network.chainId),
-      })
-      .onConflictDoUpdate((row) => ({
-        close: usdPrice,
-        low: row.low < usdPrice ? row.low : usdPrice,
-        high: row.high > usdPrice ? row.high : usdPrice,
-        average:
-          (row.average * BigInt(row.count) + usdPrice) / BigInt(row.count + 1),
-        count: row.count + 1,
-      }));
-  } catch (e) {
-    console.error("error inserting hour bucket", e);
-  }
-};
-
-const insertOrUpdateHourBucket = async ({
-  poolAddress,
-  price,
-  timestamp,
-  context,
-}: {
-  poolAddress: Address;
-  price: bigint;
-  timestamp: bigint;
-  context: Context;
-}) => {
-  const { db, network } = context;
-  const hourId = Math.floor(Number(timestamp) / secondsInHour) * secondsInHour;
-
-  try {
-    await db
-      .insert(hourBucket)
-      .values({
-        hourId,
-        pool: poolAddress.toLowerCase() as `0x${string}`,
-        open: price,
-        close: price,
-        low: price,
-        high: price,
-        average: price,
-        count: 1,
-        chainId: BigInt(network.chainId),
-      })
-      .onConflictDoUpdate((row) => ({
-        close: price,
-        low: row.low < price ? row.low : price,
-        high: row.high > price ? row.high : price,
-        average:
-          (row.average * BigInt(row.count) + price) / BigInt(row.count + 1),
-        count: row.count + 1,
-      }));
-  } catch (e) {
-    console.error("error inserting hour bucket", e);
-  }
 };
 
 const insertOrUpdateHourBucketUsd = async ({
@@ -351,8 +87,70 @@ const insertOrUpdateHourBucketUsd = async ({
   }
 };
 
+export const update24HourPriceChange = async ({
+  poolAddress,
+  assetAddress,
+  currentPrice,
+  currentTimestamp,
+  ethPrice,
+  createdAt,
+  context,
+}: {
+  poolAddress: Address;
+  assetAddress: Address;
+  currentPrice: bigint;
+  currentTimestamp: bigint;
+  ethPrice: bigint;
+  createdAt: bigint;
+  context: Context;
+}) => {
+  const { db } = context;
+
+  const timestampFrom = currentTimestamp - BigInt(secondsInDay);
+  const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
+  const searchDelta = currentTimestamp - createdAt > BigInt(secondsInDay) ? secondsInHour : secondsInDay;
+
+  const priceFrom = await db.sql.query.hourBucketUsd.findFirst({
+    where: (fields, { and, eq, between }) =>
+      and(
+        eq(fields.pool, poolAddress.toLowerCase() as `0x${string}`),
+        between(fields.hourId,
+          Number(timestampFrom) - searchDelta,
+          Number(timestampFrom) + searchDelta
+        )
+      ),
+    orderBy: (fields, { asc }) => [
+      asc(fields.hourId)
+    ],
+  });
+
+  if (!priceFrom) {
+    return null;
+  }
+
+  const priceChangePercent = Number(usdPrice - priceFrom.open) / Number(priceFrom.open) * 100;
+
+  await updateAsset({
+    assetAddress,
+    context,
+    update: {
+      percentDayChange: priceChangePercent,
+    },
+  });
+
+  await updatePool({
+    poolAddress,
+    context,
+    update: {
+      percentDayChange: priceChangePercent,
+    },
+  });
+};
+
+
 export const insertOrUpdateDailyVolume = async ({
   tokenIn,
+  tokenOut,
   poolAddress,
   amountIn,
   amountOut,
@@ -361,6 +159,7 @@ export const insertOrUpdateDailyVolume = async ({
   context,
 }: {
   tokenIn: Address;
+  tokenOut: Address;
   poolAddress: Address;
   amountIn: bigint;
   amountOut: bigint;
@@ -371,20 +170,21 @@ export const insertOrUpdateDailyVolume = async ({
   const { db, network } = context;
 
   let volumeUsd;
-  let volumeNumeraire;
-  if (
-    tokenIn.toLowerCase() ===
+
+  const isTokenInWeth = tokenIn.toLowerCase() ===
     (configs[network.name].shared.weth.toLowerCase() as `0x${string}`)
-  ) {
+
+  if (isTokenInWeth) {
     volumeUsd = (amountIn * ethPrice) / CHAINLINK_ETH_DECIMALS;
-    volumeNumeraire = amountIn;
   } else {
     const uintAmountOut = amountOut > 0n ? amountOut : -amountOut;
     volumeUsd = (uintAmountOut * ethPrice) / CHAINLINK_ETH_DECIMALS;
-    volumeNumeraire = uintAmountOut;
   }
 
-  return await db
+  const assetAddress = isTokenInWeth ? tokenOut : tokenIn;
+
+  let computedVolumeUsd;
+  const volume = await db
     .insert(dailyVolume)
     .values({
       pool: poolAddress.toLowerCase() as `0x${string}`,
@@ -412,10 +212,38 @@ export const insertOrUpdateDailyVolume = async ({
         BigInt(0)
       );
 
+      computedVolumeUsd = totalVolumeUsd;
+
       return {
         volumeUsd: totalVolumeUsd,
         checkpoints: updatedCheckpoints,
         lastUpdated: timestamp,
       };
     });
+
+  if (computedVolumeUsd && computedVolumeUsd > 0n) {
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        volumeUsd: computedVolumeUsd,
+      },
+    });
+    await updateToken({
+      tokenAddress: assetAddress,
+      context,
+      update: {
+        volumeUsd: computedVolumeUsd,
+      },
+    });
+    await updateAsset({
+      assetAddress,
+      context,
+      update: {
+        dayVolumeUsd: computedVolumeUsd,
+      },
+    });
+  }
+
+  return volume;
 };

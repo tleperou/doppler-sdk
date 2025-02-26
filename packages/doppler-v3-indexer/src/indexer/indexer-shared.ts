@@ -1,13 +1,14 @@
 import { ponder } from "ponder:registry";
-import { token, userAsset, user, ethPrice } from "ponder.schema";
+import { token, user, ethPrice } from "ponder.schema";
 import { configs } from "addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
-import { updateAsset } from "./shared/entities/asset";
+import { insertAssetIfNotExists, updateAsset } from "./shared/entities/asset";
 import { insertTokenIfNotExists } from "./shared/entities/token";
 import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 import { updateUserAsset } from "./shared/entities/userAsset";
 import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
 import { DERC20ABI } from "@app/abis/DERC20ABI";
+
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
   const { asset: assetId, pool: poolId } = event.args;
@@ -30,22 +31,29 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
 });
 
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
-  const { db, client } = context;
+  const { db, client, network } = context;
   const { address } = event.log;
   const { timestamp } = event.block;
   const { from, to } = event.args;
 
   const tokenData = await insertTokenIfNotExists({
-    address,
+    tokenAddress: address,
     timestamp,
     context,
     isDerc20: true,
+  });
+
+  const assetData = await insertAssetIfNotExists({
+    assetAddress: address,
+    timestamp,
+    context,
   });
 
   await db
     .insert(user)
     .values({
       address: to.toLowerCase() as `0x${string}`,
+      chainId: BigInt(network.chainId),
       createdAt: timestamp,
       lastSeenAt: timestamp,
     })
@@ -57,6 +65,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     .insert(user)
     .values({
       address: from.toLowerCase() as `0x${string}`,
+      chainId: BigInt(network.chainId),
       createdAt: timestamp,
       lastSeenAt: timestamp,
     })
@@ -122,6 +131,14 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
 
   await db.update(token, { address: address }).set({
     holderCount: tokenData.holderCount + holderCountDelta,
+  });
+
+  await updateAsset({
+    assetAddress: address,
+    context,
+    update: {
+      holderCount: assetData.holderCount + holderCountDelta,
+    },
   });
 });
 

@@ -4,19 +4,21 @@ import { Address, zeroAddress } from "viem";
 import { DERC20ABI } from "@app/abis";
 
 export const insertTokenIfNotExists = async ({
-  address,
+  tokenAddress,
   timestamp,
   context,
   isDerc20 = false,
   poolAddress,
 }: {
-  address: Address;
+  tokenAddress: Address;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
   poolAddress?: Address;
 }) => {
   const { db, network } = context;
+  const address = tokenAddress.toLowerCase() as `0x${string}`;
+
   const existingToken = await db.find(token, {
     address,
   });
@@ -129,3 +131,24 @@ export const insertTokenIfNotExists = async ({
       }));
   }
 };
+
+export const updateToken = async ({
+  tokenAddress,
+  context,
+  update,
+}: {
+  tokenAddress: Address;
+  context: Context;
+  update: Partial<typeof token.$inferInsert>;
+}): Promise<typeof token.$inferSelect> => {
+  const { db } = context;
+
+  const address = tokenAddress.toLowerCase() as `0x${string}`;
+
+  return await db
+    .update(token, {
+      address,
+    })
+    .set(update);
+};
+
