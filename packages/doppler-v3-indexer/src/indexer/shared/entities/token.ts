@@ -84,23 +84,23 @@ export const insertTokenIfNotExists = async ({
     });
 
     const tokenURI = tokenURIResult?.result;
-    let tokenURIJson;
+    let tokenUriData;
     let image: string | undefined;
     if (tokenURI?.startsWith("ipfs://")) {
       try {
         const cid = tokenURI.replace("ipfs://", "");
         const url = `https://${process.env.PINATA_GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_KEY}`;
         const response = await fetch(url);
-        tokenURIJson = await response.json();
+        tokenUriData = await response.json();
 
         if (
-          tokenURIJson &&
-          typeof tokenURIJson === "object" &&
-          "image" in tokenURIJson &&
-          typeof tokenURIJson.image === "string"
+          tokenUriData &&
+          typeof tokenUriData === "object" &&
+          "image" in tokenUriData &&
+          typeof tokenUriData.image === "string"
         ) {
-          if (tokenURIJson.image.startsWith("ipfs://")) {
-            image = tokenURIJson.image;
+          if (tokenUriData.image.startsWith("ipfs://")) {
+            image = tokenUriData.image;
           }
         }
       } catch (error) {
@@ -124,7 +124,7 @@ export const insertTokenIfNotExists = async ({
         lastSeenAt: timestamp,
         isDerc20,
         image,
-        tokenURI: tokenURIJson,
+        tokenUriData,
         pool: isDerc20 ? poolAddress : undefined,
         derc20Data: isDerc20 ? address : undefined,
       })
