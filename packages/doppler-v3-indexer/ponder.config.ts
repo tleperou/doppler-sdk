@@ -43,6 +43,17 @@ export default createConfig({
       startBlock: mainnet.oracleStartBlock,
       interval: (60 * 5) / 12, // every 5 minutes
     },
+    // Volume refresh job that runs periodically to ensure volume data is up-to-date
+    MetricRefresherUnichainSepolia: {
+      network: "unichainSepolia",
+      startBlock: unichainSepolia.startBlock,
+      interval: 60 * 15, // every 30 minutes (accounting for 250ms block time)
+    },
+    MetricRefresherUnichain: {
+      network: "unichain",
+      startBlock: unichain.startBlock,
+      interval: 60 * 15, // every 15 minutes (accounting for 250ms block time)
+    },
   },
   contracts: {
     Airlock: {
