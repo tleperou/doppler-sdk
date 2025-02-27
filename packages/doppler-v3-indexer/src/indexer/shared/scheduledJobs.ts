@@ -7,6 +7,7 @@ import {
 } from "@app/utils/constants";
 import { pool, asset } from "ponder.schema";
 import { refreshStaleVolumeData } from "./volumeRefresher";
+import { and, eq, or, isNull, lt, sql } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
@@ -76,21 +77,24 @@ export const refreshPoolMetrics = async ({
   // Find pools that haven't been refreshed in the last hour
   const staleThreshold = currentTimestamp - BigInt(secondsInHour * 2);
 
-  // Get stale pools for this chain - use last_updated field or fallback to created_at
-  const stalePools = await db.sql.query.pool.findMany({
-    where: (fields, { lt, eq, or, isNull, and }) =>
-      and(
-        eq(fields.chainId, chainId),
-        or(
-          isNull(fields.lastRefreshed),
-          lt(fields.lastRefreshed, staleThreshold)
+  // Use db.sql.select with Drizzle helpers
+  let stalePools = [];
+  try {
+    stalePools = await db.sql
+      .select()
+      .from(pool)
+      .where(
+        and(
+          eq(pool.chainId, chainId),
+          or(isNull(pool.lastRefreshed), lt(pool.lastRefreshed, staleThreshold))
         )
-      ),
-    orderBy: (fields, { asc }) => [
-      asc(fields.lastRefreshed || fields.createdAt),
-    ],
-    limit: 20, // Process in smaller batches to avoid timeout
-  });
+      )
+      .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
+      .limit(20);
+  } catch (error) {
+    console.error(`Error fetching stale pools: ${error}`);
+    return; // Exit early if the query fails
+  }
 
   console.log(
     `Found ${stalePools.length} pools with stale metrics on chain ${network.name}`
