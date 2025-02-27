@@ -61,12 +61,16 @@ export const refreshPoolVolume = async ({
 }) => {
   const { db, network } = context;
 
+  console.log("poolAddress", poolAddress);
+
   const volumeData = await db.sql.query.dailyVolume.findFirst({
     where: (fields, { eq }) =>
       eq(fields.pool, poolAddress.toLowerCase() as `0x${string}`),
   });
 
   if (!volumeData) return;
+
+  console.log("fields.pool", volumeData.pool);
 
   // Get related pool data to find the asset
   const poolData = await db.sql.query.pool.findFirst({
@@ -91,14 +95,16 @@ export const refreshPoolVolume = async ({
   );
 
   // Check if anything has changed before updating
-  const checkpointsChanged = 
+  const checkpointsChanged =
     JSON.stringify(checkpoints) !== JSON.stringify(updatedCheckpoints);
   const volumeChanged = volumeData.volumeUsd !== totalVolumeUsd;
-  
+
   // Only update if there's an actual change (checkpoints removed or volume changed)
   if (checkpointsChanged || volumeChanged) {
-    console.log(`Updating volume for pool ${poolAddress} (${volumeData.volumeUsd} → ${totalVolumeUsd})`);
-    
+    console.log(
+      `Updating volume for pool ${poolAddress} (${volumeData.volumeUsd} → ${totalVolumeUsd})`
+    );
+
     await db
       .update(dailyVolume, {
         pool: poolAddress.toLowerCase() as `0x${string}`,
@@ -117,7 +123,7 @@ export const refreshPoolVolume = async ({
       .set({
         lastUpdated: currentTimestamp,
       });
-    
+
     // Skip further updates if volume hasn't changed
     return;
   }
