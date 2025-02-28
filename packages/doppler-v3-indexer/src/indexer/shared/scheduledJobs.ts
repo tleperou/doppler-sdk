@@ -162,8 +162,8 @@ async function findStalePoolsWithVolume(
               isNotNull(pool.lastSwapTimestamp),
               lt(pool.lastRefreshed, pool.lastSwapTimestamp),
               lt(pool.lastSwapTimestamp, staleThreshold),
-              gt(dailyVolume.volumeUsd, 0n),
-              gt(pool.volumeUsd, 0n)
+              gt(pool.volumeUsd, 0n),
+              gt(pool.percentDayChange, 0)
             )
           )
         )
