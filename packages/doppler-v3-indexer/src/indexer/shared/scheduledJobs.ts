@@ -6,8 +6,18 @@ import {
   CHAINLINK_ETH_DECIMALS,
 } from "@app/utils/constants";
 import { pool, asset, hourBucketUsd, dailyVolume } from "ponder.schema";
-import { refreshStaleVolumeData } from "./volumeRefresher";
-import { and, eq, or, isNull, isNotNull, lt, sql, between } from "drizzle-orm";
+import {
+  and,
+  eq,
+  or,
+  isNull,
+  isNotNull,
+  lt,
+  gt,
+  sql,
+  between,
+  not,
+} from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
@@ -148,12 +158,15 @@ async function findStalePoolsWithVolume(
           or(
             isNull(pool.lastRefreshed), // Never refreshed before
             and(
-              // Has swaps more recent than last refresh
               isNotNull(pool.lastRefreshed),
               isNotNull(pool.lastSwapTimestamp),
-              lt(pool.lastRefreshed, pool.lastSwapTimestamp)
-            ),
-            lt(dailyVolume.lastUpdated, staleThreshold) // Volume data is stale
+              lt(pool.lastRefreshed, pool.lastSwapTimestamp),
+              lt(pool.lastSwapTimestamp, staleThreshold),
+              lt(dailyVolume.lastUpdated, staleThreshold),
+              gt(dailyVolume.volumeUsd, 0n),
+              gt(pool.volumeUsd, 0n),
+              not(eq(pool.percentDayChange, 0))
+            )
           )
         )
       )
@@ -300,13 +313,8 @@ async function refreshPoolComprehensive({
         context,
       });
 
-      if (
-        priceChangeInfo &&
-        Math.abs(priceChangeInfo - poolInfo.pool.percentDayChange) > 0.1
-      ) {
-        poolUpdates.percentDayChange = priceChangeInfo;
-        assetUpdates.percentDayChange = priceChangeInfo;
-      }
+      poolUpdates.percentDayChange = priceChangeInfo;
+      assetUpdates.percentDayChange = priceChangeInfo;
     } catch (error) {
       console.error(
         `Failed to calculate price change for ${poolAddress}: ${error}`
