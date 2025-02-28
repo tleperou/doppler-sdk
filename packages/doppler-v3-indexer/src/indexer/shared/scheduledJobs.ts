@@ -156,13 +156,20 @@ async function findStalePoolsWithVolume(
         and(
           eq(pool.chainId, chainId),
           or(
-            isNull(pool.lastRefreshed), // Never refreshed before
+            // 1. Never refreshed before (new pools that missed handlers)
+            isNull(pool.lastRefreshed),
+            
+            // 2. Pools with metrics that haven't been refreshed in a while
+            // but still have trading volume or price changes
             and(
-              isNotNull(pool.lastRefreshed),
-              isNotNull(pool.lastSwapTimestamp),
-              lt(pool.lastRefreshed, pool.lastSwapTimestamp),
-              lt(pool.lastSwapTimestamp, staleThreshold),
+              lt(pool.lastRefreshed, staleThreshold),
               or(gt(pool.volumeUsd, 0n), not(eq(pool.percentDayChange, 0)))
+            ),
+            
+            // 3. Pools with stale volume data that needs regular cleanup
+            and(
+              isNotNull(dailyVolume.lastUpdated),
+              lt(dailyVolume.lastUpdated, staleThreshold)
             )
           )
         )
