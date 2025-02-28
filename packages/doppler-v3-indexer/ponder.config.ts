@@ -47,12 +47,12 @@ export default createConfig({
     MetricRefresherUnichainSepolia: {
       network: "unichainSepolia",
       startBlock: unichainSepolia.startBlock,
-      interval: 60 * 15, // every 30 minutes (accounting for 250ms block time)
+      interval: 1000, // every 1000 blocks
     },
     MetricRefresherUnichain: {
       network: "unichain",
       startBlock: unichain.startBlock,
-      interval: 60 * 15, // every 15 minutes (accounting for 250ms block time)
+      interval: 1000, // every 1000 blocks
     },
   },
   contracts: {

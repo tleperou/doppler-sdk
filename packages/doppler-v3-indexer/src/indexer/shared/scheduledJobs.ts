@@ -13,19 +13,9 @@ import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 
-// Track the last time jobs were executed
-const lastExecutionTimes: Record<string, bigint> = {
-  volumeRefresher: 0n,
-  metricsRefresher: 0n,
-};
-
-// Job execution intervals
-const VOLUME_REFRESH_INTERVAL = BigInt(secondsInHour / 4); // Run every 15 minutes
-const METRICS_REFRESH_INTERVAL = BigInt(secondsInHour); // Run every hour
-
 /**
- * Executes scheduled jobs based on their defined intervals
- * This function should be called from event handlers that trigger frequently
+ * Executes all refresh jobs on each block handler trigger
+ * This runs both volume and metrics refreshes each time it's called
  */
 export const executeScheduledJobs = async ({
   context,
@@ -34,32 +24,28 @@ export const executeScheduledJobs = async ({
   context: Context;
   currentTimestamp: bigint;
 }) => {
-  // Execute volume refresher job if interval has elapsed
-  const lastVolumeRefreshTime = lastExecutionTimes.volumeRefresher ?? 0n;
-  if (currentTimestamp - lastVolumeRefreshTime >= VOLUME_REFRESH_INTERVAL) {
-    try {
-      // Tag logs with network information for easier debugging
-      const { network } = context;
-      console.log(`[${network.name} (${network.chainId})] Volume refresh job starting...`);
-      
-      await refreshStaleVolumeData({ context, currentTimestamp });
-      
-      lastExecutionTimes.volumeRefresher = currentTimestamp;
-      console.log(`[${network.name}] Volume refresh job completed`);
-    } catch (error) {
-      console.error(`Error in volume refresh job for ${context.network.name}:`, error);
-    }
+  const { network } = context;
+
+  // Run volume refresher job
+  try {
+    console.log(
+      `[${network.name} (${network.chainId})] Volume refresh job starting...`
+    );
+    await refreshStaleVolumeData({ context, currentTimestamp });
+    console.log(`[${network.name}] Volume refresh job completed`);
+  } catch (error) {
+    console.error(`Error in volume refresh job for ${network.name}:`, error);
   }
 
-  // // Execute metrics refresher job if interval has elapsed
-  const lastMetricsRefreshTime = lastExecutionTimes.metricsRefresher ?? 0n;
-  if (currentTimestamp - lastMetricsRefreshTime >= METRICS_REFRESH_INTERVAL) {
-    try {
-      await refreshPoolMetrics({ context, currentTimestamp });
-      lastExecutionTimes.metricsRefresher = currentTimestamp;
-    } catch (error) {
-      console.error("Error in metrics refresh job:", error);
-    }
+  // Run metrics refresher job
+  try {
+    console.log(
+      `[${network.name} (${network.chainId})] Metrics refresh job starting...`
+    );
+    await refreshPoolMetrics({ context, currentTimestamp });
+    console.log(`[${network.name}] Metrics refresh job completed`);
+  } catch (error) {
+    console.error(`Error in metrics refresh job for ${network.name}:`, error);
   }
 };
 

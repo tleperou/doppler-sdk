@@ -1,5 +1,4 @@
 import { ponder } from "ponder:registry";
-import { refreshStaleVolumeData } from "./shared/volumeRefresher";
 import { executeScheduledJobs } from "./shared/scheduledJobs";
 
 /**
