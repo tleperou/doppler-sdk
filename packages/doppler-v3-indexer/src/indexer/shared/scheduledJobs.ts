@@ -7,7 +7,7 @@ import {
 } from "@app/utils/constants";
 import { pool, asset, hourBucketUsd, dailyVolume } from "ponder.schema";
 import { refreshStaleVolumeData } from "./volumeRefresher";
-import { and, eq, or, isNull, lt, sql, between } from "drizzle-orm";
+import { and, eq, or, isNull, isNotNull, lt, sql, between } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
@@ -149,8 +149,8 @@ async function findStalePoolsWithVolume(
             isNull(pool.lastRefreshed), // Never refreshed before
             and(
               // Has swaps more recent than last refresh
-              isNull(pool.lastRefreshed),
-              isNull(pool.lastSwapTimestamp),
+              isNotNull(pool.lastRefreshed),
+              isNotNull(pool.lastSwapTimestamp),
               lt(pool.lastRefreshed, pool.lastSwapTimestamp)
             ),
             lt(dailyVolume.lastUpdated, staleThreshold) // Volume data is stale
