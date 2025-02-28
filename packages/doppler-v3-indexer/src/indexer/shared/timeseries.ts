@@ -227,6 +227,7 @@ export const insertOrUpdateDailyVolume = async ({
       context,
       update: {
         volumeUsd: computedVolumeUsd,
+        lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
       },
     });
     await updateToken({

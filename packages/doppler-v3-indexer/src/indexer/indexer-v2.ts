@@ -117,7 +117,11 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
     await updatePool({
       poolAddress: v2PoolData.parentPool,
       context,
-      update: { price, dollarLiquidity },
+      update: { 
+        price, 
+        dollarLiquidity,
+        lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
+      },
     });
   }
 });

@@ -11,17 +11,22 @@ ponder.on(
   "MetricRefresherUnichainSepolia:block",
   async ({ event, context }) => {
     console.log(
-      `Running scheduled jobs for unichainSepolia at block ${event.block.number}`
+      `Running comprehensive refresh for unichainSepolia at block ${event.block.number}`
     );
-
+    
+    const startTime = Date.now();
+    
     try {
-      // Execute all scheduled jobs, including volume refresh
+      // Execute combined refresh job
       await executeScheduledJobs({
         context,
         currentTimestamp: BigInt(event.block.timestamp),
       });
+      
+      const duration = (Date.now() - startTime) / 1000;
+      console.log(`UnichainSepolia refresh completed in ${duration.toFixed(2)}s`);
     } catch (error) {
-      console.error(`Error in unichainSepolia scheduled jobs: ${error}`);
+      console.error(`Error in unichainSepolia refresh job: ${error}`);
       // Log error but don't throw to prevent handler from failing completely
     }
   }
@@ -30,17 +35,22 @@ ponder.on(
 // Handler for unichain network
 ponder.on("MetricRefresherUnichain:block", async ({ event, context }) => {
   console.log(
-    `Running scheduled jobs for unichain at block ${event.block.number}`
+    `Running comprehensive refresh for unichain at block ${event.block.number}`
   );
-
+  
+  const startTime = Date.now();
+  
   try {
-    // Execute all scheduled jobs, including volume refresh
+    // Execute combined refresh job
     await executeScheduledJobs({
       context,
       currentTimestamp: BigInt(event.block.timestamp),
     });
+    
+    const duration = (Date.now() - startTime) / 1000;
+    console.log(`Unichain refresh completed in ${duration.toFixed(2)}s`);
   } catch (error) {
-    console.error(`Error in unichain scheduled jobs: ${error}`);
+    console.error(`Error in unichain refresh job: ${error}`);
     // Log error but don't throw to prevent handler from failing completely
   }
 });

@@ -5,7 +5,7 @@ import {
   secondsInDay,
   CHAINLINK_ETH_DECIMALS,
 } from "@app/utils/constants";
-import { pool, asset, hourBucketUsd } from "ponder.schema";
+import { pool, asset, hourBucketUsd, dailyVolume } from "ponder.schema";
 import { refreshStaleVolumeData } from "./volumeRefresher";
 import { and, eq, or, isNull, lt, sql, between } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
@@ -14,8 +14,8 @@ import { fetchEthPrice } from "./oracle";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 
 /**
- * Executes all refresh jobs on each block handler trigger
- * This runs both volume and metrics refreshes each time it's called
+ * Executes a comprehensive refresh job that handles both volume and metrics updates
+ * in a coordinated way to minimize database updates
  */
 export const executeScheduledJobs = async ({
   context,
@@ -24,29 +24,417 @@ export const executeScheduledJobs = async ({
   context: Context;
   currentTimestamp: bigint;
 }) => {
-  const { network } = context;
+  const { network, db } = context;
+  const chainId = BigInt(network.chainId);
 
-  // Run volume refresher job
-  try {
-    await refreshStaleVolumeData({ context, currentTimestamp });
-  } catch (error) {
-    console.error(`Error in volume refresh job for ${network.name}:`, error);
-  }
+  console.log(`[${network.name}] Running comprehensive refresh job...`);
+  const startTime = Date.now();
 
-  // Run metrics refresher job
   try {
-    await refreshPoolMetrics({ context, currentTimestamp });
+    // Get ETH price once for all calculations
+    const ethPrice = await fetchEthPrice(currentTimestamp, context);
+    if (!ethPrice) {
+      console.error(
+        `[${network.name}] Failed to get ETH price, skipping refresh`
+      );
+      return;
+    }
+
+    // Find pools that need refreshing (either volume or metrics)
+    // This finds pools that either have stale volume data or haven't been refreshed recently
+    const staleThreshold = currentTimestamp - BigInt(secondsInHour);
+    const stalePoolsWithVolume = await findStalePoolsWithVolume(
+      context,
+      staleThreshold,
+      chainId
+    );
+
+    if (stalePoolsWithVolume.length === 0) {
+      console.log(`[${network.name}] No pools need updating`);
+      return;
+    }
+
+    console.log(
+      `[${network.name}] Found ${stalePoolsWithVolume.length} pools to update`
+    );
+
+    // Process in parallel batches for better performance
+    const BATCH_SIZE = 20;
+
+    for (let i = 0; i < stalePoolsWithVolume.length; i += BATCH_SIZE) {
+      const batch = stalePoolsWithVolume.slice(i, i + BATCH_SIZE);
+
+      // Process batch in parallel
+      await Promise.all(
+        batch.map((poolInfo: any) =>
+          refreshPoolComprehensive({
+            poolInfo,
+            ethPrice,
+            currentTimestamp,
+            context,
+          }).catch((error) => {
+            console.error(
+              `Error refreshing pool ${poolInfo.pool.address}: ${error}`
+            );
+          })
+        )
+      );
+
+      // Log progress for larger batches
+      if (stalePoolsWithVolume.length > BATCH_SIZE) {
+        console.log(
+          `[${network.name}] Processed ${Math.min(i + BATCH_SIZE, stalePoolsWithVolume.length)}/${stalePoolsWithVolume.length} pools`
+        );
+      }
+    }
+
+    // Log performance metrics
+    const duration = (Date.now() - startTime) / 1000; // in seconds
+    console.log(
+      `[${network.name}] Refreshed ${stalePoolsWithVolume.length} pools in ${duration.toFixed(2)}s (${(duration / stalePoolsWithVolume.length).toFixed(3)}s per pool)`
+    );
   } catch (error) {
-    console.error(`Error in metrics refresh job for ${network.name}:`, error);
+    console.error(
+      `Error in comprehensive refresh job for ${network.name}:`,
+      error
+    );
   }
 };
 
 /**
- * Refreshes pool and asset metrics that should be periodically updated:
- * - percentDayChange
- * - dollarLiquidity (pools)
- * - liquidityUsd (assets)
- * - marketCapUsd (assets)
+ * Helper function to find pools that need updating (either volume or metrics)
+ * Joins pool and daily_volume data to identify all pools that need attention
+ */
+async function findStalePoolsWithVolume(
+  context: Context,
+  staleThreshold: bigint,
+  chainId: bigint
+) {
+  const { db } = context;
+
+  try {
+    // Find pools with either stale volume or stale metrics using db.sql.select
+    const results = await db.sql
+      .select({
+        // Pool fields
+        address: pool.address,
+        chain_id: pool.chainId,
+        is_token0: pool.isToken0,
+        base_token: pool.baseToken,
+        price: pool.price,
+        reserves0: pool.reserves0,
+        reserves1: pool.reserves1,
+        dollar_liquidity: pool.dollarLiquidity,
+        asset: pool.asset,
+        created_at: pool.createdAt,
+        last_refreshed: pool.lastRefreshed,
+        percent_day_change: pool.percentDayChange,
+        // Volume fields
+        volume_usd: dailyVolume.volumeUsd,
+        checkpoints: dailyVolume.checkpoints,
+        last_updated: dailyVolume.lastUpdated,
+      })
+      .from(pool)
+      .leftJoin(dailyVolume, eq(pool.address, dailyVolume.pool))
+      .where(
+        and(
+          eq(pool.chainId, chainId),
+          or(
+            isNull(pool.lastRefreshed),
+            lt(pool.lastRefreshed, staleThreshold),
+            lt(dailyVolume.lastUpdated, staleThreshold)
+          )
+        )
+      )
+      .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
+      .limit(50);
+
+    // Transform results into a useful format
+    return results.map((row) => ({
+      pool: {
+        address: row.address,
+        chainId: row.chain_id,
+        isToken0: row.is_token0,
+        baseToken: row.base_token,
+        price: row.price,
+        reserves0: row.reserves0,
+        reserves1: row.reserves1,
+        dollarLiquidity: row.dollar_liquidity,
+        asset: row.asset,
+        createdAt: row.created_at,
+        percentDayChange: row.percent_day_change,
+      },
+      volume: {
+        volumeUsd: row.volume_usd,
+        checkpoints: row.checkpoints,
+        lastUpdated: row.last_updated,
+      },
+      needsVolumeUpdate: row.last_updated
+        ? row.last_updated < staleThreshold
+        : false,
+      needsMetricsUpdate: row.last_refreshed
+        ? row.last_refreshed < staleThreshold
+        : true,
+    }));
+  } catch (error) {
+    console.error(`Error finding stale pools: ${error}`);
+    return [];
+  }
+}
+
+/**
+ * Refreshes a single pool's data comprehensively:
+ * - Updates volume data by cleaning old checkpoints
+ * - Updates metrics like price change and dollar liquidity
+ * - Makes a single DB update to minimize writes
+ */
+async function refreshPoolComprehensive({
+  poolInfo,
+  ethPrice,
+  currentTimestamp,
+  context,
+}: {
+  poolInfo: {
+    pool: {
+      address: string;
+      chainId: bigint;
+      isToken0: boolean;
+      baseToken: string;
+      price: bigint;
+      reserves0: bigint;
+      reserves1: bigint;
+      dollarLiquidity: bigint;
+      asset: string;
+      createdAt: bigint;
+      percentDayChange: number;
+    };
+    volume: {
+      volumeUsd: bigint;
+      checkpoints: Record<string, string>;
+      lastUpdated: bigint;
+    };
+    needsVolumeUpdate: boolean;
+    needsMetricsUpdate: boolean;
+  };
+  ethPrice: bigint;
+  currentTimestamp: bigint;
+  context: Context;
+}) {
+  const { db } = context;
+  const poolAddress = poolInfo.pool.address as Address;
+
+  // Keep track of all updates we'll make
+  const poolUpdates: Record<string, any> = {
+    lastRefreshed: currentTimestamp,
+  };
+  const assetUpdates: Record<string, any> = {};
+
+  // Always update the volume timestamp if needed
+  if (poolInfo.needsVolumeUpdate && poolInfo.volume.checkpoints) {
+    // Process volume data
+    const checkpoints = poolInfo.volume.checkpoints;
+    const cutoffTimestamp = currentTimestamp - BigInt(secondsInDay);
+
+    // Remove old checkpoints
+    const updatedCheckpoints = Object.fromEntries(
+      Object.entries(checkpoints).filter(
+        ([ts]) => BigInt(ts) >= cutoffTimestamp
+      )
+    );
+
+    // Recalculate total volume
+    const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
+      (acc, vol) => acc + BigInt(vol),
+      BigInt(0)
+    );
+
+    // Check if volume changed
+    const volumeChanged = poolInfo.volume.volumeUsd !== totalVolumeUsd;
+
+    if (volumeChanged) {
+      poolUpdates.volumeUsd = totalVolumeUsd;
+      assetUpdates.dayVolumeUsd = totalVolumeUsd;
+    }
+
+    // Update the daily volume record
+    try {
+      await db
+        .update(dailyVolume, {
+          pool: poolAddress.toLowerCase() as `0x${string}`,
+        })
+        .set({
+          volumeUsd: totalVolumeUsd,
+          checkpoints: updatedCheckpoints,
+          lastUpdated: currentTimestamp,
+        });
+    } catch (error) {
+      console.error(`Failed to update volume for ${poolAddress}: ${error}`);
+    }
+  }
+
+  // Calculate price change if metrics update is needed
+  if (poolInfo.needsMetricsUpdate) {
+    // Get price change percent
+    try {
+      const priceChangeInfo = await calculatePriceChangePercent({
+        poolAddress,
+        currentPrice: poolInfo.pool.price,
+        currentTimestamp,
+        ethPrice,
+        createdAt: poolInfo.pool.createdAt,
+        context,
+      });
+
+      if (
+        priceChangeInfo &&
+        Math.abs(priceChangeInfo - poolInfo.pool.percentDayChange) > 0.1
+      ) {
+        poolUpdates.percentDayChange = priceChangeInfo;
+        assetUpdates.percentDayChange = priceChangeInfo;
+      }
+    } catch (error) {
+      console.error(
+        `Failed to calculate price change for ${poolAddress}: ${error}`
+      );
+    }
+
+    // Calculate dollar liquidity
+    try {
+      const dollarLiquidity = await computeDollarLiquidity({
+        assetBalance: poolInfo.pool.isToken0
+          ? poolInfo.pool.reserves0
+          : poolInfo.pool.reserves1,
+        quoteBalance: poolInfo.pool.isToken0
+          ? poolInfo.pool.reserves1
+          : poolInfo.pool.reserves0,
+        price: poolInfo.pool.price,
+        ethPrice,
+      });
+
+      if (
+        dollarLiquidity &&
+        Math.abs(
+          Number(dollarLiquidity - poolInfo.pool.dollarLiquidity) /
+            Number(poolInfo.pool.dollarLiquidity || 1n)
+        ) > 0.01
+      ) {
+        poolUpdates.dollarLiquidity = dollarLiquidity;
+        assetUpdates.liquidityUsd = dollarLiquidity;
+      }
+    } catch (error) {
+      console.error(
+        `Failed to calculate dollar liquidity for ${poolAddress}: ${error}`
+      );
+    }
+  }
+
+  // Only update pool if we have changes to make beyond lastRefreshed
+  if (Object.keys(poolUpdates).length > 1) {
+    try {
+      await updatePool({
+        poolAddress,
+        context,
+        update: poolUpdates,
+      });
+    } catch (error) {
+      console.error(`Failed to update pool ${poolAddress}: ${error}`);
+    }
+  }
+
+  // Only update asset if we have changes to make
+  if (Object.keys(assetUpdates).length > 0 && poolInfo.pool.asset) {
+    try {
+      await updateAsset({
+        assetAddress: poolInfo.pool.asset as Address,
+        context,
+        update: assetUpdates,
+      });
+    } catch (error) {
+      console.error(`Failed to update asset ${poolInfo.pool.asset}: ${error}`);
+    }
+  }
+
+  // Optionally update market cap in the background
+  if (poolInfo.needsMetricsUpdate && poolInfo.pool.baseToken) {
+    refreshAssetMarketCap({
+      assetAddress: poolInfo.pool.baseToken as Address,
+      price: poolInfo.pool.price,
+      ethPrice,
+      context,
+    }).catch((error) => {
+      // Just log error but don't fail the whole update
+      console.error(
+        `Failed to update market cap for ${poolInfo.pool.baseToken}: ${error}`
+      );
+    });
+  }
+}
+
+/**
+ * Helper function to calculate price change percentage
+ */
+async function calculatePriceChangePercent({
+  poolAddress,
+  currentPrice,
+  currentTimestamp,
+  ethPrice,
+  createdAt,
+  context,
+}: {
+  poolAddress: Address;
+  currentPrice: bigint;
+  currentTimestamp: bigint;
+  ethPrice: bigint;
+  createdAt: bigint;
+  context: Context;
+}): Promise<number | null> {
+  const { db } = context;
+
+  // Skip if price is 0
+  if (currentPrice === 0n) {
+    return null;
+  }
+
+  const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
+  const timestampFrom = currentTimestamp - BigInt(secondsInDay);
+  const searchDelta =
+    currentTimestamp - createdAt > BigInt(secondsInDay)
+      ? secondsInHour
+      : secondsInDay;
+
+  try {
+    // Get historical price
+    const historyResults = await db.sql
+      .select()
+      .from(hourBucketUsd)
+      .where(
+        and(
+          eq(hourBucketUsd.pool, poolAddress.toLowerCase() as `0x${string}`),
+          between(
+            hourBucketUsd.hourId,
+            Number(timestampFrom) - searchDelta,
+            Number(timestampFrom) + searchDelta
+          )
+        )
+      )
+      .orderBy(hourBucketUsd.hourId)
+      .limit(1);
+
+    const priceFrom = historyResults[0];
+    if (!priceFrom || priceFrom.open === 0n) {
+      return null;
+    }
+
+    return (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+  } catch (error) {
+    console.error(`Error calculating price change: ${error}`);
+    return null;
+  }
+}
+
+/**
+ * Original refreshPoolMetrics function - now obsolete but kept for reference
+ * Will be removed in a future update
  */
 export const refreshPoolMetrics = async ({
   context,
@@ -91,7 +479,7 @@ export const refreshPoolMetrics = async ({
     return;
   }
 
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 20;
 
   for (let i = 0; i < stalePools.length; i += BATCH_SIZE) {
     const batch = stalePools.slice(i, i + BATCH_SIZE);

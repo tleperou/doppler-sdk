@@ -187,6 +187,7 @@ export const refreshPoolVolume = async ({
       context,
       update: {
         volumeUsd: totalVolumeUsd,
+        lastRefreshed: currentTimestamp, // Mark as recently refreshed to prevent duplicate processing
       },
     });
   } catch (error) {
