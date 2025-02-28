@@ -38,10 +38,16 @@ export const executeScheduledJobs = async ({
   const lastVolumeRefreshTime = lastExecutionTimes.volumeRefresher ?? 0n;
   if (currentTimestamp - lastVolumeRefreshTime >= VOLUME_REFRESH_INTERVAL) {
     try {
+      // Tag logs with network information for easier debugging
+      const { network } = context;
+      console.log(`[${network.name} (${network.chainId})] Volume refresh job starting...`);
+      
       await refreshStaleVolumeData({ context, currentTimestamp });
+      
       lastExecutionTimes.volumeRefresher = currentTimestamp;
+      console.log(`[${network.name}] Volume refresh job completed`);
     } catch (error) {
-      console.error("Error in volume refresh job:", error);
+      console.error(`Error in volume refresh job for ${context.network.name}:`, error);
     }
   }
 

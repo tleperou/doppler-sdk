@@ -43,9 +43,16 @@ export const refreshStaleVolumeData = async ({
     return; // Exit early if query fails
   }
 
+  // Enhanced logging with chain ID for debugging
   console.log(
-    `Found ${staleVolumeRecords.length} pools with stale volume data on chain ${network.name}`
+    `[${network.name} (${network.chainId})] Found ${staleVolumeRecords.length} pools with stale volume data`
   );
+  
+  // If there are no stale records, log that explicitly
+  if (staleVolumeRecords.length === 0) {
+    console.log(`[${network.name}] No stale volume data found - all pools are up to date`);
+    return; // Exit early if there's nothing to process
+  }
 
   for (const staleRecord of staleVolumeRecords) {
     await refreshPoolVolume({
@@ -124,25 +131,46 @@ export const refreshPoolVolume = async ({
   // Check if anything has changed before updating
   const checkpointsChanged =
     JSON.stringify(checkpoints) !== JSON.stringify(updatedCheckpoints);
-  const volumeChanged = volumeData.volumeUsd !== totalVolumeUsd;
-
-  // Only update if there's an actual change (checkpoints removed or volume changed)
-  if (checkpointsChanged || volumeChanged) {
+  
+  // More precise volume comparison to prevent "0 → 0" updates
+  const oldVolume = volumeData.volumeUsd || 0n;
+  const volumeChanged = oldVolume !== totalVolumeUsd;
+  
+  // Determine if there's a meaningful change
+  const hasCheckpointChanges = checkpointsChanged && Object.keys(updatedCheckpoints).length > 0;
+  const hasMeaningfulVolumeChange = volumeChanged && !(oldVolume === 0n && totalVolumeUsd === 0n);
+  const shouldUpdateData = hasCheckpointChanges || hasMeaningfulVolumeChange;
+  
+  // Log for debugging
+  if (shouldUpdateData) {
     console.log(
-      `Updating volume for pool ${poolAddress} (${volumeData.volumeUsd} → ${totalVolumeUsd})`
+      `Updating volume for pool ${poolAddress} (${oldVolume} → ${totalVolumeUsd})`
     );
-
-    await db
-      .update(dailyVolume, {
-        pool: poolAddress.toLowerCase() as `0x${string}`,
-      })
-      .set({
-        volumeUsd: totalVolumeUsd,
-        checkpoints: updatedCheckpoints,
-        lastUpdated: currentTimestamp,
-      });
+  } else if (oldVolume === 0n && totalVolumeUsd === 0n) {
+    console.log(`Skipping zero-to-zero update for pool ${poolAddress}`);
   } else {
-    // Just update the lastUpdated timestamp to prevent repeated processing
+    console.log(`No meaningful changes for pool ${poolAddress}, only updating timestamp`);
+  }
+
+  // Update data if there's a meaningful change
+  if (shouldUpdateData) {
+    try {
+      await db
+        .update(dailyVolume, {
+          pool: poolAddress.toLowerCase() as `0x${string}`,
+        })
+        .set({
+          volumeUsd: totalVolumeUsd,
+          checkpoints: updatedCheckpoints,
+          lastUpdated: currentTimestamp,
+        });
+    } catch (error) {
+      console.error(`Failed to update daily volume data: ${error}`);
+    }
+  }
+  
+  // Always update the timestamp to prevent repeated processing
+  try {
     await db
       .update(dailyVolume, {
         pool: poolAddress.toLowerCase() as `0x${string}`,
@@ -150,55 +178,55 @@ export const refreshPoolVolume = async ({
       .set({
         lastUpdated: currentTimestamp,
       });
-
-    // Skip further updates if volume hasn't changed
+  } catch (error) {
+    console.error(`Failed to update timestamp: ${error}`);
+  }
+  
+  // Skip further updates if there are no meaningful volume changes
+  if (!hasMeaningfulVolumeChange) {
     return;
   }
 
-  // Only update related entities if the volume actually changed
-  // Avoids unnecessary database updates
-  if (volumeChanged) {
-    // Update related entities with the refreshed volume data
+  // Update related entities with the meaningful volume changes
+  try {
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        volumeUsd: totalVolumeUsd,
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to update pool ${poolAddress}: ${error}`);
+    // Continue with other updates rather than failing the whole job
+  }
+
+  if (poolData.asset) {
     try {
-      await updatePool({
-        poolAddress,
+      await updateAsset({
+        assetAddress: poolData.asset,
+        context,
+        update: {
+          dayVolumeUsd: totalVolumeUsd,
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to update asset ${poolData.asset}: ${error}`);
+    }
+  }
+
+  // Update token volumes
+  if (poolData.baseToken) {
+    try {
+      await updateToken({
+        tokenAddress: poolData.baseToken,
         context,
         update: {
           volumeUsd: totalVolumeUsd,
         },
       });
     } catch (error) {
-      console.error(`Failed to update pool ${poolAddress}: ${error}`);
-      // Continue with other updates rather than failing the whole job
-    }
-
-    if (poolData.asset) {
-      try {
-        await updateAsset({
-          assetAddress: poolData.asset,
-          context,
-          update: {
-            dayVolumeUsd: totalVolumeUsd,
-          },
-        });
-      } catch (error) {
-        console.error(`Failed to update asset ${poolData.asset}: ${error}`);
-      }
-    }
-
-    // Update token volumes
-    if (poolData.baseToken) {
-      try {
-        await updateToken({
-          tokenAddress: poolData.baseToken,
-          context,
-          update: {
-            volumeUsd: totalVolumeUsd,
-          },
-        });
-      } catch (error) {
-        console.error(`Failed to update token ${poolData.baseToken}: ${error}`);
-      }
+      console.error(`Failed to update token ${poolData.baseToken}: ${error}`);
     }
   }
 };
