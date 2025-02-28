@@ -2,6 +2,7 @@ import { Address } from "viem";
 import { dailyVolume, pool } from "ponder.schema";
 import { Context } from "ponder:registry";
 import { secondsInDay, secondsInHour } from "@app/utils/constants";
+import { and, eq, lt } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateToken } from "./entities/token";
 import { updateAsset } from "./entities/asset";
@@ -23,13 +24,22 @@ export const refreshStaleVolumeData = async ({
   // that belong to the current chain
   const staleThreshold = currentTimestamp - BigInt(secondsInHour);
 
-  // Get stale volume records for this specific chain
-  const staleVolumeRecords = await db.sql.query.dailyVolume.findMany({
-    where: (fields, { lt, eq }) =>
-      lt(fields.lastUpdated, staleThreshold) && eq(fields.chainId, chainId),
-    orderBy: (fields, { asc }) => [asc(fields.lastUpdated)],
-    limit: 50, // Process in batches to avoid overloading
-  });
+  // Get stale volume records for this specific chain using sql.select
+  let staleVolumeRecords = [];
+  try {
+    staleVolumeRecords = await db.sql
+      .select()
+      .from(dailyVolume)
+      .where(and(
+        lt(dailyVolume.lastUpdated, staleThreshold),
+        eq(dailyVolume.chainId, chainId)
+      ))
+      .orderBy(dailyVolume.lastUpdated)
+      .limit(50); // Process in batches to avoid overloading
+  } catch (error) {
+    console.error(`Error fetching stale volume records: ${error}`);
+    return; // Exit early if query fails
+  }
 
   console.log(
     `Found ${staleVolumeRecords.length} pools with stale volume data on chain ${network.name}`
@@ -63,22 +73,37 @@ export const refreshPoolVolume = async ({
 
   console.log("poolAddress", poolAddress);
 
-  const volumeData = await db.sql.query.dailyVolume.findFirst({
-    where: (fields, { eq }) =>
-      eq(fields.pool, poolAddress.toLowerCase() as `0x${string}`),
-  });
+  // Get volume data for this pool using sql.select
+  let volumeData;
+  try {
+    const volumeResults = await db.sql
+      .select()
+      .from(dailyVolume)
+      .where(eq(dailyVolume.pool, poolAddress.toLowerCase() as `0x${string}`))
+      .limit(1);
+    
+    volumeData = volumeResults[0];
+    if (!volumeData) return;
+  } catch (error) {
+    console.error(`Error fetching volume data for pool ${poolAddress}: ${error}`);
+    return;
+  }
 
-  if (!volumeData) return;
-
-  console.log("fields.pool", volumeData.pool);
-
-  // Get related pool data to find the asset
-  const poolData = await db.sql.query.pool.findFirst({
-    where: (fields, { eq }) =>
-      eq(fields.address, poolAddress.toLowerCase() as `0x${string}`),
-  });
-
-  if (!poolData) return;
+  // Get related pool data to find the asset using sql.select
+  let poolData;
+  try {
+    const poolResults = await db.sql
+      .select()
+      .from(pool)
+      .where(eq(pool.address, poolAddress.toLowerCase() as `0x${string}`))
+      .limit(1);
+    
+    poolData = poolResults[0];
+    if (!poolData) return;
+  } catch (error) {
+    console.error(`Error fetching pool data for pool ${poolAddress}: ${error}`);
+    return;
+  }
 
   // Filter out checkpoints older than 24 hours
   const checkpoints = volumeData.checkpoints as Record<string, string>;
