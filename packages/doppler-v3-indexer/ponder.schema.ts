@@ -184,6 +184,7 @@ export const pool = onchainTable(
     graduationBalance: t.bigint().notNull(),
     isToken0: t.boolean().notNull(),
     lastRefreshed: t.bigint(),
+    lastSwapTimestamp: t.bigint(),
     reserves0: t.bigint().notNull().default(0n),
     reserves1: t.bigint().notNull().default(0n),
   }),
@@ -194,6 +195,7 @@ export const pool = onchainTable(
     baseTokenIdx: index().on(table.baseToken),
     quoteTokenIdx: index().on(table.quoteToken),
     lastRefreshedIdx: index().on(table.lastRefreshed),
+    lastSwapTimestampIdx: index().on(table.lastSwapTimestamp),
   })
 );
 

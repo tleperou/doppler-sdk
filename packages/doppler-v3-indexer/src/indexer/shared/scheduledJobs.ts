@@ -103,7 +103,9 @@ export const executeScheduledJobs = async ({
 
 /**
  * Helper function to find pools that need updating (either volume or metrics)
- * Joins pool and daily_volume data to identify all pools that need attention
+ * Joins pool and daily_volume data to identify all pools that need attention.
+ * Uses lastSwapTimestamp field to only process pools with recent swap activity
+ * that haven't been refreshed since their last swap.
  */
 async function findStalePoolsWithVolume(
   context: Context,
@@ -113,7 +115,10 @@ async function findStalePoolsWithVolume(
   const { db } = context;
 
   try {
-    // Find pools with either stale volume or stale metrics using db.sql.select
+    // Find pools with either:
+    // 1. No previous refresh (new pools)
+    // 2. Pools that have swaps more recent than their last refresh
+    // 3. Pools with stale volume data that need updating
     const results = await db.sql
       .select({
         // Pool fields
@@ -128,6 +133,7 @@ async function findStalePoolsWithVolume(
         asset: pool.asset,
         created_at: pool.createdAt,
         last_refreshed: pool.lastRefreshed,
+        last_swap_timestamp: pool.lastSwapTimestamp,
         percent_day_change: pool.percentDayChange,
         // Volume fields
         volume_usd: dailyVolume.volumeUsd,
@@ -140,14 +146,23 @@ async function findStalePoolsWithVolume(
         and(
           eq(pool.chainId, chainId),
           or(
-            isNull(pool.lastRefreshed),
-            lt(pool.lastRefreshed, staleThreshold),
-            lt(dailyVolume.lastUpdated, staleThreshold)
+            isNull(pool.lastRefreshed), // Never refreshed before
+            and(
+              // Has swaps more recent than last refresh
+              isNull(pool.lastRefreshed),
+              isNull(pool.lastSwapTimestamp),
+              lt(pool.lastRefreshed, pool.lastSwapTimestamp)
+            ),
+            lt(dailyVolume.lastUpdated, staleThreshold) // Volume data is stale
           )
         )
       )
       .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
       .limit(50);
+
+    console.log(
+      `Found ${results.length} pools needing refresh (using lastSwapTimestamp field)`
+    );
 
     // Transform results into a useful format
     return results.map((row) => ({

@@ -376,6 +376,7 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
       totalFee1: poolEntity.totalFee1 + fee1,
       graduationBalance: poolEntity.graduationBalance + quoteDelta,
       lastRefreshed: event.block.timestamp,
+      lastSwapTimestamp: event.block.timestamp, // Update last swap time
       ...slot0Data,
     },
   });

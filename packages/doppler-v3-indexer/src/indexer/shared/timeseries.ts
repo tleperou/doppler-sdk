@@ -228,6 +228,7 @@ export const insertOrUpdateDailyVolume = async ({
       update: {
         volumeUsd: computedVolumeUsd,
         lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
+        lastSwapTimestamp: timestamp, // Track when the pool was last swapped on
       },
     });
     await updateToken({

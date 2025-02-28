@@ -121,6 +121,7 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
         price, 
         dollarLiquidity,
         lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
+        lastSwapTimestamp: timestamp, // Update last swap time for the pool
       },
     });
   }
