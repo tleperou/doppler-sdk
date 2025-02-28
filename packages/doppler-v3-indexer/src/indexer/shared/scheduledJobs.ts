@@ -46,15 +46,15 @@ export const executeScheduledJobs = async ({
   }
 
   // // Execute metrics refresher job if interval has elapsed
-  // const lastMetricsRefreshTime = lastExecutionTimes.metricsRefresher ?? 0n;
-  // if (currentTimestamp - lastMetricsRefreshTime >= METRICS_REFRESH_INTERVAL) {
-  //   try {
-  //     await refreshPoolMetrics({ context, currentTimestamp });
-  //     lastExecutionTimes.metricsRefresher = currentTimestamp;
-  //   } catch (error) {
-  //     console.error("Error in metrics refresh job:", error);
-  //   }
-  // }
+  const lastMetricsRefreshTime = lastExecutionTimes.metricsRefresher ?? 0n;
+  if (currentTimestamp - lastMetricsRefreshTime >= METRICS_REFRESH_INTERVAL) {
+    try {
+      await refreshPoolMetrics({ context, currentTimestamp });
+      lastExecutionTimes.metricsRefresher = currentTimestamp;
+    } catch (error) {
+      console.error("Error in metrics refresh job:", error);
+    }
+  }
 };
 
 /**

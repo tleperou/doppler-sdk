@@ -30,10 +30,12 @@ export const refreshStaleVolumeData = async ({
     staleVolumeRecords = await db.sql
       .select()
       .from(dailyVolume)
-      .where(and(
-        lt(dailyVolume.lastUpdated, staleThreshold),
-        eq(dailyVolume.chainId, chainId)
-      ))
+      .where(
+        and(
+          lt(dailyVolume.lastUpdated, staleThreshold),
+          eq(dailyVolume.chainId, chainId)
+        )
+      )
       .orderBy(dailyVolume.lastUpdated)
       .limit(50); // Process in batches to avoid overloading
   } catch (error) {
@@ -71,8 +73,6 @@ export const refreshPoolVolume = async ({
 }) => {
   const { db, network } = context;
 
-  console.log("poolAddress", poolAddress);
-
   // Get volume data for this pool using sql.select
   let volumeData;
   try {
@@ -81,11 +81,13 @@ export const refreshPoolVolume = async ({
       .from(dailyVolume)
       .where(eq(dailyVolume.pool, poolAddress.toLowerCase() as `0x${string}`))
       .limit(1);
-    
+
     volumeData = volumeResults[0];
     if (!volumeData) return;
   } catch (error) {
-    console.error(`Error fetching volume data for pool ${poolAddress}: ${error}`);
+    console.error(
+      `Error fetching volume data for pool ${poolAddress}: ${error}`
+    );
     return;
   }
 
@@ -97,7 +99,7 @@ export const refreshPoolVolume = async ({
       .from(pool)
       .where(eq(pool.address, poolAddress.toLowerCase() as `0x${string}`))
       .limit(1);
-    
+
     poolData = poolResults[0];
     if (!poolData) return;
   } catch (error) {
