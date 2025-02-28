@@ -6,7 +6,10 @@ import {
   updatePosition,
 } from "./shared/entities/position";
 import { insertTokenIfNotExists } from "./shared/entities/token";
-import { insertOrUpdateDailyVolume, update24HourPriceChange } from "./shared/timeseries";
+import {
+  insertOrUpdateDailyVolume,
+  update24HourPriceChange,
+} from "./shared/timeseries";
 import { insertPoolIfNotExists, updatePool } from "./shared/entities/pool";
 import { insertAssetIfNotExists, updateAsset } from "./shared/entities/asset";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
@@ -116,16 +119,16 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
     context,
     update: dollarLiquidity
       ? {
-        graduationThreshold:
-          poolEntity.graduationThreshold + graduationThresholdDelta,
-        liquidity: poolEntity.liquidity + amount,
-        dollarLiquidity: dollarLiquidity,
-      }
+          graduationThreshold:
+            poolEntity.graduationThreshold + graduationThresholdDelta,
+          liquidity: poolEntity.liquidity + amount,
+          dollarLiquidity: dollarLiquidity,
+        }
       : {
-        graduationThreshold:
-          poolEntity.graduationThreshold + graduationThresholdDelta,
-        liquidity: poolEntity.liquidity + amount,
-      },
+          graduationThreshold:
+            poolEntity.graduationThreshold + graduationThresholdDelta,
+          liquidity: poolEntity.liquidity + amount,
+        },
   });
 
   if (ethPrice) {
@@ -226,16 +229,16 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
     context,
     update: dollarLiquidity
       ? {
-        liquidity: liquidity - amount,
-        dollarLiquidity: dollarLiquidity,
-        graduationThreshold:
-          poolEntity.graduationThreshold - graduationThresholdDelta,
-      }
+          liquidity: liquidity - amount,
+          dollarLiquidity: dollarLiquidity,
+          graduationThreshold:
+            poolEntity.graduationThreshold - graduationThresholdDelta,
+        }
       : {
-        liquidity: liquidity - amount,
-        graduationThreshold:
-          poolEntity.graduationThreshold - graduationThresholdDelta,
-      },
+          liquidity: liquidity - amount,
+          graduationThreshold:
+            poolEntity.graduationThreshold - graduationThresholdDelta,
+        },
   });
 
   const positionEntity = await insertPositionIfNotExists({
@@ -262,12 +265,6 @@ ponder.on("UniswapV3Pool:Burn", async ({ event, context }) => {
 ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   const address = event.log.address;
   const { amount0, amount1 } = event.args;
-  
-  // Run scheduled jobs on common events to ensure regular updates
-  await executeScheduledJobs({
-    context,
-    currentTimestamp: event.block.timestamp,
-  });
 
   const poolEntity = await insertPoolIfNotExists({
     poolAddress: address,
@@ -341,7 +338,9 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
 
     await update24HourPriceChange({
       poolAddress: address,
-      assetAddress: poolEntity.isToken0 ? token0.toLowerCase() as Hex : token1.toLowerCase() as Hex,
+      assetAddress: poolEntity.isToken0
+        ? (token0.toLowerCase() as Hex)
+        : (token1.toLowerCase() as Hex),
       currentPrice: price,
       ethPrice,
       currentTimestamp: event.block.timestamp,
@@ -350,7 +349,9 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
     });
 
     await updateMarketCap({
-      assetAddress: poolEntity.isToken0 ? token0.toLowerCase() as Hex : token1.toLowerCase() as Hex,
+      assetAddress: poolEntity.isToken0
+        ? (token0.toLowerCase() as Hex)
+        : (token1.toLowerCase() as Hex),
       price,
       ethPrice,
       context,
@@ -379,7 +380,9 @@ ponder.on("UniswapV3Pool:Swap", async ({ event, context }) => {
   });
 
   await updateAsset({
-    assetAddress: poolEntity.isToken0 ? token0.toLowerCase() as Hex : token1.toLowerCase() as Hex,
+    assetAddress: poolEntity.isToken0
+      ? (token0.toLowerCase() as Hex)
+      : (token1.toLowerCase() as Hex),
     context,
     update: {
       liquidityUsd: dollarLiquidity ?? 0n,

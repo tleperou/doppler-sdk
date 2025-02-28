@@ -47,10 +47,12 @@ export const refreshStaleVolumeData = async ({
   console.log(
     `[${network.name} (${network.chainId})] Found ${staleVolumeRecords.length} pools with stale volume data`
   );
-  
+
   // If there are no stale records, log that explicitly
   if (staleVolumeRecords.length === 0) {
-    console.log(`[${network.name}] No stale volume data found - all pools are up to date`);
+    console.log(
+      `[${network.name}] No stale volume data found - all pools are up to date`
+    );
     return; // Exit early if there's nothing to process
   }
 
@@ -131,26 +133,17 @@ export const refreshPoolVolume = async ({
   // Check if anything has changed before updating
   const checkpointsChanged =
     JSON.stringify(checkpoints) !== JSON.stringify(updatedCheckpoints);
-  
+
   // More precise volume comparison to prevent "0 → 0" updates
   const oldVolume = volumeData.volumeUsd || 0n;
   const volumeChanged = oldVolume !== totalVolumeUsd;
-  
+
   // Determine if there's a meaningful change
-  const hasCheckpointChanges = checkpointsChanged && Object.keys(updatedCheckpoints).length > 0;
-  const hasMeaningfulVolumeChange = volumeChanged && !(oldVolume === 0n && totalVolumeUsd === 0n);
+  const hasCheckpointChanges =
+    checkpointsChanged && Object.keys(updatedCheckpoints).length > 0;
+  const hasMeaningfulVolumeChange =
+    volumeChanged && !(oldVolume === 0n && totalVolumeUsd === 0n);
   const shouldUpdateData = hasCheckpointChanges || hasMeaningfulVolumeChange;
-  
-  // Log for debugging
-  if (shouldUpdateData) {
-    console.log(
-      `Updating volume for pool ${poolAddress} (${oldVolume} → ${totalVolumeUsd})`
-    );
-  } else if (oldVolume === 0n && totalVolumeUsd === 0n) {
-    console.log(`Skipping zero-to-zero update for pool ${poolAddress}`);
-  } else {
-    console.log(`No meaningful changes for pool ${poolAddress}, only updating timestamp`);
-  }
 
   // Update data if there's a meaningful change
   if (shouldUpdateData) {
@@ -168,7 +161,7 @@ export const refreshPoolVolume = async ({
       console.error(`Failed to update daily volume data: ${error}`);
     }
   }
-  
+
   // Always update the timestamp to prevent repeated processing
   try {
     await db
@@ -181,7 +174,7 @@ export const refreshPoolVolume = async ({
   } catch (error) {
     console.error(`Failed to update timestamp: ${error}`);
   }
-  
+
   // Skip further updates if there are no meaningful volume changes
   if (!hasMeaningfulVolumeChange) {
     return;

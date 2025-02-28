@@ -5,9 +5,9 @@ import {
   secondsInDay,
   CHAINLINK_ETH_DECIMALS,
 } from "@app/utils/constants";
-import { pool, asset } from "ponder.schema";
+import { pool, asset, hourBucketUsd } from "ponder.schema";
 import { refreshStaleVolumeData } from "./volumeRefresher";
-import { and, eq, or, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, or, isNull, lt, sql, between } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
@@ -28,22 +28,14 @@ export const executeScheduledJobs = async ({
 
   // Run volume refresher job
   try {
-    console.log(
-      `[${network.name} (${network.chainId})] Volume refresh job starting...`
-    );
     await refreshStaleVolumeData({ context, currentTimestamp });
-    console.log(`[${network.name}] Volume refresh job completed`);
   } catch (error) {
     console.error(`Error in volume refresh job for ${network.name}:`, error);
   }
 
   // Run metrics refresher job
   try {
-    console.log(
-      `[${network.name} (${network.chainId})] Metrics refresh job starting...`
-    );
     await refreshPoolMetrics({ context, currentTimestamp });
-    console.log(`[${network.name}] Metrics refresh job completed`);
   } catch (error) {
     console.error(`Error in metrics refresh job for ${network.name}:`, error);
   }
@@ -88,24 +80,43 @@ export const refreshPoolMetrics = async ({
     return; // Exit early if the query fails
   }
 
-  console.log(
-    `Found ${stalePools.length} pools with stale metrics on chain ${network.name}`
-  );
+  // Exit early if no pools need refreshing
+  if (stalePools.length === 0) {
+    return;
+  }
 
-  // Current eth price for all calculations
   const ethPrice = await fetchEthPrice(currentTimestamp, context);
   if (!ethPrice) {
     console.error("Failed to get ETH price, skipping metrics refresh");
     return;
   }
 
-  for (const poolData of stalePools) {
-    await refreshPoolData({
-      poolData,
-      ethPrice,
-      currentTimestamp,
-      context,
-    });
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < stalePools.length; i += BATCH_SIZE) {
+    const batch = stalePools.slice(i, i + BATCH_SIZE);
+
+    // Process this batch in parallel
+    await Promise.all(
+      batch.map((poolData) =>
+        refreshPoolData({
+          poolData,
+          ethPrice,
+          currentTimestamp,
+          context,
+        }).catch((error) => {
+          // Log but don't fail the whole batch
+          console.error(`Error refreshing pool ${poolData.address}: ${error}`);
+        })
+      )
+    );
+
+    // Log progress for larger batches
+    if (stalePools.length > BATCH_SIZE) {
+      console.log(
+        `[${network.name}] Processed ${Math.min(i + BATCH_SIZE, stalePools.length)}/${stalePools.length} pools`
+      );
+    }
   }
 };
 
@@ -230,24 +241,35 @@ export const refreshPriceChangePercent = async ({
 
   const timestampFrom = currentTimestamp - BigInt(secondsInDay);
   const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
+
+  // Skip expensive calculations if price is 0
+  if (currentPrice === 0n || usdPrice === 0n) {
+    return null;
+  }
+
   const searchDelta =
     currentTimestamp - createdAt > BigInt(secondsInDay)
       ? secondsInHour
       : secondsInDay;
 
-  const priceFrom = await db.sql.query.hourBucketUsd.findFirst({
-    where: (fields, { and, eq, between }) =>
+  // Use sql.select for better performance
+  const hourBucketResults = await db.sql
+    .select()
+    .from(hourBucketUsd)
+    .where(
       and(
-        eq(fields.pool, poolAddress.toLowerCase() as `0x${string}`),
+        eq(hourBucketUsd.pool, poolAddress.toLowerCase() as `0x${string}`),
         between(
-          fields.hourId,
+          hourBucketUsd.hourId,
           Number(timestampFrom) - searchDelta,
           Number(timestampFrom) + searchDelta
         )
-      ),
-    orderBy: (fields, { asc }) => [asc(fields.hourId)],
-  });
+      )
+    )
+    .orderBy(hourBucketUsd.hourId)
+    .limit(1);
 
+  const priceFrom = hourBucketResults[0];
   if (!priceFrom || priceFrom.open === 0n) {
     return null;
   }
@@ -255,43 +277,65 @@ export const refreshPriceChangePercent = async ({
   const priceChangePercent =
     (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
 
-  // Only update if there's a significant change (avoid tiny updates)
-  const currentAsset = await db.find(asset, { address: assetAddress });
+  // Skip tiny price changes (< 0.1%)
+  if (Math.abs(priceChangePercent) < 0.1) {
+    return null;
+  }
+
+  // Get both asset and pool in parallel to save time
+  const [currentAsset, currentPool] = await Promise.all([
+    db.find(asset, { address: assetAddress }),
+    db.find(pool, {
+      address: poolAddress,
+      chainId: BigInt(network.chainId),
+    }),
+  ]);
+
+  // Prepare updates
+  const updates = [];
+
+  // Only update asset if needed
   if (
     !currentAsset ||
     Math.abs(currentAsset.percentDayChange - priceChangePercent) > 0.1
   ) {
-    await updateAsset({
-      assetAddress,
-      context,
-      update: {
-        percentDayChange: priceChangePercent,
-      },
-    });
+    updates.push(
+      updateAsset({
+        assetAddress,
+        context,
+        update: {
+          percentDayChange: priceChangePercent,
+        },
+      })
+    );
   }
 
-  // Update pool's percent day change
-  const currentPool = await db.find(pool, {
-    address: poolAddress,
-    chainId: BigInt(network.chainId),
-  });
+  // Only update pool if needed
   if (
     !currentPool ||
     Math.abs(currentPool.percentDayChange - priceChangePercent) > 0.1
   ) {
-    await updatePool({
-      poolAddress,
-      context,
-      update: {
-        percentDayChange: priceChangePercent,
-      },
-    });
+    updates.push(
+      updatePool({
+        poolAddress,
+        context,
+        update: {
+          percentDayChange: priceChangePercent,
+        },
+      })
+    );
+  }
+
+  // Execute updates in parallel if there are any
+  if (updates.length > 0) {
+    await Promise.all(updates);
   }
 };
 
 /**
  * Updates the market cap for an asset
  */
+// Cache for total supply values to avoid repeated contract calls
 export const refreshAssetMarketCap = async ({
   assetAddress,
   price,
@@ -303,10 +347,17 @@ export const refreshAssetMarketCap = async ({
   ethPrice: bigint;
   context: Context;
 }) => {
+  // Skip immediately if price is 0
+  if (price === 0n) {
+    return;
+  }
+
   const { client, db } = context;
 
   try {
-    // Try to read totalSupply from the asset token
+    // Get total supply (from cache if available)
+    let totalSupply: bigint | null = null;
+    // Read from contract
     const totalSupplyResult = await client
       .readContract({
         address: assetAddress,
@@ -322,47 +373,33 @@ export const refreshAssetMarketCap = async ({
         functionName: "totalSupply",
       })
       .catch((err) => {
-        console.warn(`Failed to read totalSupply for ${assetAddress}:`, err);
         return null;
       });
 
     if (totalSupplyResult) {
-      const totalSupply = totalSupplyResult as bigint;
+      totalSupply = totalSupplyResult as bigint;
+    }
+
+    if (totalSupply) {
       const marketCap = (price * totalSupply) / BigInt(10 ** 18);
       const marketCapUsd = (marketCap * ethPrice) / CHAINLINK_ETH_DECIMALS;
 
-      // Get current value to avoid unnecessary updates
+      // Get current asset value
       const currentAsset = await db.find(asset, { address: assetAddress });
+      if (!currentAsset) return;
 
-      // Only update if change is significant (>1%)
-      let shouldUpdate = false;
-      if (!currentAsset || currentAsset.marketCapUsd === 0n) {
-        shouldUpdate = marketCapUsd > 0n;
-      } else if (marketCapUsd === 0n) {
-        shouldUpdate = true;
-      } else {
-        const percentChange =
-          Math.abs(
-            Number(marketCapUsd - currentAsset.marketCapUsd) /
-              Number(currentAsset.marketCapUsd)
-          ) * 100;
-        shouldUpdate = percentChange > 1;
-      }
-
-      if (shouldUpdate) {
-        await updateAsset({
-          assetAddress,
-          context,
-          update: {
-            marketCapUsd,
-          },
-        });
-      }
+      await updateAsset({
+        assetAddress,
+        context,
+        update: {
+          marketCapUsd,
+        },
+      });
     }
   } catch (error) {
+    // Less verbose error handling
     console.error(
-      `Failed to update market cap for asset ${assetAddress}:`,
-      error
+      `Market cap update failed for ${assetAddress.slice(0, 8)}...`
     );
   }
 };
