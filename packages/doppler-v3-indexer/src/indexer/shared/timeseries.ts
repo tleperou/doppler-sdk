@@ -125,10 +125,33 @@ export const update24HourPriceChange = async ({
   });
 
   if (!priceFrom) {
-    return null;
+    // Default to 0% change if no previous price data found
+    await updateAsset({
+      assetAddress,
+      context,
+      update: {
+        percentDayChange: 0,
+      },
+    });
+    
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        percentDayChange: 0,
+      },
+    });
+    
+    return;
   }
 
-  const priceChangePercent = Number(usdPrice - priceFrom.open) / Number(priceFrom.open) * 100;
+  // Calculate the price change percentage
+  let priceChangePercent = Number(usdPrice - priceFrom.open) / Number(priceFrom.open) * 100;
+  
+  // Ensure we're not sending null values to the database
+  if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
+    priceChangePercent = 0;
+  }
 
   await updateAsset({
     assetAddress,

@@ -158,14 +158,14 @@ async function findStalePoolsWithVolume(
           or(
             // 1. Never refreshed before (new pools that missed handlers)
             isNull(pool.lastRefreshed),
-            
+
             // 2. Pools with metrics that haven't been refreshed in a while
             // but still have trading volume or price changes
             and(
               lt(pool.lastRefreshed, staleThreshold),
               or(gt(pool.volumeUsd, 0n), not(eq(pool.percentDayChange, 0)))
             ),
-            
+
             // 3. Pools with stale volume data that needs regular cleanup
             and(
               isNotNull(dailyVolume.lastUpdated),
@@ -414,12 +414,12 @@ async function calculatePriceChangePercent({
   ethPrice: bigint;
   createdAt: bigint;
   context: Context;
-}): Promise<number | null> {
+}): Promise<number> {
   const { db } = context;
 
   // Skip if price is 0
   if (currentPrice === 0n) {
-    return null;
+    return 0; // Return 0 instead of null
   }
 
   const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
@@ -449,13 +449,20 @@ async function calculatePriceChangePercent({
 
     const priceFrom = historyResults[0];
     if (!priceFrom || priceFrom.open === 0n) {
-      return null;
+      return 0; // Return 0 instead of null
     }
 
-    return (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+    const priceChangePercent = (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+    
+    // Ensure we're not returning NaN or Infinity
+    if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
+      return 0;
+    }
+    
+    return priceChangePercent;
   } catch (error) {
     console.error(`Error calculating price change: ${error}`);
-    return null;
+    return 0; // Return 0 instead of null on error
   }
 }
 
@@ -686,60 +693,40 @@ export const refreshPriceChangePercent = async ({
 
   const priceFrom = hourBucketResults[0];
   if (!priceFrom || priceFrom.open === 0n) {
-    return null;
+    // If no historical price, set 0% change instead of null
+    return 0;
   }
 
-  const priceChangePercent =
+  // Calculate price change percentage
+  let priceChangePercent =
     (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
 
-  // Skip tiny price changes (< 0.1%)
-  if (Math.abs(priceChangePercent) < 0.1) {
-    return null;
+  // Ensure we're not sending null values to the database
+  if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
+    priceChangePercent = 0;
   }
 
-  // Get both asset and pool in parallel to save time
-  const [currentAsset, currentPool] = await Promise.all([
-    db.find(asset, { address: assetAddress }),
-    db.find(pool, {
-      address: poolAddress,
-      chainId: BigInt(network.chainId),
-    }),
-  ]);
-
-  // Prepare updates
   const updates = [];
 
-  // Only update asset if needed
-  if (
-    !currentAsset ||
-    Math.abs(currentAsset.percentDayChange - priceChangePercent) > 0.1
-  ) {
-    updates.push(
-      updateAsset({
-        assetAddress,
-        context,
-        update: {
-          percentDayChange: priceChangePercent,
-        },
-      })
-    );
-  }
+  updates.push(
+    updateAsset({
+      assetAddress,
+      context,
+      update: {
+        percentDayChange: priceChangePercent,
+      },
+    })
+  );
 
-  // Only update pool if needed
-  if (
-    !currentPool ||
-    Math.abs(currentPool.percentDayChange - priceChangePercent) > 0.1
-  ) {
-    updates.push(
-      updatePool({
-        poolAddress,
-        context,
-        update: {
-          percentDayChange: priceChangePercent,
-        },
-      })
-    );
-  }
+  updates.push(
+    updatePool({
+      poolAddress,
+      context,
+      update: {
+        percentDayChange: priceChangePercent,
+      },
+    })
+  );
 
   // Execute updates in parallel if there are any
   if (updates.length > 0) {
