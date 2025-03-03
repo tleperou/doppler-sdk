@@ -164,7 +164,7 @@ export const configs: IndexerConfigs = {
       universalRouter: "0x76870DEbef0BE25589A5CddCe9B1D99276C73B4e" as Address,
       governanceFactory: "0x136191B46478cAB023cbC01a36160C4Aad81677a" as Address,
       migrator: "0x8b4C7DB9121FC885689C0A50D5a1429F15AEc2a0" as Address,
-      weth: "0x4200000000000000000000000000000000000006" as Address,
+      weth: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
     },
     oracle: oracleAddresses,
     startBlock: baseSepoliaStartBlock,
