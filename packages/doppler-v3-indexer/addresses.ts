@@ -1,11 +1,12 @@
 import { Address, zeroAddress } from "viem";
 
-export type Network = "unichainSepolia" | "mainnet" | "unichain";
+export type Network = "unichainSepolia" | "mainnet" | "unichain" | "baseSepolia";
 
 export const CHAIN_IDS = {
   unichainSepolia: 1301,
   unichain: 130,
   mainnet: 1,
+  baseSepolia: 84532,
 } as const;
 
 const unichainSepoliaStartBlock = 11932039;
@@ -13,6 +14,8 @@ const mainnetStartBlockUnichainSepolia = 21782000;
 
 const unichainStartBlock = 8536880;
 const mainnetStartBlockUnichain = 21823900;
+
+const baseSepoliaStartBlock = 22100097;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
@@ -141,5 +144,30 @@ export const configs: IndexerConfigs = {
     oracle: oracleAddresses,
     startBlock: unichainStartBlock,
     oracleStartBlock: mainnetStartBlockUnichain,
+  },
+  baseSepolia: {
+    v2: {
+      factory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
+    },
+    v3: {
+      v3Initializer: "0x9916Ec1c1E0462F6F8f7514e414F06bf001Ac82A" as Address,
+    },
+    v4: {
+      poolManager: zeroAddress as Address,
+      dopplerDeployer: zeroAddress as Address,
+      v4Initializer: zeroAddress as Address,
+      stateView: zeroAddress as Address,
+    },
+    shared: {
+      airlock: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+      tokenFactory: "0x5FBe931dc4B923A7abe4c47aD68d5bF9Eda5B76D" as Address,
+      universalRouter: "0x76870DEbef0BE25589A5CddCe9B1D99276C73B4e" as Address,
+      governanceFactory: "0x136191B46478cAB023cbC01a36160C4Aad81677a" as Address,
+      migrator: "0x8b4C7DB9121FC885689C0A50D5a1429F15AEc2a0" as Address,
+      weth: "0x4200000000000000000000000000000000000006" as Address,
+    },
+    oracle: oracleAddresses,
+    startBlock: baseSepoliaStartBlock,
+    oracleStartBlock: mainnetStartBlockUnichainSepolia,
   },
 };
