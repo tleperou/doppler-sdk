@@ -26,4 +26,16 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     quoterV2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658" as Address,
     univ2Router02: "0x284f11109359a7e1306c3e447ef14d38400063ff" as Address,
   },
+  // base sepolia
+  84532: {
+    airlock: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+    tokenFactory: "0x5FBe931dc4B923A7abe4c47aD68d5bF9Eda5B76D" as Address,
+    v3Initializer: "0x9916Ec1c1E0462F6F8f7514e414F06bf001Ac82A" as Address,
+    governanceFactory: "0x136191B46478cAB023cbC01a36160C4Aad81677a" as Address,
+    liquidityMigrator: "0x8b4C7DB9121FC885689C0A50D5a1429F15AEc2a0" as Address,
+    universalRouter: "0x76870DEbef0BE25589A5CddCe9B1D99276C73B4e" as Address,
+    permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
+    quoterV2: "0xC5290058841028F1614F3A6F0F5816cAd0df5E27" as Address,
+    univ2Router02: "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4" as Address,
+  },
 };
