@@ -2850,3 +2850,208 @@ export const uniswapV2Router02Abi = [
     type: "receive",
   },
 ] as const;
+
+export const BundlerAbi = [
+  {
+    type: "constructor",
+    inputs: [
+      { name: "_airlock", type: "address", internalType: "address payable" },
+      { name: "_router", type: "address", internalType: "address payable" },
+      { name: "_quoter", type: "address", internalType: "address" },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "bundle",
+    inputs: [
+      {
+        name: "createData",
+        type: "tuple",
+        internalType: "struct CreateParams",
+        components: [
+          { name: "initialSupply", type: "uint256", internalType: "uint256" },
+          { name: "numTokensToSell", type: "uint256", internalType: "uint256" },
+          { name: "numeraire", type: "address", internalType: "address" },
+          {
+            name: "tokenFactory",
+            type: "address",
+            internalType: "contract ITokenFactory",
+          },
+          { name: "tokenFactoryData", type: "bytes", internalType: "bytes" },
+          {
+            name: "governanceFactory",
+            type: "address",
+            internalType: "contract IGovernanceFactory",
+          },
+          {
+            name: "governanceFactoryData",
+            type: "bytes",
+            internalType: "bytes",
+          },
+          {
+            name: "poolInitializer",
+            type: "address",
+            internalType: "contract IPoolInitializer",
+          },
+          { name: "poolInitializerData", type: "bytes", internalType: "bytes" },
+          {
+            name: "liquidityMigrator",
+            type: "address",
+            internalType: "contract ILiquidityMigrator",
+          },
+          {
+            name: "liquidityMigratorData",
+            type: "bytes",
+            internalType: "bytes",
+          },
+          { name: "integrator", type: "address", internalType: "address" },
+          { name: "salt", type: "bytes32", internalType: "bytes32" },
+        ],
+      },
+      { name: "commands", type: "bytes", internalType: "bytes" },
+      { name: "inputs", type: "bytes[]", internalType: "bytes[]" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "simulateBundleExactIn",
+    inputs: [
+      {
+        name: "createData",
+        type: "tuple",
+        internalType: "struct CreateParams",
+        components: [
+          { name: "initialSupply", type: "uint256", internalType: "uint256" },
+          { name: "numTokensToSell", type: "uint256", internalType: "uint256" },
+          { name: "numeraire", type: "address", internalType: "address" },
+          {
+            name: "tokenFactory",
+            type: "address",
+            internalType: "contract ITokenFactory",
+          },
+          { name: "tokenFactoryData", type: "bytes", internalType: "bytes" },
+          {
+            name: "governanceFactory",
+            type: "address",
+            internalType: "contract IGovernanceFactory",
+          },
+          {
+            name: "governanceFactoryData",
+            type: "bytes",
+            internalType: "bytes",
+          },
+          {
+            name: "poolInitializer",
+            type: "address",
+            internalType: "contract IPoolInitializer",
+          },
+          { name: "poolInitializerData", type: "bytes", internalType: "bytes" },
+          {
+            name: "liquidityMigrator",
+            type: "address",
+            internalType: "contract ILiquidityMigrator",
+          },
+          {
+            name: "liquidityMigratorData",
+            type: "bytes",
+            internalType: "bytes",
+          },
+          { name: "integrator", type: "address", internalType: "address" },
+          { name: "salt", type: "bytes32", internalType: "bytes32" },
+        ],
+      },
+      {
+        name: "params",
+        type: "tuple",
+        internalType: "struct IQuoterV2.QuoteExactInputSingleParams",
+        components: [
+          { name: "tokenIn", type: "address", internalType: "address" },
+          { name: "tokenOut", type: "address", internalType: "address" },
+          { name: "amountIn", type: "uint256", internalType: "uint256" },
+          { name: "fee", type: "uint24", internalType: "uint24" },
+          {
+            name: "sqrtPriceLimitX96",
+            type: "uint160",
+            internalType: "uint160",
+          },
+        ],
+      },
+    ],
+    outputs: [{ name: "amountOut", type: "uint256", internalType: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "simulateBundleExactOut",
+    inputs: [
+      {
+        name: "createData",
+        type: "tuple",
+        internalType: "struct CreateParams",
+        components: [
+          { name: "initialSupply", type: "uint256", internalType: "uint256" },
+          { name: "numTokensToSell", type: "uint256", internalType: "uint256" },
+          { name: "numeraire", type: "address", internalType: "address" },
+          {
+            name: "tokenFactory",
+            type: "address",
+            internalType: "contract ITokenFactory",
+          },
+          { name: "tokenFactoryData", type: "bytes", internalType: "bytes" },
+          {
+            name: "governanceFactory",
+            type: "address",
+            internalType: "contract IGovernanceFactory",
+          },
+          {
+            name: "governanceFactoryData",
+            type: "bytes",
+            internalType: "bytes",
+          },
+          {
+            name: "poolInitializer",
+            type: "address",
+            internalType: "contract IPoolInitializer",
+          },
+          { name: "poolInitializerData", type: "bytes", internalType: "bytes" },
+          {
+            name: "liquidityMigrator",
+            type: "address",
+            internalType: "contract ILiquidityMigrator",
+          },
+          {
+            name: "liquidityMigratorData",
+            type: "bytes",
+            internalType: "bytes",
+          },
+          { name: "integrator", type: "address", internalType: "address" },
+          { name: "salt", type: "bytes32", internalType: "bytes32" },
+        ],
+      },
+      {
+        name: "params",
+        type: "tuple",
+        internalType: "struct IQuoterV2.QuoteExactOutputSingleParams",
+        components: [
+          { name: "tokenIn", type: "address", internalType: "address" },
+          { name: "tokenOut", type: "address", internalType: "address" },
+          { name: "amount", type: "uint256", internalType: "uint256" },
+          { name: "fee", type: "uint24", internalType: "uint24" },
+          {
+            name: "sqrtPriceLimitX96",
+            type: "uint160",
+            internalType: "uint160",
+          },
+        ],
+      },
+    ],
+    outputs: [{ name: "amountIn", type: "uint256", internalType: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+  { type: "error", name: "InvalidAddresses", inputs: [] },
+  { type: "error", name: "InvalidBundleData", inputs: [] },
+  { type: "error", name: "InvalidOutputToken", inputs: [] },
+] as const;

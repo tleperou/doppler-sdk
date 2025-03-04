@@ -6,8 +6,10 @@ import {
   OnMinedParam,
   createDrift,
   FunctionReturn,
+  FunctionArgs,
 } from "@delvtech/drift";
 import { ReadFactory, AirlockABI } from "./ReadFactory";
+import { BundlerAbi } from "../../abis";
 import { Address, encodeAbiParameters, Hex, parseEther } from "viem";
 
 // Constants for default configuration values
@@ -175,11 +177,14 @@ export interface DefaultConfigs {
   defaultGovernanceConfig?: GovernanceConfig;
 }
 
+export type BundlerABI = typeof BundlerAbi;
+
 /**
  * Factory class for creating and managing Doppler V3 pools with read/write capabilities
  */
 export class ReadWriteFactory extends ReadFactory {
   declare airlock: ReadWriteContract<AirlockABI>;
+  declare bundler: ReadWriteContract<BundlerABI>;
   declare defaultV3PoolConfig: V3PoolConfig;
   declare defaultVestingConfig: VestingConfig;
   declare defaultSaleConfig: SaleConfig;
@@ -192,10 +197,15 @@ export class ReadWriteFactory extends ReadFactory {
    */
   constructor(
     address: Address,
+    bundlerAddress: Address,
     drift: Drift<ReadWriteAdapter> = createDrift(),
     defaultConfigs?: DefaultConfigs
   ) {
     super(address, drift);
+    this.bundler = drift.contract({
+      abi: BundlerAbi,
+      address: bundlerAddress,
+    });
 
     // Initialize default configurations with fallback values
     this.defaultV3PoolConfig = defaultConfigs?.defaultV3PoolConfig ?? {
@@ -529,6 +539,34 @@ export class ReadWriteFactory extends ReadFactory {
     params: CreateParams
   ): Promise<FunctionReturn<AirlockABI, "create">> {
     return this.airlock.simulateWrite("create", { createData: params });
+  }
+
+  public async simulateBundleExactOutput(
+    createData: CreateParams,
+    params: FunctionArgs<BundlerABI, "simulateBundleExactOut">["params"]
+  ): Promise<FunctionReturn<BundlerABI, "simulateBundleExactOut">> {
+    return this.bundler.simulateWrite("simulateBundleExactOut", {
+      createData,
+      params: { ...params },
+    });
+  }
+
+  public async simulateBundleExactInput(
+    createData: CreateParams,
+    params: FunctionArgs<BundlerABI, "simulateBundleExactIn">["params"]
+  ): Promise<FunctionReturn<BundlerABI, "simulateBundleExactIn">> {
+    return this.bundler.simulateWrite("simulateBundleExactIn", {
+      createData,
+      params: { ...params },
+    });
+  }
+
+  public async bundle(
+    createData: CreateParams,
+    commands: FunctionArgs<BundlerABI, "bundle">["commands"],
+    inputs: FunctionArgs<BundlerABI, "bundle">["inputs"]
+  ): Promise<Hex> {
+    return this.bundler.write("bundle", { createData, commands, inputs });
   }
 
   /**
