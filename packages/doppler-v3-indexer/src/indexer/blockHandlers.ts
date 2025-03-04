@@ -41,7 +41,7 @@ ponder.on("MetricRefresherUnichain:block", async ({ event, context }) => {
   const startTime = Date.now();
   
   try {
-    // Execute combined refresh job
+    // Execute optimized combined refresh job
     await executeScheduledJobs({
       context,
       currentTimestamp: BigInt(event.block.timestamp),

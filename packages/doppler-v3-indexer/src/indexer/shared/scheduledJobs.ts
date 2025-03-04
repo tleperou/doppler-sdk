@@ -68,18 +68,18 @@ export const executeScheduledJobs = async ({
       `[${network.name}] Found ${stalePoolsWithVolume.length} pools to update`
     );
 
-    // Process in parallel batches for better performance
-    const BATCH_SIZE = 20;
+    // Process in parallel batches with larger batch size for better performance
+    const BATCH_SIZE = 50; // Increased from 20 to 50 for better parallelism
 
     for (let i = 0; i < stalePoolsWithVolume.length; i += BATCH_SIZE) {
       const batch = stalePoolsWithVolume.slice(i, i + BATCH_SIZE);
 
-      // Process batch in parallel
+      // Process batch in parallel with more concurrency
       await Promise.all(
         batch.map((poolInfo: any) =>
           refreshPoolComprehensive({
             poolInfo,
-            ethPrice,
+            ethPrice, 
             currentTimestamp,
             context,
           }).catch((error) => {
@@ -167,9 +167,11 @@ async function findStalePoolsWithVolume(
             ),
 
             // 3. Pools with stale volume data that needs regular cleanup
+            // Only consider pools with actual volume
             and(
               isNotNull(dailyVolume.lastUpdated),
-              lt(dailyVolume.lastUpdated, staleThreshold)
+              lt(dailyVolume.lastUpdated, staleThreshold),
+              gt(dailyVolume.volumeUsd, 0n)
             )
           )
         )
@@ -261,8 +263,8 @@ async function refreshPoolComprehensive({
   };
   const assetUpdates: Record<string, any> = {};
 
-  // Always update the volume timestamp if needed
-  if (poolInfo.needsVolumeUpdate && poolInfo.volume.checkpoints) {
+  // Update volume if needed and if we have any checkpoints
+  if (poolInfo.needsVolumeUpdate && poolInfo.volume.checkpoints && Object.keys(poolInfo.volume.checkpoints).length > 0) {
     // Process volume data
     const checkpoints = poolInfo.volume.checkpoints;
     const cutoffTimestamp = currentTimestamp - BigInt(secondsInDay);
@@ -273,34 +275,50 @@ async function refreshPoolComprehensive({
         ([ts]) => BigInt(ts) >= cutoffTimestamp
       )
     );
+    
+    // Skip unnecessary processing if no checkpoints remain
+    if (Object.keys(updatedCheckpoints).length === 0) {
+      // Just update the timestamp if no relevant checkpoints
+      try {
+        await db
+          .update(dailyVolume, {
+            pool: poolAddress.toLowerCase() as `0x${string}`,
+          })
+          .set({
+            lastUpdated: currentTimestamp,
+          });
+      } catch (error) {
+        console.error(`Failed to update volume timestamp for ${poolAddress}: ${error}`);
+      }
+    } else {
+      // Recalculate total volume
+      const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
+        (acc, vol) => acc + BigInt(vol),
+        BigInt(0)
+      );
 
-    // Recalculate total volume
-    const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
-      (acc, vol) => acc + BigInt(vol),
-      BigInt(0)
-    );
+      // Check if volume changed
+      const volumeChanged = poolInfo.volume.volumeUsd !== totalVolumeUsd;
 
-    // Check if volume changed
-    const volumeChanged = poolInfo.volume.volumeUsd !== totalVolumeUsd;
+      if (volumeChanged) {
+        poolUpdates.volumeUsd = totalVolumeUsd;
+        assetUpdates.dayVolumeUsd = totalVolumeUsd;
+      }
 
-    if (volumeChanged) {
-      poolUpdates.volumeUsd = totalVolumeUsd;
-      assetUpdates.dayVolumeUsd = totalVolumeUsd;
-    }
-
-    // Update the daily volume record
-    try {
-      await db
-        .update(dailyVolume, {
-          pool: poolAddress.toLowerCase() as `0x${string}`,
-        })
-        .set({
-          volumeUsd: totalVolumeUsd,
-          checkpoints: updatedCheckpoints,
-          lastUpdated: currentTimestamp,
-        });
-    } catch (error) {
-      console.error(`Failed to update volume for ${poolAddress}: ${error}`);
+      // Update the daily volume record
+      try {
+        await db
+          .update(dailyVolume, {
+            pool: poolAddress.toLowerCase() as `0x${string}`,
+          })
+          .set({
+            volumeUsd: totalVolumeUsd,
+            checkpoints: updatedCheckpoints,
+            lastUpdated: currentTimestamp,
+          });
+      } catch (error) {
+        console.error(`Failed to update volume for ${poolAddress}: ${error}`);
+      }
     }
   }
 
@@ -381,8 +399,11 @@ async function refreshPoolComprehensive({
     }
   }
 
-  // Optionally update market cap in the background
-  if (poolInfo.needsMetricsUpdate && poolInfo.pool.baseToken) {
+  // Optionally update market cap in the background, but only if there's been a significant price change
+  // This avoids unnecessary contract calls and database updates
+  if (poolInfo.needsMetricsUpdate && poolInfo.pool.baseToken && 
+      (Math.abs(poolInfo.pool.percentDayChange) > 1 || // Only refresh if price changed by more than 1%
+       (poolUpdates.percentDayChange !== undefined && Math.abs(poolUpdates.percentDayChange as number) > 1))) {
     refreshAssetMarketCap({
       assetAddress: poolInfo.pool.baseToken as Address,
       price: poolInfo.pool.price,
