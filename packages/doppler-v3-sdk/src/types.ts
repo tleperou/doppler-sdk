@@ -10,7 +10,7 @@ export type DopplerV3Addresses = {
   permit2: Address;
   quoterV2: Address;
   univ2Router02: Address;
-  bundler?: Address;
+  bundler: Address;
 };
 
 export type PoolKey = {
