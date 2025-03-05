@@ -564,9 +564,14 @@ export class ReadWriteFactory extends ReadFactory {
   public async bundle(
     createData: CreateParams,
     commands: FunctionArgs<BundlerABI, "bundle">["commands"],
-    inputs: FunctionArgs<BundlerABI, "bundle">["inputs"]
+    inputs: FunctionArgs<BundlerABI, "bundle">["inputs"],
+    options?: ContractWriteOptions & OnMinedParam
   ): Promise<Hex> {
-    return this.bundler.write("bundle", { createData, commands, inputs });
+    return this.bundler.write(
+      "bundle",
+      { createData, commands, inputs },
+      options
+    );
   }
 
   /**
