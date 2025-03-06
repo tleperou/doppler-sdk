@@ -6,22 +6,12 @@ import {
   CHAINLINK_ETH_DECIMALS,
 } from "@app/utils/constants";
 import { pool, asset, hourBucketUsd, dailyVolume } from "ponder.schema";
-import {
-  and,
-  eq,
-  or,
-  isNull,
-  isNotNull,
-  lt,
-  gt,
-  sql,
-  between,
-  not,
-} from "drizzle-orm";
+import { and, eq, lt, sql, between } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
+import { updateDailyVolume } from "./timeseries";
 
 /**
  * Executes a comprehensive refresh job that handles both volume and metrics updates
@@ -239,177 +229,63 @@ async function refreshPoolComprehensive({
   currentTimestamp: bigint;
   context: Context;
 }) {
-  const { db } = context;
   const poolAddress = poolInfo.pool.address as Address;
 
-  // Keep track of all updates we'll make
-  const poolUpdates: Record<string, any> = {
-    lastRefreshed: currentTimestamp,
-  };
-  const assetUpdates: Record<string, any> = {};
+  await updateDailyVolume({
+    poolAddress,
+    asset: poolInfo.pool.asset as Address,
+    volumeData: poolInfo.volume,
+    timestamp: currentTimestamp,
+    context,
+  });
 
-  // Update volume if needed and if we have any checkpoints
-  if (
-    poolInfo.needsVolumeUpdate &&
-    poolInfo.volume.checkpoints &&
-    Object.keys(poolInfo.volume.checkpoints).length > 0
-  ) {
-    // Process volume data
-    const checkpoints = poolInfo.volume.checkpoints;
-    const cutoffTimestamp = currentTimestamp - BigInt(secondsInDay);
+  try {
+    const priceChangeInfo = await calculatePriceChangePercent({
+      poolAddress,
+      currentPrice: poolInfo.pool.price,
+      currentTimestamp,
+      ethPrice,
+      createdAt: poolInfo.pool.createdAt,
+      context,
+    });
 
-    // Remove old checkpoints
-    const updatedCheckpoints = Object.fromEntries(
-      Object.entries(checkpoints).filter(
-        ([ts]) => BigInt(ts) >= cutoffTimestamp
-      )
-    );
+    const dollarLiquidity = await computeDollarLiquidity({
+      assetBalance: poolInfo.pool.isToken0
+        ? poolInfo.pool.reserves0
+        : poolInfo.pool.reserves1,
+      quoteBalance: poolInfo.pool.isToken0
+        ? poolInfo.pool.reserves1
+        : poolInfo.pool.reserves0,
+      price: poolInfo.pool.price,
+      ethPrice,
+    });
 
-    // Skip unnecessary processing if no checkpoints remain
-    if (Object.keys(updatedCheckpoints).length === 0) {
-      // Just update the timestamp if no relevant checkpoints
-      try {
-        await db
-          .update(dailyVolume, {
-            pool: poolAddress.toLowerCase() as `0x${string}`,
-          })
-          .set({
-            lastUpdated: currentTimestamp,
-          });
-      } catch (error) {
-        console.error(
-          `Failed to update volume timestamp for ${poolAddress}: ${error}`
-        );
-      }
-    } else {
-      // Recalculate total volume
-      const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
-        (acc, vol) => acc + BigInt(vol),
-        BigInt(0)
-      );
-
-      // Check if volume changed
-      const volumeChanged = poolInfo.volume.volumeUsd !== totalVolumeUsd;
-
-      if (volumeChanged) {
-        poolUpdates.volumeUsd = totalVolumeUsd;
-        assetUpdates.dayVolumeUsd = totalVolumeUsd;
-      }
-
-      // Update the daily volume record
-      try {
-        await db
-          .update(dailyVolume, {
-            pool: poolAddress.toLowerCase() as `0x${string}`,
-          })
-          .set({
-            volumeUsd: totalVolumeUsd,
-            checkpoints: updatedCheckpoints,
-            lastUpdated: currentTimestamp,
-          });
-      } catch (error) {
-        console.error(`Failed to update volume for ${poolAddress}: ${error}`);
-      }
-    }
-  }
-
-  // Calculate price change if metrics update is needed
-  if (poolInfo.needsMetricsUpdate) {
-    // Get price change percent
-    try {
-      const priceChangeInfo = await calculatePriceChangePercent({
-        poolAddress,
-        currentPrice: poolInfo.pool.price,
-        currentTimestamp,
-        ethPrice,
-        createdAt: poolInfo.pool.createdAt,
-        context,
-      });
-
-      poolUpdates.percentDayChange = priceChangeInfo;
-      assetUpdates.percentDayChange = priceChangeInfo;
-    } catch (error) {
-      console.error(
-        `Failed to calculate price change for ${poolAddress}: ${error}`
-      );
-    }
-
-    // Calculate dollar liquidity
-    try {
-      const dollarLiquidity = await computeDollarLiquidity({
-        assetBalance: poolInfo.pool.isToken0
-          ? poolInfo.pool.reserves0
-          : poolInfo.pool.reserves1,
-        quoteBalance: poolInfo.pool.isToken0
-          ? poolInfo.pool.reserves1
-          : poolInfo.pool.reserves0,
-        price: poolInfo.pool.price,
-        ethPrice,
-      });
-
-      if (
-        dollarLiquidity &&
-        Math.abs(
-          Number(dollarLiquidity - poolInfo.pool.dollarLiquidity) /
-            Number(poolInfo.pool.dollarLiquidity || 1n)
-        ) > 0.01
-      ) {
-        poolUpdates.dollarLiquidity = dollarLiquidity;
-        assetUpdates.liquidityUsd = dollarLiquidity;
-      }
-    } catch (error) {
-      console.error(
-        `Failed to calculate dollar liquidity for ${poolAddress}: ${error}`
-      );
-    }
-  }
-
-  // Only update pool if we have changes to make beyond lastRefreshed
-  if (Object.keys(poolUpdates).length > 1) {
-    try {
-      await updatePool({
-        poolAddress,
-        context,
-        update: poolUpdates,
-      });
-    } catch (error) {
-      console.error(`Failed to update pool ${poolAddress}: ${error}`);
-    }
-  }
-
-  // Only update asset if we have changes to make
-  if (Object.keys(assetUpdates).length > 0 && poolInfo.pool.asset) {
-    try {
-      await updateAsset({
-        assetAddress: poolInfo.pool.asset as Address,
-        context,
-        update: assetUpdates,
-      });
-    } catch (error) {
-      console.error(`Failed to update asset ${poolInfo.pool.asset}: ${error}`);
-    }
-  }
-
-  // Optionally update market cap in the background, but only if there's been a significant price change
-  // This avoids unnecessary contract calls and database updates
-  if (
-    poolInfo.needsMetricsUpdate &&
-    poolInfo.pool.baseToken &&
-    (Math.abs(poolInfo.pool.percentDayChange) > 1 || // Only refresh if price changed by more than 1%
-      (poolUpdates.percentDayChange !== undefined &&
-        Math.abs(poolUpdates.percentDayChange as number) > 1))
-  ) {
-    refreshAssetMarketCap({
-      assetAddress: poolInfo.pool.baseToken as Address,
+    const marketCap = await getAssetMarketCap({
+      assetAddress: poolInfo.pool.asset as Address,
       price: poolInfo.pool.price,
       ethPrice,
       context,
-    }).catch((error) => {
-      // Just log error but don't fail the whole update
-      console.error(
-        `Failed to update market cap for ${poolInfo.pool.baseToken}: ${error}`
-      );
     });
+
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        percentDayChange: priceChangeInfo,
+        dollarLiquidity: dollarLiquidity,
+      },
+    });
+    await updateAsset({
+      assetAddress: poolInfo.pool.asset as Address,
+      context,
+      update: {
+        percentDayChange: priceChangeInfo,
+        liquidityUsd: dollarLiquidity,
+        marketCapUsd: marketCap,
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to refresh pool ${poolAddress}: ${error}`);
   }
 }
 
@@ -433,9 +309,8 @@ async function calculatePriceChangePercent({
 }): Promise<number> {
   const { db } = context;
 
-  // Skip if price is 0
   if (currentPrice === 0n) {
-    return 0; // Return 0 instead of null
+    return 0;
   }
 
   const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
@@ -484,281 +359,10 @@ async function calculatePriceChangePercent({
 }
 
 /**
- * Original refreshPoolMetrics function - now obsolete but kept for reference
- * Will be removed in a future update
+ * Computes the market cap for an asset
+ * @returns The market cap in USD or null if it cannot be calculated
  */
-export const refreshPoolMetrics = async ({
-  context,
-  currentTimestamp,
-}: {
-  context: Context;
-  currentTimestamp: bigint;
-}) => {
-  const { db, network } = context;
-  const chainId = BigInt(network.chainId);
-
-  // Find pools that haven't been refreshed in the last hour
-  const staleThreshold = currentTimestamp - BigInt(secondsInHour * 2);
-
-  // Use db.sql.select with Drizzle helpers
-  let stalePools = [];
-  try {
-    stalePools = await db.sql
-      .select()
-      .from(pool)
-      .where(
-        and(
-          eq(pool.chainId, chainId),
-          or(isNull(pool.lastRefreshed), lt(pool.lastRefreshed, staleThreshold))
-        )
-      )
-      .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
-      .limit(20);
-  } catch (error) {
-    console.error(`Error fetching stale pools: ${error}`);
-    return; // Exit early if the query fails
-  }
-
-  // Exit early if no pools need refreshing
-  if (stalePools.length === 0) {
-    return;
-  }
-
-  const ethPrice = await fetchEthPrice(currentTimestamp, context);
-  if (!ethPrice) {
-    console.error("Failed to get ETH price, skipping metrics refresh");
-    return;
-  }
-
-  const BATCH_SIZE = 20;
-
-  for (let i = 0; i < stalePools.length; i += BATCH_SIZE) {
-    const batch = stalePools.slice(i, i + BATCH_SIZE);
-
-    // Process this batch in parallel
-    await Promise.all(
-      batch.map((poolData) =>
-        refreshPoolData({
-          poolData,
-          ethPrice,
-          currentTimestamp,
-          context,
-        }).catch((error) => {
-          // Log but don't fail the whole batch
-          console.error(`Error refreshing pool ${poolData.address}: ${error}`);
-        })
-      )
-    );
-
-    // Log progress for larger batches
-    if (stalePools.length > BATCH_SIZE) {
-      console.log(
-        `[${network.name}] Processed ${Math.min(
-          i + BATCH_SIZE,
-          stalePools.length
-        )}/${stalePools.length} pools`
-      );
-    }
-  }
-};
-
-/**
- * Refreshes data for a specific pool including:
- * - Price change percentage (24h)
- * - Dollar liquidity amounts
- */
-export const refreshPoolData = async ({
-  poolData,
-  ethPrice,
-  currentTimestamp,
-  context,
-}: {
-  poolData: typeof pool.$inferSelect;
-  ethPrice: bigint;
-  currentTimestamp: bigint;
-  context: Context;
-}) => {
-  const { db } = context;
-  const poolAddress = poolData.address as Address;
-  const assetAddress = poolData.asset as Address;
-
-  try {
-    // 1. Update price change percentage
-    await refreshPriceChangePercent({
-      poolAddress,
-      assetAddress,
-      currentPrice: poolData.price,
-      currentTimestamp,
-      ethPrice,
-      createdAt: poolData.createdAt,
-      context,
-    });
-
-    // 2. Update dollar liquidity for pool
-    // We're using the stored reserves for calculation
-    const dollarLiquidity = await computeDollarLiquidity({
-      assetBalance: poolData.isToken0 ? poolData.reserves0 : poolData.reserves1,
-      quoteBalance: poolData.isToken0 ? poolData.reserves1 : poolData.reserves0,
-      price: poolData.price,
-      ethPrice,
-    });
-
-    // Only update if the value has changed significantly (>1%)
-    let shouldUpdateLiquidity = false;
-    if (poolData.dollarLiquidity === 0n) {
-      shouldUpdateLiquidity = dollarLiquidity > 0n;
-    } else if (dollarLiquidity === 0n) {
-      shouldUpdateLiquidity = true;
-    } else {
-      const percentChange =
-        Math.abs(
-          Number(dollarLiquidity - poolData.dollarLiquidity) /
-            Number(poolData.dollarLiquidity)
-        ) * 100;
-      shouldUpdateLiquidity = percentChange > 1;
-    }
-
-    if (shouldUpdateLiquidity) {
-      await updatePool({
-        poolAddress,
-        context,
-        update: {
-          dollarLiquidity: dollarLiquidity ?? 0n,
-          lastRefreshed: currentTimestamp,
-        },
-      });
-
-      // 3. Update liquidityUsd for the asset
-      await updateAsset({
-        assetAddress,
-        context,
-        update: {
-          liquidityUsd: dollarLiquidity ?? 0n,
-        },
-      });
-    } else {
-      // Just update the last refreshed timestamp
-      await updatePool({
-        poolAddress,
-        context,
-        update: {
-          lastRefreshed: currentTimestamp,
-        },
-      });
-    }
-
-    // 4. Update market cap for the asset if needed
-    await refreshAssetMarketCap({
-      assetAddress,
-      price: poolData.price,
-      ethPrice,
-      context,
-    });
-  } catch (error) {
-    console.error(`Failed to refresh metrics for pool ${poolAddress}:`, error);
-  }
-};
-
-/**
- * Calculates and updates the 24-hour price change percentage
- */
-export const refreshPriceChangePercent = async ({
-  poolAddress,
-  assetAddress,
-  currentPrice,
-  currentTimestamp,
-  ethPrice,
-  createdAt,
-  context,
-}: {
-  poolAddress: Address;
-  assetAddress: Address;
-  currentPrice: bigint;
-  currentTimestamp: bigint;
-  ethPrice: bigint;
-  createdAt: bigint;
-  context: Context;
-}) => {
-  const { db, network } = context;
-
-  const timestampFrom = currentTimestamp - BigInt(secondsInDay);
-  const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
-
-  // Skip expensive calculations if price is 0
-  if (currentPrice === 0n || usdPrice === 0n) {
-    return null;
-  }
-
-  const searchDelta =
-    currentTimestamp - createdAt > BigInt(secondsInDay)
-      ? secondsInHour
-      : secondsInDay;
-
-  // Use sql.select for better performance
-  const hourBucketResults = await db.sql
-    .select()
-    .from(hourBucketUsd)
-    .where(
-      and(
-        eq(hourBucketUsd.pool, poolAddress.toLowerCase() as `0x${string}`),
-        between(
-          hourBucketUsd.hourId,
-          Number(timestampFrom) - searchDelta,
-          Number(timestampFrom) + searchDelta
-        )
-      )
-    )
-    .orderBy(hourBucketUsd.hourId)
-    .limit(1);
-
-  const priceFrom = hourBucketResults[0];
-  if (!priceFrom || priceFrom.open === 0n) {
-    // If no historical price, set 0% change instead of null
-    return 0;
-  }
-
-  // Calculate price change percentage
-  let priceChangePercent =
-    (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
-
-  // Ensure we're not sending null values to the database
-  if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
-    priceChangePercent = 0;
-  }
-
-  const updates = [];
-
-  updates.push(
-    updateAsset({
-      assetAddress,
-      context,
-      update: {
-        percentDayChange: priceChangePercent,
-      },
-    })
-  );
-
-  updates.push(
-    updatePool({
-      poolAddress,
-      context,
-      update: {
-        percentDayChange: priceChangePercent,
-      },
-    })
-  );
-
-  // Execute updates in parallel if there are any
-  if (updates.length > 0) {
-    await Promise.all(updates);
-  }
-};
-
-/**
- * Updates the market cap for an asset
- */
-// Cache for total supply values to avoid repeated contract calls
-export const refreshAssetMarketCap = async ({
+export const getAssetMarketCap = async ({
   assetAddress,
   price,
   ethPrice,
@@ -768,16 +372,16 @@ export const refreshAssetMarketCap = async ({
   price: bigint;
   ethPrice: bigint;
   context: Context;
-}) => {
-  // Skip immediately if price is 0
+}): Promise<bigint> => {
+  // Return null if price is 0
   if (price === 0n) {
-    return;
+    return 0n;
   }
 
-  const { client, db } = context;
+  const { client } = context;
 
   try {
-    // Get total supply (from cache if available)
+    // Get total supply
     let totalSupply: bigint | null = null;
     // Read from contract
     const totalSupplyResult = await client
@@ -805,23 +409,15 @@ export const refreshAssetMarketCap = async ({
     if (totalSupply) {
       const marketCap = (price * totalSupply) / BigInt(10 ** 18);
       const marketCapUsd = (marketCap * ethPrice) / CHAINLINK_ETH_DECIMALS;
-
-      // Get current asset value
-      const currentAsset = await db.find(asset, { address: assetAddress });
-      if (!currentAsset) return;
-
-      await updateAsset({
-        assetAddress,
-        context,
-        update: {
-          marketCapUsd,
-        },
-      });
+      return marketCapUsd;
     }
+
+    return 0n;
   } catch (error) {
     // Less verbose error handling
     console.error(
-      `Market cap update failed for ${assetAddress.slice(0, 8)}...`
+      `Market cap calculation failed for ${assetAddress.slice(0, 8)}...`
     );
+    return 0n;
   }
 };
