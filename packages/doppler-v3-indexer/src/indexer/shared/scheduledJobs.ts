@@ -171,9 +171,7 @@ async function findStalePoolsWithVolume(
       .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
       .limit(100);
 
-    console.log(
-      `Found ${results.length} pools needing refresh (using lastSwapTimestamp field)`
-    );
+    console.log(`Found ${results.length} pools needing refresh`);
 
     // Transform results into a useful format
     return results.map((row) => ({

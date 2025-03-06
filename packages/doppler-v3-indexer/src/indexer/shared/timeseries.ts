@@ -238,6 +238,8 @@ export const insertOrUpdateDailyVolume = async ({
         BigInt(secondsInDay)
       );
 
+      console.log("OLDEST CHECKPOINT TIME", oldestCheckpointTime);
+
       const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
         (acc, vol) => acc + BigInt(vol),
         BigInt(0)
