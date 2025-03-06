@@ -231,11 +231,9 @@ export const insertOrUpdateDailyVolume = async ({
           ([ts]) => BigInt(ts) >= timestamp - BigInt(secondsInDay)
         )
       );
-
-      const oldestCheckpointTime = Object.keys(updatedCheckpoints).reduce(
-        (oldest, current) =>
-          BigInt(current) < oldest ? BigInt(current) : oldest,
-        BigInt(secondsInDay)
+      // find the lowest key in the updatedCheckpoints object
+      const oldestCheckpointTime = BigInt(
+        Math.min(...Object.keys(updatedCheckpoints).map(Number))
       );
 
       console.log("OLDEST CHECKPOINT TIME", oldestCheckpointTime);
