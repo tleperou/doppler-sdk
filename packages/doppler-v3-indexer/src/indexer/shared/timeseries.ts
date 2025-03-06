@@ -215,7 +215,7 @@ export const insertOrUpdateDailyVolume = async ({
       chainId: BigInt(network.chainId),
       lastUpdated: timestamp,
       checkpoints: {},
-      earliestCheckpoint: timestamp,
+      earliestCheckpoint: 0n,
       dayChangeUsd: 0n,
     })
     .onConflictDoUpdate((row) => {
