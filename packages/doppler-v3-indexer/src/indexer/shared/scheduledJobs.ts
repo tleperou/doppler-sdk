@@ -56,6 +56,7 @@ export const executeScheduledJobs = async ({
     const stalePoolsWithVolume = await findStalePoolsWithVolume(
       context,
       staleThreshold,
+      currentTimestamp,
       chainId
     );
 
@@ -79,7 +80,7 @@ export const executeScheduledJobs = async ({
         batch.map((poolInfo: any) =>
           refreshPoolComprehensive({
             poolInfo,
-            ethPrice, 
+            ethPrice,
             currentTimestamp,
             context,
           }).catch((error) => {
@@ -93,7 +94,10 @@ export const executeScheduledJobs = async ({
       // Log progress for larger batches
       if (stalePoolsWithVolume.length > BATCH_SIZE) {
         console.log(
-          `[${network.name}] Processed ${Math.min(i + BATCH_SIZE, stalePoolsWithVolume.length)}/${stalePoolsWithVolume.length} pools`
+          `[${network.name}] Processed ${Math.min(
+            i + BATCH_SIZE,
+            stalePoolsWithVolume.length
+          )}/${stalePoolsWithVolume.length} pools`
         );
       }
     }
@@ -101,7 +105,11 @@ export const executeScheduledJobs = async ({
     // Log performance metrics
     const duration = (Date.now() - startTime) / 1000; // in seconds
     console.log(
-      `[${network.name}] Refreshed ${stalePoolsWithVolume.length} pools in ${duration.toFixed(2)}s (${(duration / stalePoolsWithVolume.length).toFixed(3)}s per pool)`
+      `[${network.name}] Refreshed ${
+        stalePoolsWithVolume.length
+      } pools in ${duration.toFixed(2)}s (${(
+        duration / stalePoolsWithVolume.length
+      ).toFixed(3)}s per pool)`
     );
   } catch (error) {
     console.error(
@@ -120,15 +128,12 @@ export const executeScheduledJobs = async ({
 async function findStalePoolsWithVolume(
   context: Context,
   staleThreshold: bigint,
+  currentTimestamp: bigint,
   chainId: bigint
 ) {
   const { db } = context;
 
   try {
-    // Find pools with either:
-    // 1. No previous refresh (new pools)
-    // 2. Pools that have swaps more recent than their last refresh
-    // 3. Pools with stale volume data that need updating
     const results = await db.sql
       .select({
         // Pool fields
@@ -149,35 +154,22 @@ async function findStalePoolsWithVolume(
         volume_usd: dailyVolume.volumeUsd,
         checkpoints: dailyVolume.checkpoints,
         last_updated: dailyVolume.lastUpdated,
+        inactive: dailyVolume.inactive,
       })
       .from(pool)
       .leftJoin(dailyVolume, eq(pool.address, dailyVolume.pool))
       .where(
         and(
           eq(pool.chainId, chainId),
-          or(
-            // 1. Never refreshed before (new pools that missed handlers)
-            isNull(pool.lastRefreshed),
-
-            // 2. Pools with metrics that haven't been refreshed in a while
-            // but still have trading volume or price changes
-            and(
-              lt(pool.lastRefreshed, staleThreshold),
-              or(gt(pool.volumeUsd, 0n), not(eq(pool.percentDayChange, 0)))
-            ),
-
-            // 3. Pools with stale volume data that needs regular cleanup
-            // Only consider pools with actual volume
-            and(
-              isNotNull(dailyVolume.lastUpdated),
-              lt(dailyVolume.lastUpdated, staleThreshold),
-              gt(dailyVolume.volumeUsd, 0n)
-            )
+          eq(dailyVolume.inactive, false),
+          lt(
+            dailyVolume.earliestCheckpoint,
+            currentTimestamp - BigInt(secondsInDay)
           )
         )
       )
       .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
-      .limit(50);
+      .limit(100);
 
     console.log(
       `Found ${results.length} pools needing refresh (using lastSwapTimestamp field)`
@@ -202,13 +194,8 @@ async function findStalePoolsWithVolume(
         volumeUsd: row.volume_usd,
         checkpoints: row.checkpoints,
         lastUpdated: row.last_updated,
+        inactive: row.inactive,
       },
-      needsVolumeUpdate: row.last_updated
-        ? row.last_updated < staleThreshold
-        : false,
-      needsMetricsUpdate: row.last_refreshed
-        ? row.last_refreshed < staleThreshold
-        : true,
     }));
   } catch (error) {
     console.error(`Error finding stale pools: ${error}`);
@@ -264,7 +251,11 @@ async function refreshPoolComprehensive({
   const assetUpdates: Record<string, any> = {};
 
   // Update volume if needed and if we have any checkpoints
-  if (poolInfo.needsVolumeUpdate && poolInfo.volume.checkpoints && Object.keys(poolInfo.volume.checkpoints).length > 0) {
+  if (
+    poolInfo.needsVolumeUpdate &&
+    poolInfo.volume.checkpoints &&
+    Object.keys(poolInfo.volume.checkpoints).length > 0
+  ) {
     // Process volume data
     const checkpoints = poolInfo.volume.checkpoints;
     const cutoffTimestamp = currentTimestamp - BigInt(secondsInDay);
@@ -275,7 +266,7 @@ async function refreshPoolComprehensive({
         ([ts]) => BigInt(ts) >= cutoffTimestamp
       )
     );
-    
+
     // Skip unnecessary processing if no checkpoints remain
     if (Object.keys(updatedCheckpoints).length === 0) {
       // Just update the timestamp if no relevant checkpoints
@@ -288,7 +279,9 @@ async function refreshPoolComprehensive({
             lastUpdated: currentTimestamp,
           });
       } catch (error) {
-        console.error(`Failed to update volume timestamp for ${poolAddress}: ${error}`);
+        console.error(
+          `Failed to update volume timestamp for ${poolAddress}: ${error}`
+        );
       }
     } else {
       // Recalculate total volume
@@ -401,9 +394,13 @@ async function refreshPoolComprehensive({
 
   // Optionally update market cap in the background, but only if there's been a significant price change
   // This avoids unnecessary contract calls and database updates
-  if (poolInfo.needsMetricsUpdate && poolInfo.pool.baseToken && 
-      (Math.abs(poolInfo.pool.percentDayChange) > 1 || // Only refresh if price changed by more than 1%
-       (poolUpdates.percentDayChange !== undefined && Math.abs(poolUpdates.percentDayChange as number) > 1))) {
+  if (
+    poolInfo.needsMetricsUpdate &&
+    poolInfo.pool.baseToken &&
+    (Math.abs(poolInfo.pool.percentDayChange) > 1 || // Only refresh if price changed by more than 1%
+      (poolUpdates.percentDayChange !== undefined &&
+        Math.abs(poolUpdates.percentDayChange as number) > 1))
+  ) {
     refreshAssetMarketCap({
       assetAddress: poolInfo.pool.baseToken as Address,
       price: poolInfo.pool.price,
@@ -473,13 +470,14 @@ async function calculatePriceChangePercent({
       return 0; // Return 0 instead of null
     }
 
-    const priceChangePercent = (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
-    
+    const priceChangePercent =
+      (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+
     // Ensure we're not returning NaN or Infinity
     if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
       return 0;
     }
-    
+
     return priceChangePercent;
   } catch (error) {
     console.error(`Error calculating price change: ${error}`);
@@ -557,7 +555,10 @@ export const refreshPoolMetrics = async ({
     // Log progress for larger batches
     if (stalePools.length > BATCH_SIZE) {
       console.log(
-        `[${network.name}] Processed ${Math.min(i + BATCH_SIZE, stalePools.length)}/${stalePools.length} pools`
+        `[${network.name}] Processed ${Math.min(
+          i + BATCH_SIZE,
+          stalePools.length
+        )}/${stalePools.length} pools`
       );
     }
   }

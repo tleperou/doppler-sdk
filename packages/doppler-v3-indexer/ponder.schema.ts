@@ -123,6 +123,8 @@ export const dailyVolume = onchainTable("daily_volume", (t) => ({
   chainId: t.bigint().notNull(),
   checkpoints: t.jsonb().notNull(),
   lastUpdated: t.bigint().notNull(),
+  earliestCheckpoint: t.bigint().notNull(),
+  inactive: t.boolean().notNull().default(false),
 }));
 
 export const position = onchainTable(

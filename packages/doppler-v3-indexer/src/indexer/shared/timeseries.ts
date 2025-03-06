@@ -1,8 +1,5 @@
 import { Address } from "viem";
-import {
-  hourBucketUsd,
-  dailyVolume,
-} from "ponder.schema";
+import { hourBucketUsd, dailyVolume } from "ponder.schema";
 import { Context } from "ponder:registry";
 import {
   secondsInDay,
@@ -108,20 +105,22 @@ export const update24HourPriceChange = async ({
 
   const timestampFrom = currentTimestamp - BigInt(secondsInDay);
   const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
-  const searchDelta = currentTimestamp - createdAt > BigInt(secondsInDay) ? secondsInHour : secondsInDay;
+  const searchDelta =
+    currentTimestamp - createdAt > BigInt(secondsInDay)
+      ? secondsInHour
+      : secondsInDay;
 
   const priceFrom = await db.sql.query.hourBucketUsd.findFirst({
     where: (fields, { and, eq, between }) =>
       and(
         eq(fields.pool, poolAddress.toLowerCase() as `0x${string}`),
-        between(fields.hourId,
+        between(
+          fields.hourId,
           Number(timestampFrom) - searchDelta,
           Number(timestampFrom) + searchDelta
         )
       ),
-    orderBy: (fields, { asc }) => [
-      asc(fields.hourId)
-    ],
+    orderBy: (fields, { asc }) => [asc(fields.hourId)],
   });
 
   if (!priceFrom) {
@@ -133,7 +132,7 @@ export const update24HourPriceChange = async ({
         percentDayChange: 0,
       },
     });
-    
+
     await updatePool({
       poolAddress,
       context,
@@ -141,13 +140,14 @@ export const update24HourPriceChange = async ({
         percentDayChange: 0,
       },
     });
-    
+
     return;
   }
 
   // Calculate the price change percentage
-  let priceChangePercent = Number(usdPrice - priceFrom.open) / Number(priceFrom.open) * 100;
-  
+  let priceChangePercent =
+    (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+
   // Ensure we're not sending null values to the database
   if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
     priceChangePercent = 0;
@@ -169,7 +169,6 @@ export const update24HourPriceChange = async ({
     },
   });
 };
-
 
 export const insertOrUpdateDailyVolume = async ({
   tokenIn,
@@ -194,8 +193,9 @@ export const insertOrUpdateDailyVolume = async ({
 
   let volumeUsd;
 
-  const isTokenInWeth = tokenIn.toLowerCase() ===
-    (configs[network.name].shared.weth.toLowerCase() as `0x${string}`)
+  const isTokenInWeth =
+    tokenIn.toLowerCase() ===
+    (configs[network.name].shared.weth.toLowerCase() as `0x${string}`);
 
   if (isTokenInWeth) {
     volumeUsd = (amountIn * ethPrice) / CHAINLINK_ETH_DECIMALS;
@@ -217,6 +217,8 @@ export const insertOrUpdateDailyVolume = async ({
       checkpoints: {
         [timestamp.toString()]: volumeUsd.toString(),
       },
+      earliestCheckpoint: timestamp,
+      dayChangeUsd: 0n,
     })
     .onConflictDoUpdate((row) => {
       const checkpoints = {
@@ -230,6 +232,12 @@ export const insertOrUpdateDailyVolume = async ({
         )
       );
 
+      const oldestCheckpointTime = Object.keys(updatedCheckpoints).reduce(
+        (oldest, current) =>
+          BigInt(current) < oldest ? BigInt(current) : oldest,
+        BigInt(secondsInDay)
+      );
+
       const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
         (acc, vol) => acc + BigInt(vol),
         BigInt(0)
@@ -241,6 +249,8 @@ export const insertOrUpdateDailyVolume = async ({
         volumeUsd: totalVolumeUsd,
         checkpoints: updatedCheckpoints,
         lastUpdated: timestamp,
+        earliestCheckpoint: oldestCheckpointTime,
+        inactive: totalVolumeUsd === 0n,
       };
     });
 
