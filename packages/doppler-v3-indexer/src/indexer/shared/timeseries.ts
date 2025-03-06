@@ -214,9 +214,7 @@ export const insertOrUpdateDailyVolume = async ({
       volumeUsd: volumeUsd,
       chainId: BigInt(network.chainId),
       lastUpdated: timestamp,
-      checkpoints: {
-        [timestamp.toString()]: volumeUsd.toString(),
-      },
+      checkpoints: {},
       earliestCheckpoint: timestamp,
       dayChangeUsd: 0n,
     })
