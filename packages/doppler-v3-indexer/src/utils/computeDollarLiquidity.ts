@@ -11,10 +11,6 @@ export const computeDollarLiquidity = async ({
   price: bigint;
   ethPrice: bigint;
 }) => {
-  console.log("assetBalance", assetBalance);
-  console.log("quoteBalance", quoteBalance);
-  console.log("price", price);
-  console.log("ethPrice", ethPrice);
   const assetLiquidity =
     (((assetBalance * price) / WAD) * ethPrice) / CHAINLINK_ETH_DECIMALS;
   const numeraireLiquidity = (quoteBalance * ethPrice) / CHAINLINK_ETH_DECIMALS;
