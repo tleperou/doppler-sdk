@@ -229,12 +229,10 @@ export const insertOrUpdateDailyVolume = async ({
           ([ts]) => BigInt(ts) >= timestamp - BigInt(secondsInDay)
         )
       );
-      // find the lowest key in the updatedCheckpoints object
+
       const oldestCheckpointTime = BigInt(
         Math.min(...Object.keys(updatedCheckpoints).map(Number))
       );
-
-      console.log("OLDEST CHECKPOINT TIME", oldestCheckpointTime);
 
       const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
         (acc, vol) => acc + BigInt(vol),
@@ -258,8 +256,8 @@ export const insertOrUpdateDailyVolume = async ({
       context,
       update: {
         volumeUsd: computedVolumeUsd,
-        lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
-        lastSwapTimestamp: timestamp, // Track when the pool was last swapped on
+        lastRefreshed: timestamp,
+        lastSwapTimestamp: timestamp,
       },
     });
     await updateToken({

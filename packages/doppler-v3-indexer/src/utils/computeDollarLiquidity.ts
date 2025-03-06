@@ -1,5 +1,3 @@
-import { Context } from "ponder:registry";
-import { fetchEthPrice } from "../indexer/shared/oracle";
 import { WAD, CHAINLINK_ETH_DECIMALS } from "../utils/constants";
 
 export const computeDollarLiquidity = async ({

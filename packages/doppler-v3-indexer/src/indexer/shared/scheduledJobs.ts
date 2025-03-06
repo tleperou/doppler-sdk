@@ -267,10 +267,6 @@ async function refreshPoolComprehensive({
       context,
     });
 
-    console.log("priceChangeInfo", priceChangeInfo);
-    console.log("dollarLiquidity", dollarLiquidity);
-    console.log("marketCap", marketCap);
-
     await updatePool({
       poolAddress,
       context,
