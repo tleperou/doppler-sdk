@@ -124,7 +124,7 @@ export const dailyVolume = onchainTable("daily_volume", (t) => ({
   checkpoints: t.jsonb().notNull(),
   lastUpdated: t.bigint().notNull(),
   earliestCheckpoint: t.bigint().notNull(),
-  inactive: t.boolean().notNull().default(false),
+  inactive: t.boolean().notNull().default(true), // indicates if the pool has checkpoints
 }));
 
 export const position = onchainTable(
