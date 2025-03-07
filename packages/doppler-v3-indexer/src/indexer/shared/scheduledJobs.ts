@@ -1,5 +1,5 @@
 import { Context } from "ponder:registry";
-import { Address } from "viem";
+import { Address, formatUnits, parseUnits } from "viem";
 import {
   secondsInHour,
   secondsInDay,
@@ -346,8 +346,11 @@ async function calculatePriceChangePercent({
       return 0; // Return 0 instead of null
     }
 
-    const priceChangePercent =
-      (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+    const num = formatUnits(usdPrice - priceFrom.open, 8);
+    const denom = formatUnits(priceFrom.open, 8);
+    const priceChangePercent = (Number(num) / Number(denom)) * 100;
+
+    console.log(priceChangePercent);
 
     // Ensure we're not returning NaN or Infinity
     if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
