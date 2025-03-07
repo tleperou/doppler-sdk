@@ -242,54 +242,54 @@ async function refreshPoolComprehensive({
     context,
   });
 
-  try {
-    const priceChangeInfo = await calculatePriceChangePercent({
-      poolAddress,
-      currentPrice: poolInfo.pool.price,
-      currentTimestamp,
-      ethPrice,
-      createdAt: poolInfo.pool.createdAt,
-      context,
-    });
+  // try {
+  const priceChangeInfo = await calculatePriceChangePercent({
+    poolAddress,
+    currentPrice: poolInfo.pool.price,
+    currentTimestamp,
+    ethPrice,
+    createdAt: poolInfo.pool.createdAt,
+    context,
+  });
 
-    const dollarLiquidity = await computeDollarLiquidity({
-      assetBalance: poolInfo.pool.isToken0
-        ? poolInfo.pool.reserves0
-        : poolInfo.pool.reserves1,
-      quoteBalance: poolInfo.pool.isToken0
-        ? poolInfo.pool.reserves1
-        : poolInfo.pool.reserves0,
-      price: poolInfo.pool.price,
-      ethPrice,
-    });
+  const dollarLiquidity = await computeDollarLiquidity({
+    assetBalance: poolInfo.pool.isToken0
+      ? poolInfo.pool.reserves0
+      : poolInfo.pool.reserves1,
+    quoteBalance: poolInfo.pool.isToken0
+      ? poolInfo.pool.reserves1
+      : poolInfo.pool.reserves0,
+    price: poolInfo.pool.price,
+    ethPrice,
+  });
 
-    const marketCap = await getAssetMarketCap({
-      assetAddress: poolInfo.pool.asset as Address,
-      price: poolInfo.pool.price,
-      ethPrice,
-      context,
-    });
+  const marketCap = await getAssetMarketCap({
+    assetAddress: poolInfo.pool.asset as Address,
+    price: poolInfo.pool.price,
+    ethPrice,
+    context,
+  });
 
-    await updatePool({
-      poolAddress,
-      context,
-      update: {
-        percentDayChange: priceChangeInfo,
-        dollarLiquidity: dollarLiquidity,
-      },
-    });
-    await updateAsset({
-      assetAddress: poolInfo.pool.asset as Address,
-      context,
-      update: {
-        percentDayChange: priceChangeInfo,
-        liquidityUsd: dollarLiquidity,
-        marketCapUsd: marketCap,
-      },
-    });
-  } catch (error) {
-    console.error(`Failed to refresh pool ${poolAddress}: ${error}`);
-  }
+  await updatePool({
+    poolAddress,
+    context,
+    update: {
+      percentDayChange: priceChangeInfo,
+      dollarLiquidity: dollarLiquidity,
+    },
+  });
+  await updateAsset({
+    assetAddress: poolInfo.pool.asset as Address,
+    context,
+    update: {
+      percentDayChange: priceChangeInfo,
+      liquidityUsd: dollarLiquidity,
+      marketCapUsd: marketCap,
+    },
+  });
+  // } catch (error) {
+  //   console.error(`Failed to refresh pool ${poolAddress}: ${error}`);
+  // }
 }
 
 /**
