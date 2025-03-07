@@ -298,56 +298,60 @@ export const updateDailyVolume = async ({
 }) => {
   const { db } = context;
 
-  let checkpoints = volumeData.checkpoints as Record<string, string>;
+  try {
+    let checkpoints = volumeData.checkpoints as Record<string, string>;
 
-  const updatedCheckpoints = Object.fromEntries(
-    Object.entries(checkpoints).filter(
-      ([ts]) => BigInt(ts) >= timestamp - BigInt(secondsInDay)
-    )
-  );
-  // find the lowest key in the updatedCheckpoints object
-  const oldestCheckpointTime = BigInt(
-    Math.min(...Object.keys(updatedCheckpoints).map(Number))
-  );
+    const updatedCheckpoints = Object.fromEntries(
+      Object.entries(checkpoints).filter(
+        ([ts]) => BigInt(ts) >= timestamp - BigInt(secondsInDay)
+      )
+    );
+    // find the lowest key in the updatedCheckpoints object
+    const oldestCheckpointTime = BigInt(
+      Math.min(...Object.keys(updatedCheckpoints).map(Number))
+    );
 
-  const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
-    (acc, vol) => acc + BigInt(vol),
-    BigInt(0)
-  );
+    const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
+      (acc, vol) => acc + BigInt(vol),
+      BigInt(0)
+    );
 
-  await db
-    .update(dailyVolume, {
-      pool: poolAddress.toLowerCase() as `0x${string}`,
-    })
-    .set({
-      volumeUsd: totalVolumeUsd,
-      checkpoints: updatedCheckpoints,
-      lastUpdated: timestamp,
-      earliestCheckpoint: oldestCheckpointTime,
-      inactive: totalVolumeUsd === 0n,
+    await db
+      .update(dailyVolume, {
+        pool: poolAddress.toLowerCase() as `0x${string}`,
+      })
+      .set({
+        volumeUsd: totalVolumeUsd,
+        checkpoints: updatedCheckpoints,
+        lastUpdated: timestamp,
+        earliestCheckpoint: oldestCheckpointTime,
+        inactive: totalVolumeUsd === 0n,
+      });
+
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        volumeUsd: totalVolumeUsd,
+        lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
+        lastSwapTimestamp: timestamp, // Track when the pool was last swapped on
+      },
     });
-
-  await updatePool({
-    poolAddress,
-    context,
-    update: {
-      volumeUsd: totalVolumeUsd,
-      lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
-      lastSwapTimestamp: timestamp, // Track when the pool was last swapped on
-    },
-  });
-  await updateToken({
-    tokenAddress: asset,
-    context,
-    update: {
-      volumeUsd: totalVolumeUsd,
-    },
-  });
-  await updateAsset({
-    assetAddress: asset,
-    context,
-    update: {
-      dayVolumeUsd: totalVolumeUsd,
-    },
-  });
+    await updateToken({
+      tokenAddress: asset,
+      context,
+      update: {
+        volumeUsd: totalVolumeUsd,
+      },
+    });
+    await updateAsset({
+      assetAddress: asset,
+      context,
+      update: {
+        dayVolumeUsd: totalVolumeUsd,
+      },
+    });
+  } catch (e) {
+    console.error("error updating daily volume", e);
+  }
 };

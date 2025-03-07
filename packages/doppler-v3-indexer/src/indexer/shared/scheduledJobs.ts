@@ -73,10 +73,6 @@ export const executeScheduledJobs = async ({
             ethPrice,
             currentTimestamp,
             context,
-          }).catch((error) => {
-            console.error(
-              `Error refreshing pool ${poolInfo.pool.address}: ${error}`
-            );
           })
         )
       );
