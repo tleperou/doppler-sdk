@@ -16,7 +16,6 @@ import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { insertOrUpdateBuckets } from "./shared/timeseries";
 import { getV3PoolReserves } from "@app/utils/v3-utils/getV3PoolData";
 import { fetchEthPrice, updateMarketCap } from "./shared/oracle";
-import { executeScheduledJobs } from "./shared/scheduledJobs";
 import { Hex } from "viem";
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {

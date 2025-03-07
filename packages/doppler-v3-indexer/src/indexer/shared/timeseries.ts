@@ -250,7 +250,7 @@ export const insertOrUpdateDailyVolume = async ({
       };
     });
 
-  if (computedVolumeUsd && computedVolumeUsd > 0n) {
+  if (computedVolumeUsd) {
     await updatePool({
       poolAddress,
       context,

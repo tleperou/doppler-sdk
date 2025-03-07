@@ -6,7 +6,7 @@ import {
   CHAINLINK_ETH_DECIMALS,
 } from "@app/utils/constants";
 import { pool, asset, hourBucketUsd, dailyVolume } from "ponder.schema";
-import { and, eq, lt, sql, between } from "drizzle-orm";
+import { and, eq, lt, sql, between, or, not } from "drizzle-orm";
 import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
 import { fetchEthPrice } from "./oracle";
@@ -151,7 +151,10 @@ async function findStalePoolsWithVolume(
       .where(
         and(
           eq(pool.chainId, chainId),
-          eq(dailyVolume.inactive, false),
+          or(
+            eq(dailyVolume.inactive, false),
+            not(eq(dailyVolume.checkpoints, {}))
+          ),
           lt(
             dailyVolume.earliestCheckpoint,
             currentTimestamp - BigInt(secondsInDay)
