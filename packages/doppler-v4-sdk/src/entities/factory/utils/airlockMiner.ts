@@ -8,16 +8,17 @@ import {
   Hex,
   keccak256,
 } from 'viem';
+import { encodeTokenFactoryData } from './factory';
 
 const FLAG_MASK = BigInt(0x3fff);
 
 const flags = BigInt(
   (1 << 13) | // BEFORE_INITIALIZE_FLAG
-    (1 << 12) | // AFTER_INITIALIZE_FLAG
-    (1 << 11) | // BEFORE_ADD_LIQUIDITY_FLAG
-    (1 << 7) | // BEFORE_SWAP_FLAG
-    (1 << 6) | // AFTER_SWAP_FLAG
-    (1 << 5) // BEFORE_DONATE_FLAG
+  (1 << 12) | // AFTER_INITIALIZE_FLAG
+  (1 << 11) | // BEFORE_ADD_LIQUIDITY_FLAG
+  (1 << 7) | // BEFORE_SWAP_FLAG
+  (1 << 6) | // AFTER_SWAP_FLAG
+  (1 << 5) // BEFORE_DONATE_FLAG
 );
 
 export interface MineV4Params {
@@ -174,25 +175,18 @@ export function mine(params: MineV4Params): [Hash, Address, Address, Hex, Hex] {
     tokenURI,
   } = params.tokenFactoryData;
 
-  const tokenFactoryData = encodeAbiParameters(
-    [
-      { type: 'string' },
-      { type: 'string' },
-      { type: 'uint256' },
-      { type: 'uint256' },
-      { type: 'address[]' },
-      { type: 'uint256[]' },
-      { type: 'string' },
-    ],
-    [
+  const tokenFactoryData = encodeTokenFactoryData(
+    {
       name,
       symbol,
-      yearlyMintRate,
-      vestingDuration,
-      recipients,
-      amounts,
       tokenURI,
-    ]
+    },
+    {
+      amounts,
+      recipients,
+      vestingDuration,
+      yearlyMintRate,
+    }
   );
 
   const { airlock, initialSupply } = params;

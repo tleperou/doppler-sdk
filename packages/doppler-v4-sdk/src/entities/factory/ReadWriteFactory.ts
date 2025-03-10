@@ -4,28 +4,11 @@ import {
   Drift,
   ContractWriteOptions,
   OnMinedParam,
-  FunctionArgs,
 } from '@delvtech/drift';
-import { ReadFactory, AirlockABI } from './ReadFactory';
 import { Address, Hex } from 'viem';
 
-export interface CreateParams {
-  initialSupply: bigint;
-  numTokensToSell: bigint;
-  numeraire: Address;
-  tokenFactory: Address;
-  tokenFactoryData: Hex;
-  governanceFactory: Address;
-  governanceFactoryData: Hex;
-  poolInitializer: Address;
-  poolInitializerData: Hex;
-  liquidityMigrator: Address;
-  liquidityMigratorData: Hex;
-  integrator: Address;
-  salt: Hex;
-  hook: Hex;
-  token: Hex;
-}
+import { ReadFactory, AirlockABI } from './ReadFactory';
+import { CreateParams } from './types';
 
 export class ReadWriteFactory extends ReadFactory {
   declare airlock: ReadWriteContract<AirlockABI>;
@@ -34,8 +17,8 @@ export class ReadWriteFactory extends ReadFactory {
     super(address, drift);
   }
 
-  async create(
-    params: FunctionArgs<AirlockABI, 'create'>['createData'],
+  public async create(
+    params: CreateParams,
     options?: ContractWriteOptions & OnMinedParam
   ): Promise<Hex> {
     return this.airlock.write('create', { createData: params }, options);
