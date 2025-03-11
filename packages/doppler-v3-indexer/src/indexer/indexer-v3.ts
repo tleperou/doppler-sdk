@@ -21,8 +21,11 @@ import { Hex } from "viem";
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
   const { poolOrHook, asset: assetId, numeraire } = event.args;
 
+  const creatorAddress = event.transaction.from;
+
   await insertTokenIfNotExists({
     tokenAddress: numeraire,
+    creatorAddress,
     timestamp: event.block.timestamp,
     context,
     isDerc20: false,
@@ -30,6 +33,7 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
 
   await insertTokenIfNotExists({
     tokenAddress: assetId,
+    creatorAddress,
     timestamp: event.block.timestamp,
     context,
     isDerc20: true,
