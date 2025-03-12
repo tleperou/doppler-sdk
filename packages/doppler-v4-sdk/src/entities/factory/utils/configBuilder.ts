@@ -67,10 +67,10 @@ export function buildConfig(
     symbol: params.symbol,
     initialSupply: params.totalSupply,
     airlock,
-    yearlyMintRate: 0n,
-    vestingDuration: 0n,
-    recipients: [],
-    amounts: [],
+    yearlyMintRate: params.yearlyMintRate,
+    vestingDuration: params.vestingDuration,
+    recipients: params.recipients,
+    amounts: params.amounts,
     tokenURI: params.tokenURI,
   };
 
