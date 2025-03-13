@@ -7,8 +7,8 @@ import {
 } from "@app/utils/constants";
 import { pool, asset, hourBucketUsd, dailyVolume } from "ponder.schema";
 import { and, eq, lt, sql, between, or, not } from "drizzle-orm";
-import { updatePool } from "./entities/pool";
 import { updateAsset } from "./entities/asset";
+import { updatePool } from "./entities/pool";
 import { fetchEthPrice } from "./oracle";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { updateDailyVolume } from "./timeseries";
@@ -266,22 +266,35 @@ async function refreshPoolComprehensive({
     context,
   });
 
+  const poolUpdate: any = {
+    percentDayChange: priceChangeInfo,
+  };
+
+  if (dollarLiquidity) {
+    poolUpdate.dollarLiquidity = dollarLiquidity;
+  }
+
   await updatePool({
     poolAddress,
     context,
-    update: {
-      percentDayChange: priceChangeInfo,
-      dollarLiquidity: dollarLiquidity,
-    },
+    update: poolUpdate,
   });
+
+  const assetUpdate: any = {
+    percentDayChange: priceChangeInfo,
+  };
+
+  if (dollarLiquidity) {
+    assetUpdate.liquidityUsd = dollarLiquidity;
+  }
+  if (marketCap) {
+    assetUpdate.marketCapUsd = marketCap;
+  }
+
   await updateAsset({
     assetAddress: poolInfo.pool.asset as Address,
     context,
-    update: {
-      percentDayChange: priceChangeInfo,
-      liquidityUsd: dollarLiquidity,
-      marketCapUsd: marketCap,
-    },
+    update: assetUpdate,
   });
   // } catch (error) {
   //   console.error(`Failed to refresh pool ${poolAddress}: ${error}`);

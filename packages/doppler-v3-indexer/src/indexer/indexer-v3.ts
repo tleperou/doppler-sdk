@@ -106,33 +106,42 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
       price: poolEntity.price,
       ethPrice,
     });
-  }
 
-  const graduationThresholdDelta = await computeGraduationThresholdDelta({
-    poolAddress: address,
-    context,
-    tickLower,
-    tickUpper,
-    liquidity: amount,
-    isToken0: poolEntity.isToken0,
-  });
+    if (dollarLiquidity) {
+      await updateAsset({
+        assetAddress: poolEntity.baseToken,
+        context,
+        update: {
+          liquidityUsd: dollarLiquidity,
+        },
+      });
 
-  await updatePool({
-    poolAddress: address,
-    context,
-    update: dollarLiquidity
-      ? {
-          graduationThreshold:
-            poolEntity.graduationThreshold + graduationThresholdDelta,
+      await updatePool({
+        poolAddress: address,
+        context,
+        update: {
           liquidity: poolEntity.liquidity + amount,
           dollarLiquidity: dollarLiquidity,
-        }
-      : {
-          graduationThreshold:
-            poolEntity.graduationThreshold + graduationThresholdDelta,
+        },
+      });
+    } else {
+      await updatePool({
+        poolAddress: address,
+        context,
+        update: {
           liquidity: poolEntity.liquidity + amount,
         },
-  });
+      });
+    }
+  } else {
+    await updatePool({
+      poolAddress: address,
+      context,
+      update: {
+        liquidity: poolEntity.liquidity + amount,
+      },
+    });
+  }
 
   if (ethPrice) {
     await updateMarketCap({
