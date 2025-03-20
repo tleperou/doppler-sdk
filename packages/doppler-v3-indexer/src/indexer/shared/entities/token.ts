@@ -5,12 +5,14 @@ import { DERC20ABI } from "@app/abis";
 
 export const insertTokenIfNotExists = async ({
   tokenAddress,
+  creatorAddress,
   timestamp,
   context,
   isDerc20 = false,
   poolAddress,
 }: {
   tokenAddress: Address;
+  creatorAddress: Address;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
@@ -41,6 +43,7 @@ export const insertTokenIfNotExists = async ({
       name: "Ether",
       symbol: "ETH",
       decimals: 18,
+      creatorAddress: zeroAddress,
       firstSeenAt: timestamp,
       lastSeenAt: timestamp,
       totalSupply: 0n,
@@ -84,22 +87,23 @@ export const insertTokenIfNotExists = async ({
     });
 
     const tokenURI = tokenURIResult?.result;
+    let tokenUriData;
     let image: string | undefined;
     if (tokenURI?.startsWith("ipfs://")) {
       try {
         const cid = tokenURI.replace("ipfs://", "");
         const url = `https://${process.env.PINATA_GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_KEY}`;
         const response = await fetch(url);
-        const data = await response.json();
+        tokenUriData = await response.json();
 
         if (
-          data &&
-          typeof data === "object" &&
-          "image" in data &&
-          typeof data.image === "string"
+          tokenUriData &&
+          typeof tokenUriData === "object" &&
+          "image" in tokenUriData &&
+          typeof tokenUriData.image === "string"
         ) {
-          if (data.image.startsWith("ipfs://")) {
-            image = data.image;
+          if (tokenUriData.image.startsWith("ipfs://")) {
+            image = tokenUriData.image;
           }
         }
       } catch (error) {
@@ -119,10 +123,12 @@ export const insertTokenIfNotExists = async ({
         symbol: symbolResult?.result ?? "???",
         decimals: decimalsResult.result ?? 18,
         totalSupply: totalSupplyResult.result ?? 0n,
+        creatorAddress,
         firstSeenAt: timestamp,
         lastSeenAt: timestamp,
         isDerc20,
         image,
+        tokenUriData,
         pool: isDerc20 ? poolAddress : undefined,
         derc20Data: isDerc20 ? address : undefined,
       })
@@ -151,4 +157,3 @@ export const updateToken = async ({
     })
     .set(update);
 };
-

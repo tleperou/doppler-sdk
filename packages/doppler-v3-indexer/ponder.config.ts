@@ -13,7 +13,7 @@ import {
 import { CHAIN_IDS, configs } from "./addresses";
 import { UniswapV2FactoryABI } from "@app/abis/UniswapV2Factory";
 
-const { unichainSepolia, unichain, mainnet } = configs;
+const { unichainSepolia, unichain, mainnet, baseSepolia } = configs;
 
 export default createConfig({
   database: {
@@ -36,12 +36,32 @@ export default createConfig({
       chainId: CHAIN_IDS.unichain,
       transport: http(process.env.PONDER_RPC_URL_130),
     },
+    baseSepolia: {
+      chainId: CHAIN_IDS.baseSepolia,
+      transport: http(process.env.PONDER_RPC_URL_84532),
+    },
   },
   blocks: {
     ChainlinkEthPriceFeed: {
       network: "mainnet",
       startBlock: mainnet.oracleStartBlock,
       interval: (60 * 5) / 12, // every 5 minutes
+    },
+    // Volume refresh job that runs periodically to ensure volume data is up-to-date
+    MetricRefresherUnichainSepolia: {
+      network: "unichainSepolia",
+      startBlock: unichainSepolia.startBlock,
+      interval: 1000, // every 1000 blocks
+    },
+    MetricRefresherUnichain: {
+      network: "unichain",
+      startBlock: unichain.startBlock,
+      interval: 1000, // every 1000 blocks
+    },
+    MetricRefresherBaseSepolia: {
+      network: "baseSepolia",
+      startBlock: baseSepolia.startBlock,
+      interval: 1000, // every 1000 blocks
     },
   },
   contracts: {
@@ -56,6 +76,10 @@ export default createConfig({
           startBlock: unichain.startBlock,
           address: unichain.shared.airlock,
         },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: baseSepolia.shared.airlock,
+        },
       },
     },
     UniswapV3Initializer: {
@@ -69,6 +93,10 @@ export default createConfig({
           startBlock: unichain.startBlock,
           address: unichain.v3.v3Initializer,
         },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: baseSepolia.v3.v3Initializer,
+        },
       },
     },
     UniswapV4Initializer: {
@@ -81,6 +109,10 @@ export default createConfig({
         unichain: {
           startBlock: unichain.startBlock,
           address: unichain.v4.v4Initializer,
+        },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: baseSepolia.v4.v4Initializer,
         },
       },
     },
@@ -103,6 +135,14 @@ export default createConfig({
             parameter: "asset",
           }),
         },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: factory({
+            address: baseSepolia.v3.v3Initializer,
+            event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
+            parameter: "asset",
+          }),
+        },
       },
     },
     UniswapV3Pool: {
@@ -120,6 +160,14 @@ export default createConfig({
           startBlock: unichain.startBlock,
           address: factory({
             address: unichain.v3.v3Initializer,
+            event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
+            parameter: "poolOrHook",
+          }),
+        },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: factory({
+            address: baseSepolia.v3.v3Initializer,
             event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
             parameter: "poolOrHook",
           }),

@@ -3,11 +3,12 @@ import { token, user, ethPrice } from "ponder.schema";
 import { configs } from "addresses";
 import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
 import { insertAssetIfNotExists, updateAsset } from "./shared/entities/asset";
-import { insertTokenIfNotExists } from "./shared/entities/token";
+import { insertTokenIfNotExists, updateToken } from "./shared/entities/token";
 import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 import { updateUserAsset } from "./shared/entities/userAsset";
 import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
 import { DERC20ABI } from "@app/abis/DERC20ABI";
+import { executeScheduledJobs } from "./shared/scheduledJobs";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
@@ -36,8 +37,11 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { timestamp } = event.block;
   const { from, to } = event.args;
 
+  const creatorAddress = event.transaction.from;
+
   const tokenData = await insertTokenIfNotExists({
     tokenAddress: address,
+    creatorAddress,
     timestamp,
     context,
     isDerc20: true,
@@ -129,8 +133,12 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     holderCountDelta -= 1;
   }
 
-  await db.update(token, { address: address }).set({
-    holderCount: tokenData.holderCount + holderCountDelta,
+  await updateToken({
+    tokenAddress: address,
+    context,
+    update: {
+      holderCount: tokenData.holderCount + holderCountDelta,
+    },
   });
 
   await updateAsset({

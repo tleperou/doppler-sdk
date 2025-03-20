@@ -1,8 +1,5 @@
 import { Address } from "viem";
-import {
-  hourBucketUsd,
-  dailyVolume,
-} from "ponder.schema";
+import { hourBucketUsd, dailyVolume } from "ponder.schema";
 import { Context } from "ponder:registry";
 import {
   secondsInDay,
@@ -108,27 +105,53 @@ export const update24HourPriceChange = async ({
 
   const timestampFrom = currentTimestamp - BigInt(secondsInDay);
   const usdPrice = (currentPrice * ethPrice) / CHAINLINK_ETH_DECIMALS;
-  const searchDelta = currentTimestamp - createdAt > BigInt(secondsInDay) ? secondsInHour : secondsInDay;
+  const searchDelta =
+    currentTimestamp - createdAt > BigInt(secondsInDay)
+      ? secondsInHour
+      : secondsInDay;
 
   const priceFrom = await db.sql.query.hourBucketUsd.findFirst({
     where: (fields, { and, eq, between }) =>
       and(
         eq(fields.pool, poolAddress.toLowerCase() as `0x${string}`),
-        between(fields.hourId,
+        between(
+          fields.hourId,
           Number(timestampFrom) - searchDelta,
           Number(timestampFrom) + searchDelta
         )
       ),
-    orderBy: (fields, { asc }) => [
-      asc(fields.hourId)
-    ],
+    orderBy: (fields, { asc }) => [asc(fields.hourId)],
   });
 
   if (!priceFrom) {
-    return null;
+    // Default to 0% change if no previous price data found
+    await updateAsset({
+      assetAddress,
+      context,
+      update: {
+        percentDayChange: 0,
+      },
+    });
+
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        percentDayChange: 0,
+      },
+    });
+
+    return;
   }
 
-  const priceChangePercent = Number(usdPrice - priceFrom.open) / Number(priceFrom.open) * 100;
+  // Calculate the price change percentage
+  let priceChangePercent =
+    (Number(usdPrice - priceFrom.open) / Number(priceFrom.open)) * 100;
+
+  // Ensure we're not sending null values to the database
+  if (isNaN(priceChangePercent) || !isFinite(priceChangePercent)) {
+    priceChangePercent = 0;
+  }
 
   await updateAsset({
     assetAddress,
@@ -146,7 +169,6 @@ export const update24HourPriceChange = async ({
     },
   });
 };
-
 
 export const insertOrUpdateDailyVolume = async ({
   tokenIn,
@@ -171,8 +193,9 @@ export const insertOrUpdateDailyVolume = async ({
 
   let volumeUsd;
 
-  const isTokenInWeth = tokenIn.toLowerCase() ===
-    (configs[network.name].shared.weth.toLowerCase() as `0x${string}`)
+  const isTokenInWeth =
+    tokenIn.toLowerCase() ===
+    (configs[network.name].shared.weth.toLowerCase() as `0x${string}`);
 
   if (isTokenInWeth) {
     volumeUsd = (amountIn * ethPrice) / CHAINLINK_ETH_DECIMALS;
@@ -191,9 +214,9 @@ export const insertOrUpdateDailyVolume = async ({
       volumeUsd: volumeUsd,
       chainId: BigInt(network.chainId),
       lastUpdated: timestamp,
-      checkpoints: {
-        [timestamp.toString()]: volumeUsd.toString(),
-      },
+      checkpoints: {},
+      earliestCheckpoint: 0n,
+      dayChangeUsd: 0n,
     })
     .onConflictDoUpdate((row) => {
       const checkpoints = {
@@ -207,6 +230,11 @@ export const insertOrUpdateDailyVolume = async ({
         )
       );
 
+      const oldestCheckpointTime =
+        Object.keys(updatedCheckpoints).length > 0
+          ? BigInt(Math.min(...Object.keys(updatedCheckpoints).map(Number)))
+          : timestamp;
+
       const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
         (acc, vol) => acc + BigInt(vol),
         BigInt(0)
@@ -218,15 +246,19 @@ export const insertOrUpdateDailyVolume = async ({
         volumeUsd: totalVolumeUsd,
         checkpoints: updatedCheckpoints,
         lastUpdated: timestamp,
+        earliestCheckpoint: oldestCheckpointTime,
+        inactive: totalVolumeUsd === 0n,
       };
     });
 
-  if (computedVolumeUsd && computedVolumeUsd > 0n) {
+  if (computedVolumeUsd) {
     await updatePool({
       poolAddress,
       context,
       update: {
         volumeUsd: computedVolumeUsd,
+        lastRefreshed: timestamp,
+        lastSwapTimestamp: timestamp,
       },
     });
     await updateToken({
@@ -246,4 +278,82 @@ export const insertOrUpdateDailyVolume = async ({
   }
 
   return volume;
+};
+
+export const updateDailyVolume = async ({
+  poolAddress,
+  asset,
+  volumeData,
+  timestamp,
+  context,
+}: {
+  poolAddress: Address;
+  asset: Address;
+  volumeData: {
+    volumeUsd: bigint;
+    checkpoints: Record<string, string>;
+    lastUpdated: bigint;
+  };
+  timestamp: bigint;
+  context: Context;
+}) => {
+  const { db } = context;
+
+  try {
+    let checkpoints = volumeData.checkpoints as Record<string, string>;
+
+    const updatedCheckpoints = Object.fromEntries(
+      Object.entries(checkpoints).filter(
+        ([ts]) => BigInt(ts) >= timestamp - BigInt(secondsInDay)
+      )
+    );
+
+    const oldestCheckpointTime =
+      Object.keys(updatedCheckpoints).length > 0
+        ? BigInt(Math.min(...Object.keys(updatedCheckpoints).map(Number)))
+        : timestamp;
+
+    const totalVolumeUsd = Object.values(updatedCheckpoints).reduce(
+      (acc, vol) => acc + BigInt(vol),
+      BigInt(0)
+    );
+
+    await db
+      .update(dailyVolume, {
+        pool: poolAddress.toLowerCase() as `0x${string}`,
+      })
+      .set({
+        volumeUsd: totalVolumeUsd,
+        checkpoints: updatedCheckpoints,
+        lastUpdated: timestamp,
+        earliestCheckpoint: oldestCheckpointTime,
+        inactive: totalVolumeUsd === 0n,
+      });
+
+    await updatePool({
+      poolAddress,
+      context,
+      update: {
+        volumeUsd: totalVolumeUsd,
+        lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
+        lastSwapTimestamp: timestamp, // Track when the pool was last swapped on
+      },
+    });
+    await updateToken({
+      tokenAddress: asset,
+      context,
+      update: {
+        volumeUsd: totalVolumeUsd,
+      },
+    });
+    await updateAsset({
+      assetAddress: asset,
+      context,
+      update: {
+        dayVolumeUsd: totalVolumeUsd,
+      },
+    });
+  } catch (e) {
+    console.error("error updating daily volume", e);
+  }
 };
