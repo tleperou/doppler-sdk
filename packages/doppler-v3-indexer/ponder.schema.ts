@@ -33,6 +33,7 @@ export const token = onchainTable(
     pool: t.hex(),
     volumeUsd: t.bigint().notNull().default(0n),
     holderCount: t.integer().notNull().default(0),
+    creatorAddress: t.hex().notNull(),
   }),
   (table) => ({
     addressIdx: index().on(table.address),
@@ -121,8 +122,10 @@ export const dailyVolume = onchainTable("daily_volume", (t) => ({
   pool: t.hex().notNull().primaryKey(),
   volumeUsd: t.bigint().notNull(),
   chainId: t.bigint().notNull(),
-  checkpoints: t.jsonb().notNull(),
+  checkpoints: t.jsonb().notNull().default("{}"),
   lastUpdated: t.bigint().notNull(),
+  earliestCheckpoint: t.bigint().notNull(),
+  inactive: t.boolean().notNull().default(true), // indicates if the pool has checkpoints
 }));
 
 export const position = onchainTable(

@@ -106,24 +106,35 @@ ponder.on("UniswapV2Pair:Swap", async ({ event, context }) => {
       update: { price: (price * ethPrice) / CHAINLINK_ETH_DECIMALS },
     });
 
-    await updateAsset({
-      assetAddress: poolEntity.baseToken,
-      context,
-      update: {
-        liquidityUsd: dollarLiquidity ?? 0n,
-      },
-    });
+    if (dollarLiquidity) {
+      await updateAsset({
+        assetAddress: poolEntity.baseToken,
+        context,
+        update: {
+          liquidityUsd: dollarLiquidity,
+        },
+      });
 
-    await updatePool({
-      poolAddress: v2PoolData.parentPool,
-      context,
-      update: { 
-        price, 
-        dollarLiquidity,
-        lastRefreshed: timestamp, // Mark as recently updated to prevent redundant refresh
-        lastSwapTimestamp: timestamp, // Update last swap time for the pool
-      },
-    });
+      await updatePool({
+        poolAddress: v2PoolData.parentPool,
+        context,
+        update: { 
+          price, 
+          dollarLiquidity,
+          lastRefreshed: timestamp,
+          lastSwapTimestamp: timestamp,
+        },
+      });
+    } else {
+      await updatePool({
+        poolAddress: v2PoolData.parentPool,
+        context,
+        update: { 
+          price,
+          lastRefreshed: timestamp,
+          lastSwapTimestamp: timestamp,
+        },
+      });
+    }
   }
 });
-

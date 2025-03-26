@@ -16,14 +16,16 @@ import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { insertOrUpdateBuckets } from "./shared/timeseries";
 import { getV3PoolReserves } from "@app/utils/v3-utils/getV3PoolData";
 import { fetchEthPrice, updateMarketCap } from "./shared/oracle";
-import { executeScheduledJobs } from "./shared/scheduledJobs";
 import { Hex } from "viem";
 
 ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
   const { poolOrHook, asset: assetId, numeraire } = event.args;
 
+  const creatorAddress = event.transaction.from;
+
   await insertTokenIfNotExists({
     tokenAddress: numeraire,
+    creatorAddress,
     timestamp: event.block.timestamp,
     context,
     isDerc20: false,
@@ -31,6 +33,7 @@ ponder.on("UniswapV3Initializer:Create", async ({ event, context }) => {
 
   await insertTokenIfNotExists({
     tokenAddress: assetId,
+    creatorAddress,
     timestamp: event.block.timestamp,
     context,
     isDerc20: true,
@@ -103,33 +106,56 @@ ponder.on("UniswapV3Pool:Mint", async ({ event, context }) => {
       price: poolEntity.price,
       ethPrice,
     });
-  }
 
-  const graduationThresholdDelta = await computeGraduationThresholdDelta({
-    poolAddress: address,
-    context,
-    tickLower,
-    tickUpper,
-    liquidity: amount,
-    isToken0: poolEntity.isToken0,
-  });
+    const graduationThresholdDelta = await computeGraduationThresholdDelta({
+      poolAddress: address,
+      context,
+      tickLower,
+      tickUpper,
+      liquidity: amount,
+      isToken0: poolEntity.isToken0,
+    });
 
-  await updatePool({
-    poolAddress: address,
-    context,
-    update: dollarLiquidity
-      ? {
+    if (dollarLiquidity) {
+      await updateAsset({
+        assetAddress: poolEntity.baseToken,
+        context,
+        update: {
+          liquidityUsd: dollarLiquidity,
+        },
+      });
+
+      await updatePool({
+        poolAddress: address,
+        context,
+        update: {
           graduationThreshold:
             poolEntity.graduationThreshold + graduationThresholdDelta,
           liquidity: poolEntity.liquidity + amount,
           dollarLiquidity: dollarLiquidity,
-        }
-      : {
+        },
+      });
+    } else {
+      await updatePool({
+        poolAddress: address,
+        context,
+        update: {
           graduationThreshold:
             poolEntity.graduationThreshold + graduationThresholdDelta,
           liquidity: poolEntity.liquidity + amount,
         },
-  });
+      });
+    }
+  } else {
+    await updatePool({
+      poolAddress: address,
+      context,
+      update: {
+        graduationThreshold: poolEntity.graduationThreshold,
+        liquidity: poolEntity.liquidity + amount,
+      },
+    });
+  }
 
   if (ethPrice) {
     await updateMarketCap({

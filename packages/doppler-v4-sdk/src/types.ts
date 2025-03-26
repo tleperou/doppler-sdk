@@ -88,6 +88,12 @@ export interface DopplerPreDeploymentConfig {
   minProceeds: bigint;
   maxProceeds: bigint;
   numPdSlugs?: number; // uses a default if not set
+
+  // vesting parameters
+  yearlyMintRate: bigint;
+  vestingDuration: bigint;
+  recipients: Address[];
+  amounts: bigint[];
 }
 
 export interface AssetData {

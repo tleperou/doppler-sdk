@@ -6,7 +6,6 @@ import { encodeSqrtRatioX96, tickToPrice, TickMath } from '@uniswap/v3-sdk';
 import { encodeAbiParameters, parseEther, toHex, Address } from 'viem';
 import { ETH_ADDRESS } from '@/constants';
 import {
-  CreateParams,
   MineV4Params,
   mine,
   TokenFactoryData,
@@ -18,6 +17,7 @@ import {
   DEFAULT_INITIAL_VOTING_PERIOD,
   DEFAULT_INITIAL_PROPOSAL_THRESHOLD,
 } from '@/constants';
+import { CreateParams } from '../types';
 
 /**
  * Validates and builds pool configuration from user-friendly parameters
@@ -67,10 +67,10 @@ export function buildConfig(
     symbol: params.symbol,
     initialSupply: params.totalSupply,
     airlock,
-    yearlyMintRate: 0n,
-    vestingDuration: 0n,
-    recipients: [],
-    amounts: [],
+    yearlyMintRate: params.yearlyMintRate,
+    vestingDuration: params.vestingDuration,
+    recipients: params.recipients,
+    amounts: params.amounts,
     tokenURI: params.tokenURI,
   };
 

@@ -1,6 +1,6 @@
 {
   "name": "doppler-v3-sdk",
-  "version": "1.0.11-rc5",
+  "version": "1.0.12",
   "description": "SDK for interacting with Doppler v3 protocol",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -38,6 +38,7 @@
     "@delvtech/drift-viem": "^0.0.1",
     "@uniswap/sdk-core": "^5.9.0",
     "@uniswap/v4-sdk": "^1.10.4",
+    "ponder": "^0.9.26",
     "viem": "^2.21.55"
   },
   "devDependencies": {

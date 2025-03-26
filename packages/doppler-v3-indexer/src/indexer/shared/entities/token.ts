@@ -5,12 +5,14 @@ import { DERC20ABI } from "@app/abis";
 
 export const insertTokenIfNotExists = async ({
   tokenAddress,
+  creatorAddress,
   timestamp,
   context,
   isDerc20 = false,
   poolAddress,
 }: {
   tokenAddress: Address;
+  creatorAddress: Address;
   timestamp: bigint;
   context: Context;
   isDerc20?: boolean;
@@ -41,6 +43,7 @@ export const insertTokenIfNotExists = async ({
       name: "Ether",
       symbol: "ETH",
       decimals: 18,
+      creatorAddress: zeroAddress,
       firstSeenAt: timestamp,
       lastSeenAt: timestamp,
       totalSupply: 0n,
@@ -120,6 +123,7 @@ export const insertTokenIfNotExists = async ({
         symbol: symbolResult?.result ?? "???",
         decimals: decimalsResult.result ?? 18,
         totalSupply: totalSupplyResult.result ?? 0n,
+        creatorAddress,
         firstSeenAt: timestamp,
         lastSeenAt: timestamp,
         isDerc20,
@@ -153,4 +157,3 @@ export const updateToken = async ({
     })
     .set(update);
 };
-

@@ -13,7 +13,7 @@ import {
 import { CHAIN_IDS, configs } from "./addresses";
 import { UniswapV2FactoryABI } from "@app/abis/UniswapV2Factory";
 
-const { unichainSepolia, unichain, mainnet, baseSepolia } = configs;
+const { unichainSepolia, unichain, mainnet, baseSepolia, ink } = configs;
 
 export default createConfig({
   database: {
@@ -40,6 +40,10 @@ export default createConfig({
       chainId: CHAIN_IDS.baseSepolia,
       transport: http(process.env.PONDER_RPC_URL_84532),
     },
+    ink: {
+      chainId: CHAIN_IDS.ink,
+      transport: http(process.env.PONDER_RPC_URL_57073),
+    },
   },
   blocks: {
     ChainlinkEthPriceFeed: {
@@ -63,6 +67,11 @@ export default createConfig({
       startBlock: baseSepolia.startBlock,
       interval: 1000, // every 1000 blocks
     },
+    MetricRefresherInk: {
+      network: "ink",
+      startBlock: ink.startBlock,
+      interval: 1000, // every 1000 blocks
+    },
   },
   contracts: {
     Airlock: {
@@ -79,6 +88,10 @@ export default createConfig({
         baseSepolia: {
           startBlock: baseSepolia.startBlock,
           address: baseSepolia.shared.airlock,
+        },
+        ink: {
+          startBlock: ink.startBlock,
+          address: ink.shared.airlock,
         },
       },
     },
@@ -97,6 +110,10 @@ export default createConfig({
           startBlock: baseSepolia.startBlock,
           address: baseSepolia.v3.v3Initializer,
         },
+        ink: {
+          startBlock: ink.startBlock,
+          address: ink.v3.v3Initializer,
+        },
       },
     },
     UniswapV4Initializer: {
@@ -113,6 +130,10 @@ export default createConfig({
         baseSepolia: {
           startBlock: baseSepolia.startBlock,
           address: baseSepolia.v4.v4Initializer,
+        },
+        ink: {
+          startBlock: ink.startBlock,
+          address: ink.v4.v4Initializer,
         },
       },
     },
@@ -139,6 +160,14 @@ export default createConfig({
           startBlock: baseSepolia.startBlock,
           address: factory({
             address: baseSepolia.v3.v3Initializer,
+            event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
+            parameter: "asset",
+          }),
+        },
+        ink: {
+          startBlock: ink.startBlock,
+          address: factory({
+            address: ink.v3.v3Initializer,
             event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
             parameter: "asset",
           }),
@@ -172,6 +201,14 @@ export default createConfig({
             parameter: "poolOrHook",
           }),
         },
+        ink: {
+          startBlock: ink.startBlock,
+          address: factory({
+            address: ink.v3.v3Initializer,
+            event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
+            parameter: "poolOrHook",
+          }),
+        },
       },
     },
     UniswapV2Pair: {
@@ -192,6 +229,28 @@ export default createConfig({
           startBlock: unichain.startBlock,
           address: factory({
             address: unichain.v2.factory,
+            event: getAbiItem({
+              abi: UniswapV2FactoryABI,
+              name: "PairCreated",
+            }),
+            parameter: "pair",
+          }),
+        },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: factory({
+            address: baseSepolia.v2.factory,
+            event: getAbiItem({
+              abi: UniswapV2FactoryABI,
+              name: "PairCreated",
+            }),
+            parameter: "pair",
+          }),
+        },
+        ink: {
+          startBlock: ink.startBlock,
+          address: factory({
+            address: ink.v2.factory,
             event: getAbiItem({
               abi: UniswapV2FactoryABI,
               name: "PairCreated",

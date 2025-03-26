@@ -1,12 +1,18 @@
 import { Address, zeroAddress } from "viem";
 
-export type Network = "unichainSepolia" | "mainnet" | "unichain" | "baseSepolia";
+export type Network =
+  | "unichainSepolia"
+  | "mainnet"
+  | "unichain"
+  | "baseSepolia"
+  | "ink";
 
 export const CHAIN_IDS = {
   unichainSepolia: 1301,
   unichain: 130,
   mainnet: 1,
   baseSepolia: 84532,
+  ink: 57073,
 } as const;
 
 const unichainSepoliaStartBlock = 11932039;
@@ -16,6 +22,9 @@ const unichainStartBlock = 8536880;
 const mainnetStartBlockUnichain = 21823900;
 
 const baseSepoliaStartBlock = 22668126;
+
+const inkStartBlock = 9500879;
+const mainnetStartBlockInk = 22131643;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
@@ -150,7 +159,7 @@ export const configs: IndexerConfigs = {
       factory: "0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e" as Address,
     },
     v3: {
-      v3Initializer: "0x63f8C8F9beFaab2FaCD7Ece0b0242f78B920Ee90" as Address,
+      v3Initializer: "0xBEd386a1Fc62B6598c9b8d2BF634471B6Fe75EB7" as Address,
     },
     v4: {
       poolManager: zeroAddress as Address,
@@ -159,15 +168,42 @@ export const configs: IndexerConfigs = {
       stateView: zeroAddress as Address,
     },
     shared: {
-      airlock: "0xe7dfbd5b0A2C3B4464653A9beCdc489229eF090E" as Address,
-      tokenFactory: "0xe93882f395B0b24180855c68Ab19B2d78573ceBc" as Address,
+      airlock: "0xa24E35a5d71d02a59b41E7c93567626302da1958" as Address,
+      tokenFactory: "0x91231cDdD8d6C86Df602070a3081478e074b97b7" as Address,
       universalRouter: "0x95273d871c8156636e114b63797d78D7E1720d81" as Address,
-      governanceFactory: "0x44bf742e57cd8cF23ABbc8dab2c44e2a3228356E" as Address,
-      migrator: "0x0A00775D71a42cd33D62780003035e7F5b47bD3A" as Address,
+      governanceFactory:
+        "0xA7A28cB18F73CDd591fa81ead6ffadf749c0d0a2" as Address,
+      migrator: "0x166109C4EE7fE69164631Caa937dAA5F5cEbFef0" as Address,
       weth: "0x4200000000000000000000000000000000000006" as Address,
     },
     oracle: oracleAddresses,
     startBlock: baseSepoliaStartBlock,
     oracleStartBlock: mainnetStartBlockUnichainSepolia,
+  },
+  ink: {
+    v2: {
+      factory: "0xfe57A6BA1951F69aE2Ed4abe23e0f095DF500C04" as Address,
+    },
+    v3: {
+      v3Initializer: "0xaA47D2977d622DBdFD33eeF6a8276727c52EB4e5" as Address,
+    },
+    v4: {
+      poolManager: zeroAddress as Address,
+      dopplerDeployer: zeroAddress as Address,
+      v4Initializer: zeroAddress as Address,
+      stateView: zeroAddress as Address,
+    },
+    shared: {
+      airlock: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
+      tokenFactory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
+      universalRouter: "0x112908dac86e20e7241b0927479ea3bf935d1fa0" as Address,
+      governanceFactory:
+        "0xb4deE32EB70A5E55f3D2d861F49Fb3D79f7a14d9" as Address,
+      migrator: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+      weth: "0x4200000000000000000000000000000000000006" as Address,
+    },
+    oracle: oracleAddresses,
+    startBlock: inkStartBlock,
+    oracleStartBlock: mainnetStartBlockInk,
   },
 };
