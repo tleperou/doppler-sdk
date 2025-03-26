@@ -38,4 +38,16 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     quoterV2: "0xC5290058841028F1614F3A6F0F5816cAd0df5E27" as Address,
     univ2Router02: "0x1689E7B1F10000AE47eBfE339a4f69dECd19F602" as Address,
   },
+  // ink
+  57073: {
+    airlock: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
+    tokenFactory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
+    v3Initializer: "0xaA47D2977d622DBdFD33eeF6a8276727c52EB4e5" as Address,
+    governanceFactory: "0xb4deE32EB70A5E55f3D2d861F49Fb3D79f7a14d9" as Address,
+    liquidityMigrator: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+    universalRouter: "0x112908dac86e20e7241b0927479ea3bf935d1fa0" as Address,
+    permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
+    quoterV2: "0x96b572D2d880cf2Fa2563651BD23ADE6f5516652" as Address,
+    univ2Router02: "0xB3FB126ACDd5AdCA2f50Ac644a7a2303745f18b4" as Address,
+  },
 };
