@@ -1,4 +1,4 @@
-import { Address, zeroAddress } from "viem";
+import { Address } from "viem";
 import { DopplerV3Addresses } from "./types";
 
 export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
@@ -13,7 +13,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x6Dd37329A1A225a6Fca658265D460423DCafBF89" as Address,
     univ2Router02: "0x284f11109359a7e1306c3e447ef14d38400063ff" as Address,
-    bundler: zeroAddress,
+    bundler: "0xe93882f395B0b24180855c68Ab19B2d78573ceBc" as Address,
   },
   // unichain
   130: {
@@ -26,7 +26,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658" as Address,
     univ2Router02: "0x284f11109359a7e1306c3e447ef14d38400063ff" as Address,
-    bundler: zeroAddress,
+    bundler: "0x91231cDdD8d6C86Df602070a3081478e074b97b7" as Address,
   },
   // base sepolia
   84532: {
