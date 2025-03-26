@@ -13,8 +13,8 @@ import { Address, encodeAbiParameters, Hex, parseEther } from "viem";
 // Constants for default configuration values
 const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
 const DEFAULT_START_TICK = 167000;
-const DEFAULT_END_TICK = 200000;
-const DEFAULT_NUM_POSITIONS = 10;
+const DEFAULT_END_TICK = 195000;
+const DEFAULT_NUM_POSITIONS = 15;
 const DEFAULT_FEE = 10_000; // 1% fee tier
 const DEFAULT_VESTING_DURATION = BigInt(ONE_YEAR_IN_SECONDS);
 const DEFAULT_INITIAL_SUPPLY_WAD = parseEther("1000000000");
