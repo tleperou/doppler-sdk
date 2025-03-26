@@ -1,4 +1,4 @@
-import { Address, zeroAddress } from "viem";
+import { Address } from "viem";
 import { DopplerV3Addresses } from "./types";
 
 export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
@@ -13,6 +13,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x6Dd37329A1A225a6Fca658265D460423DCafBF89" as Address,
     univ2Router02: "0x284f11109359a7e1306c3e447ef14d38400063ff" as Address,
+    bundler: "0xe93882f395B0b24180855c68Ab19B2d78573ceBc" as Address,
   },
   // unichain
   130: {
@@ -25,6 +26,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658" as Address,
     univ2Router02: "0x284f11109359a7e1306c3e447ef14d38400063ff" as Address,
+    bundler: "0x91231cDdD8d6C86Df602070a3081478e074b97b7" as Address,
   },
   // base sepolia
   84532: {
@@ -37,6 +39,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0xC5290058841028F1614F3A6F0F5816cAd0df5E27" as Address,
     univ2Router02: "0x1689E7B1F10000AE47eBfE339a4f69dECd19F602" as Address,
+    bundler: "0x0874cbB8F836c3C6459946dB28E59dA3B02C1eED" as Address,
   },
   // ink
   57073: {
@@ -49,5 +52,6 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x96b572D2d880cf2Fa2563651BD23ADE6f5516652" as Address,
     univ2Router02: "0xB3FB126ACDd5AdCA2f50Ac644a7a2303745f18b4" as Address,
+    bundler: "0x136191B46478cAB023cbC01a36160C4Aad81677a" as Address,
   },
 };
