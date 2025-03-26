@@ -43,7 +43,14 @@ export const getV3PoolData = async ({
   address: Address;
   context: Context;
 }): Promise<V3PoolData> => {
-  const { client } = context;
+  const { client, network } = context;
+
+  let multiCallAddress = {};
+  if (network.name == "ink") {
+    multiCallAddress = {
+      multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11",
+    };
+  }
 
   const [slot0, liquidity, token0, token1, fee] = await client.multicall({
     contracts: [
@@ -73,6 +80,7 @@ export const getV3PoolData = async ({
         functionName: "fee",
       },
     ],
+    ...multiCallAddress,
   });
 
   const poolState = await getPoolState({
@@ -130,7 +138,15 @@ export const getV3PoolReserves = async ({
   address: Address;
   context: Context;
 }) => {
-  const { client } = context;
+  const { client, network } = context;
+
+  let multiCallAddress = {};
+  if (network.name == "ink") {
+    multiCallAddress = {
+      multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11",
+    };
+  }
+
   const [r0, r1] = await client.multicall({
     contracts: [
       {
@@ -146,6 +162,7 @@ export const getV3PoolReserves = async ({
         args: [address],
       },
     ],
+    ...multiCallAddress,
   });
 
   const reserve0 = r0?.result ?? 0n;

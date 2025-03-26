@@ -13,7 +13,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0x6Dd37329A1A225a6Fca658265D460423DCafBF89" as Address,
     univ2Router02: "0x284f11109359a7e1306c3e447ef14d38400063ff" as Address,
-    bundler: "0xe93882f395B0b24180855c68Ab19B2d78573ceBc" as Address,
+    bundler: "0x63f8C8F9beFaab2FaCD7Ece0b0242f78B920Ee90" as Address,
   },
   // unichain
   130: {
@@ -35,7 +35,7 @@ export const DOPPLER_V3_ADDRESSES: { [chainId: number]: DopplerV3Addresses } = {
     v3Initializer: "0xBEd386a1Fc62B6598c9b8d2BF634471B6Fe75EB7" as Address,
     governanceFactory: "0xA7A28cB18F73CDd591fa81ead6ffadf749c0d0a2" as Address,
     liquidityMigrator: "0x166109C4EE7fE69164631Caa937dAA5F5cEbFef0" as Address,
-    universalRouter: "0x95273d871c8156636e114b63797d78D7E1720d81" as Address,
+    universalRouter: "0x492E6456D9528771018DeB9E87ef7750EF184104" as Address,
     permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3" as Address,
     quoterV2: "0xC5290058841028F1614F3A6F0F5816cAd0df5E27" as Address,
     univ2Router02: "0x1689E7B1F10000AE47eBfE339a4f69dECd19F602" as Address,

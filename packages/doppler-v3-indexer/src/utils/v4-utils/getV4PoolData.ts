@@ -29,7 +29,7 @@ export const getV4PoolData = async ({
   hook: Address;
 }): Promise<V4PoolData> => {
   const { stateView } = configs[context.network.name].v4;
-  const { client } = context;
+  const { client, network } = context;
 
   const poolKey = await client.readContract({
     abi: DopplerABI,
@@ -47,6 +47,12 @@ export const getV4PoolData = async ({
 
   const poolId = getPoolId(key);
 
+  let multiCallAddress = {};
+  if (network.name == "ink") {
+    multiCallAddress = {
+      multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11",
+    };
+  }
   const [slot0, liquidity] = await client.multicall({
     contracts: [
       {
@@ -62,6 +68,7 @@ export const getV4PoolData = async ({
         args: [poolId],
       },
     ],
+    ...multiCallAddress,
   });
 
   if (!slot0.result?.[3]) {

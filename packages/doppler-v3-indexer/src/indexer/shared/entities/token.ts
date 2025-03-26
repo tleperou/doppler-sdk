@@ -18,7 +18,14 @@ export const insertTokenIfNotExists = async ({
   isDerc20?: boolean;
   poolAddress?: Address;
 }) => {
-  const { db, network } = context;
+  const { db, network, client } = context;
+
+  let multiCallAddress = {};
+  if (network.name == "ink") {
+    multiCallAddress = {
+      multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11",
+    };
+  }
   const address = tokenAddress.toLowerCase() as `0x${string}`;
 
   const existingToken = await db.find(token, {
@@ -84,6 +91,7 @@ export const insertTokenIfNotExists = async ({
           functionName: "tokenURI",
         },
       ],
+      ...multiCallAddress,
     });
 
     const tokenURI = tokenURIResult?.result;
