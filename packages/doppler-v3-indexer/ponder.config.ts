@@ -24,10 +24,10 @@ export default createConfig({
     },
   },
   networks: {
-    unichainSepolia: {
-      chainId: CHAIN_IDS.unichainSepolia,
-      transport: http(process.env.PONDER_RPC_URL_1301),
-    },
+    // unichainSepolia: {
+    //   chainId: CHAIN_IDS.unichainSepolia,
+    //   transport: http(process.env.PONDER_RPC_URL_1301),
+    // },
     mainnet: {
       chainId: 1,
       transport: http(process.env.PONDER_RPC_URL_1),
@@ -36,10 +36,10 @@ export default createConfig({
       chainId: CHAIN_IDS.unichain,
       transport: http(process.env.PONDER_RPC_URL_130),
     },
-    baseSepolia: {
-      chainId: CHAIN_IDS.baseSepolia,
-      transport: http(process.env.PONDER_RPC_URL_84532),
-    },
+    // baseSepolia: {
+    //   chainId: CHAIN_IDS.baseSepolia,
+    //   transport: http(process.env.PONDER_RPC_URL_84532),
+    // },
     ink: {
       chainId: CHAIN_IDS.ink,
       transport: http(process.env.PONDER_RPC_URL_57073),
