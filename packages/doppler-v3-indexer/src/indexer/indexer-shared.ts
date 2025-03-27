@@ -21,8 +21,8 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
   });
 
   await insertV2PoolIfNotExists({
-    assetAddress: asset.poolAddress,
-    poolAddress: poolId,
+    assetAddress: assetId,
+    poolAddress: asset.poolAddress,
     timestamp,
     context,
   });
