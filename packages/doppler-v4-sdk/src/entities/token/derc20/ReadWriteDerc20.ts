@@ -28,4 +28,12 @@ export class ReadWriteDerc20 extends ReadDerc20 {
       }
     );
   }
+
+  async release(amount: bigint): Promise<Hex> {
+    return this.contract.write('release', { amount });
+  }
+
+  async renounceOwnership(): Promise<Hex> {
+    return this.contract.write('renounceOwnership');
+  }
 }
