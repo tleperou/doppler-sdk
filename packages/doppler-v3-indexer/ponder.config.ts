@@ -24,10 +24,10 @@ export default createConfig({
     },
   },
   networks: {
-    // unichainSepolia: {
-    //   chainId: CHAIN_IDS.unichainSepolia,
-    //   transport: http(process.env.PONDER_RPC_URL_1301),
-    // },
+    unichainSepolia: {
+      chainId: CHAIN_IDS.unichainSepolia,
+      transport: http(process.env.PONDER_RPC_URL_1301),
+    },
     mainnet: {
       chainId: 1,
       transport: http(process.env.PONDER_RPC_URL_1),
@@ -36,10 +36,10 @@ export default createConfig({
       chainId: CHAIN_IDS.unichain,
       transport: http(process.env.PONDER_RPC_URL_130),
     },
-    // baseSepolia: {
-    //   chainId: CHAIN_IDS.baseSepolia,
-    //   transport: http(process.env.PONDER_RPC_URL_84532),
-    // },
+    baseSepolia: {
+      chainId: CHAIN_IDS.baseSepolia,
+      transport: http(process.env.PONDER_RPC_URL_84532),
+    },
     ink: {
       chainId: CHAIN_IDS.ink,
       transport: http(process.env.PONDER_RPC_URL_57073),
@@ -145,13 +145,24 @@ export default createConfig({
         },
       },
     },
-    UniswapV2Pair: {
+    UniswapV2Par: {
       abi: UniswapV2PairABI,
       network: {
-        unichain: {
-          startBlock: unichain.startBlock,
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
           address: factory({
-            address: unichain.v2.factory,
+            address: baseSepolia.shared.airlock,
+            event: getAbiItem({
+              abi: AirlockABI,
+              name: "Migrate",
+            }),
+            parameter: "pool",
+          }),
+        },
+        ink: {
+          startBlock: ink.startBlock,
+          address: factory({
+            address: ink.v2.factory,
             event: getAbiItem({
               abi: UniswapV2FactoryABI,
               name: "PairCreated",
@@ -159,10 +170,26 @@ export default createConfig({
             parameter: "pair",
           }),
         },
-        ink: {
-          startBlock: ink.startBlock,
+      },
+    },
+    UniswapV2PairUnichain: {
+      abi: UniswapV2PairABI,
+      network: {
+        unichainSepolia: {
+          startBlock: unichainSepolia.startBlock,
           address: factory({
-            address: ink.v2.factory,
+            address: unichainSepolia.v2.factory,
+            event: getAbiItem({
+              abi: UniswapV2FactoryABI,
+              name: "PairCreated",
+            }),
+            parameter: "pair",
+          }),
+        },
+        unichain: {
+          startBlock: unichain.startBlock,
+          address: factory({
+            address: unichain.v2.factory,
             event: getAbiItem({
               abi: UniswapV2FactoryABI,
               name: "PairCreated",
