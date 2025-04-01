@@ -120,29 +120,27 @@ export const insertTokenIfNotExists = async ({
           error
         );
       }
+    } else if (tokenURI?.includes("ohara")) {
+      try {
+        const url = tokenURI;
+        const response = await fetch(url);
+        tokenUriData = await response.json();
 
-      if (tokenURI?.includes("ohara")) {
-        try {
-          const url = tokenURI;
-          const response = await fetch(url);
-          tokenUriData = await response.json();
-
-          if (
-            tokenUriData &&
-            typeof tokenUriData === "object" &&
-            "image" in tokenUriData &&
-            typeof tokenUriData.image === "string"
-          ) {
-            if (tokenUriData.image.startsWith("https://")) {
-              image = tokenUriData.image;
-            }
+        if (
+          tokenUriData &&
+          typeof tokenUriData === "object" &&
+          "image" in tokenUriData &&
+          typeof tokenUriData.image === "string"
+        ) {
+          if (tokenUriData.image.startsWith("https://")) {
+            image = tokenUriData.image;
           }
-        } catch (error) {
-          console.error(
-            `Failed to fetch ohara metadata for token ${address}:`,
-            error
-          );
         }
+      } catch (error) {
+        console.error(
+          `Failed to fetch ohara metadata for token ${address}:`,
+          error
+        );
       }
     }
 
