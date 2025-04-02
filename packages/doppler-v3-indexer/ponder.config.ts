@@ -62,6 +62,16 @@ export default createConfig({
       startBlock: ink.startBlock,
       interval: 1000, // every 1000 blocks
     },
+    MetricRefresherBaseSepolia: {
+      network: "baseSepolia",
+      startBlock: baseSepolia.startBlock,
+      interval: 1000, // every 1000 blocks
+    },
+    MetricRefresherUnichainSepolia: {
+      network: "unichainSepolia",
+      startBlock: unichainSepolia.startBlock,
+      interval: 1000, // every 1000 blocks
+    },
   },
   contracts: {
     Airlock: {
@@ -145,7 +155,7 @@ export default createConfig({
         },
       },
     },
-    UniswapV2Par: {
+    UniswapV2Pair: {
       abi: UniswapV2PairABI,
       network: {
         baseSepolia: {
