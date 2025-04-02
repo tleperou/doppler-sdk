@@ -23,4 +23,17 @@ export class ReadWriteFactory extends ReadFactory {
   ): Promise<Hex> {
     return this.airlock.write('create', { createData: params }, options);
   }
+
+  /**
+   * Migrates an asset's liquidity
+   * @param asset The address of the asset to migrate
+   * @param options Optional contract write options
+   * @returns Transaction hash
+   */
+  public async migrate(
+    asset: Address,
+    options?: ContractWriteOptions & OnMinedParam
+  ): Promise<Hex> {
+    return this.airlock.write('migrate', { asset }, options);
+  }
 }

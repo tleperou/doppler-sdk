@@ -45,3 +45,11 @@ export interface CreateParams {
     hook: Hex;
     token: Hex;
 }
+
+/**
+ * Parameters required for migrating an asset
+ * @property asset Address of the asset to migrate
+ */
+export interface MigrateParams {
+    asset: Address;
+}
