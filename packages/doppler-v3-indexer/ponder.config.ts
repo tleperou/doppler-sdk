@@ -51,7 +51,6 @@ export default createConfig({
       startBlock: mainnet.oracleStartBlock,
       interval: (60 * 5) / 12, // every 5 minutes
     },
-    // Volume refresh job that runs periodically to ensure volume data is up-to-date
     MetricRefresherUnichain: {
       network: "unichain",
       startBlock: unichain.startBlock,
@@ -85,6 +84,10 @@ export default createConfig({
           startBlock: ink.startBlock,
           address: ink.shared.airlock,
         },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: baseSepolia.shared.airlock,
+        },
       },
     },
     UniswapV3Initializer: {
@@ -98,6 +101,10 @@ export default createConfig({
           startBlock: ink.startBlock,
           address: ink.v3.v3Initializer,
         },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: baseSepolia.v3.v3Initializer,
+        },
       },
     },
     UniswapV4Initializer: {
@@ -110,6 +117,10 @@ export default createConfig({
         ink: {
           startBlock: ink.startBlock,
           address: ink.v4.v4Initializer,
+        },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: baseSepolia.v4.v4Initializer,
         },
       },
     },
@@ -132,6 +143,14 @@ export default createConfig({
             parameter: "asset",
           }),
         },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: factory({
+            address: baseSepolia.v3.v3Initializer,
+            event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
+            parameter: "asset",
+          }),
+        },
       },
     },
     UniswapV3Pool: {
@@ -149,6 +168,14 @@ export default createConfig({
           startBlock: ink.startBlock,
           address: factory({
             address: ink.v3.v3Initializer,
+            event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
+            parameter: "poolOrHook",
+          }),
+        },
+        baseSepolia: {
+          startBlock: baseSepolia.startBlock,
+          address: factory({
+            address: baseSepolia.v3.v3Initializer,
             event: getAbiItem({ abi: UniswapV3InitializerABI, name: "Create" }),
             parameter: "poolOrHook",
           }),
