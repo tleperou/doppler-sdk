@@ -5,7 +5,8 @@ export type Network =
   | "mainnet"
   | "unichain"
   | "baseSepolia"
-  | "ink";
+  | "ink"
+  | "base";
 
 export const CHAIN_IDS = {
   unichainSepolia: 1301,
@@ -13,18 +14,20 @@ export const CHAIN_IDS = {
   mainnet: 1,
   baseSepolia: 84532,
   ink: 57073,
+  base: 8453,
 } as const;
 
+const mainnetStartBlock = 21782000;
+
 const unichainSepoliaStartBlock = 11932039;
-const mainnetStartBlockUnichainSepolia = 21782000;
 
 const unichainStartBlock = 8536880;
-const mainnetStartBlockUnichain = 21823900;
 
 const baseSepoliaStartBlock = 22668126;
 
 const inkStartBlock = 9500879;
-const mainnetStartBlockInk = 22131643;
+
+const baseStartBlock = 28415526;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
@@ -101,7 +104,7 @@ export const configs: IndexerConfigs = {
     },
     oracle: oracleAddresses,
     startBlock: unichainSepoliaStartBlock,
-    oracleStartBlock: mainnetStartBlockUnichainSepolia,
+    oracleStartBlock: mainnetStartBlock,
   },
   mainnet: {
     v2: {
@@ -125,8 +128,8 @@ export const configs: IndexerConfigs = {
       weth: zeroAddress as Address,
     },
     oracle: oracleAddresses,
-    startBlock: mainnetStartBlockUnichain,
-    oracleStartBlock: mainnetStartBlockUnichainSepolia,
+    startBlock: mainnetStartBlock,
+    oracleStartBlock: mainnetStartBlock,
   },
   unichain: {
     v2: {
@@ -152,7 +155,7 @@ export const configs: IndexerConfigs = {
     },
     oracle: oracleAddresses,
     startBlock: unichainStartBlock,
-    oracleStartBlock: mainnetStartBlockUnichain,
+    oracleStartBlock: mainnetStartBlock,
   },
   baseSepolia: {
     v2: {
@@ -178,7 +181,7 @@ export const configs: IndexerConfigs = {
     },
     oracle: oracleAddresses,
     startBlock: baseSepoliaStartBlock,
-    oracleStartBlock: mainnetStartBlockUnichainSepolia,
+    oracleStartBlock: mainnetStartBlock,
   },
   ink: {
     v2: {
@@ -204,6 +207,32 @@ export const configs: IndexerConfigs = {
     },
     oracle: oracleAddresses,
     startBlock: inkStartBlock,
-    oracleStartBlock: mainnetStartBlockInk,
+    oracleStartBlock: mainnetStartBlock,
+  },
+  base: {
+    v2: {
+      factory: "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6" as Address,
+    },
+    v3: {
+      v3Initializer: "0xaA47D2977d622DBdFD33eeF6a8276727c52EB4e5" as Address,
+    },
+    v4: {
+      poolManager: zeroAddress as Address,
+      dopplerDeployer: zeroAddress as Address,
+      v4Initializer: zeroAddress as Address,
+      stateView: zeroAddress as Address,
+    },
+    shared: {
+      airlock: "0x660eAaEdEBc968f8f3694354FA8EC0b4c5Ba8D12" as Address,
+      tokenFactory: "0xFAafdE6a5b658684cC5eb0C5c2c755B00A246F45" as Address,
+      universalRouter: "0x6ff5693b99212da76ad316178a184ab56d299b43" as Address,
+      governanceFactory:
+        "0xb4deE32EB70A5E55f3D2d861F49Fb3D79f7a14d9" as Address,
+      migrator: "0x5F3bA43D44375286296Cb85F1EA2EBfa25dde731" as Address,
+      weth: "0x4200000000000000000000000000000000000006" as Address,
+    },
+    oracle: oracleAddresses,
+    startBlock: baseStartBlock,
+    oracleStartBlock: mainnetStartBlock,
   },
 };
