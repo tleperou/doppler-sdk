@@ -1,18 +1,15 @@
 import { ponder } from "ponder:registry";
-import { token, user, ethPrice } from "ponder.schema";
-import { configs } from "addresses";
-import { ChainlinkOracleABI } from "@app/abis/ChainlinkOracleABI";
+import { user } from "ponder.schema";
 import { insertAssetIfNotExists, updateAsset } from "./shared/entities/asset";
 import { insertTokenIfNotExists, updateToken } from "./shared/entities/token";
 import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 import { updateUserAsset } from "./shared/entities/userAsset";
 import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
 import { DERC20ABI } from "@app/abis/DERC20ABI";
-import { executeScheduledJobs } from "./shared/scheduledJobs";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
-  const { asset: assetId, pool: poolId } = event.args;
+  const { asset: assetId } = event.args;
 
   const asset = await insertAssetIfNotExists({
     assetAddress: assetId,
@@ -154,25 +151,4 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
       holderCount: assetData.holderCount + holderCountDelta,
     },
   });
-});
-
-ponder.on("ChainlinkEthPriceFeed:block", async ({ event, context }) => {
-  const { db, client, network } = context;
-  const { timestamp } = event.block;
-
-  const latestAnswer = await client.readContract({
-    abi: ChainlinkOracleABI,
-    address: configs[network.name].oracle.chainlinkEth,
-    functionName: "latestAnswer",
-  });
-
-  const price = latestAnswer;
-
-  await db
-    .insert(ethPrice)
-    .values({
-      timestamp: timestamp,
-      price: price,
-    })
-    .onConflictDoNothing();
 });
