@@ -18,7 +18,7 @@ export const insertTokenIfNotExists = async ({
   isDerc20?: boolean;
   poolAddress?: Address;
 }) => {
-  const { db, network, client } = context;
+  const { db, network } = context;
 
   let multiCallAddress = {};
   if (network.name == "ink") {
@@ -117,6 +117,28 @@ export const insertTokenIfNotExists = async ({
       } catch (error) {
         console.error(
           `Failed to fetch IPFS metadata for token ${address}:`,
+          error
+        );
+      }
+    } else if (tokenURI?.includes("ohara")) {
+      try {
+        const url = tokenURI;
+        const response = await fetch(url);
+        tokenUriData = await response.json();
+
+        if (
+          tokenUriData &&
+          typeof tokenUriData === "object" &&
+          "image" in tokenUriData &&
+          typeof tokenUriData.image === "string"
+        ) {
+          if (tokenUriData.image.startsWith("https://")) {
+            image = tokenUriData.image;
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Failed to fetch ohara metadata for token ${address}:`,
           error
         );
       }
