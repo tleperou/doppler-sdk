@@ -9,6 +9,7 @@ import {
   keccak256,
 } from 'viem';
 import { encodeTokenFactoryData } from './factory';
+import { TokenFactoryData, DopplerData } from '../types';
 
 const FLAG_MASK = BigInt(0x3fff);
 
@@ -32,34 +33,6 @@ export interface MineV4Params {
   tokenFactoryData: TokenFactoryData;
   poolInitializer: Address;
   poolInitializerData: DopplerData;
-}
-
-export interface DopplerData {
-  initialPrice: bigint;
-  minimumProceeds: bigint;
-  maximumProceeds: bigint;
-  startingTime: bigint;
-  endingTime: bigint;
-  startingTick: number;
-  endingTick: number;
-  epochLength: bigint;
-  gamma: number;
-  isToken0: boolean;
-  numPDSlugs: bigint;
-  fee: number;
-  tickSpacing: number;
-}
-
-export interface TokenFactoryData {
-  name: string;
-  symbol: string;
-  airlock: Address;
-  initialSupply: bigint;
-  yearlyMintRate: bigint;
-  vestingDuration: bigint;
-  recipients: Address[];
-  amounts: bigint[];
-  tokenURI: string;
 }
 
 function computeCreate2Address(
