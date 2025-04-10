@@ -71,7 +71,7 @@ export class ReadWriteFactory extends ReadFactory {
     if (params.numTokensToSell <= 0) {
       throw new Error('Number of tokens to sell must be positive');
     }
-    if (params.priceRange.startPrice >= params.priceRange.endPrice) {
+    if (params.priceRange.startPrice <= params.priceRange.endPrice) {
       throw new Error('Invalid price range');
     }
     if (params.duration <= 0) {
