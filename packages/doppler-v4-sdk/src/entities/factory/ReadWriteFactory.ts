@@ -15,11 +15,12 @@ import {
   Hex,
   keccak256,
   parseEther,
+  zeroAddress,
 } from 'viem';
 import { ReadFactory, AirlockABI } from './ReadFactory';
 import { CreateParams } from './types';
 import { DERC20Bytecode, DopplerBytecode } from '@/abis';
-import { DAY_SECONDS, DEFAULT_PD_SLUGS, ETH_ADDRESS } from '@/constants';
+import { DAY_SECONDS, DEFAULT_PD_SLUGS } from '@/constants';
 import { Price, Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, TickMath } from '@uniswap/v3-sdk';
 import { DopplerData, TokenFactoryData } from './types';
@@ -88,14 +89,14 @@ export class ReadWriteFactory extends ReadFactory {
 
   private computeTicks(priceRange: PriceRange, tickSpacing: number) {
     const minPrice = new Price(
-      new Token(1, ETH_ADDRESS, 18),
-      new Token(1, ETH_ADDRESS, 18),
+      new Token(1, zeroAddress, 18),
+      new Token(1, zeroAddress, 18),
       parseEther('1').toString(),
       parseEther(priceRange.startPrice.toString()).toString()
     );
     const maxPrice = new Price(
-      new Token(1, ETH_ADDRESS, 18),
-      new Token(1, ETH_ADDRESS, 18),
+      new Token(1, zeroAddress, 18),
+      new Token(1, zeroAddress, 18),
       parseEther('1').toString(),
       parseEther(priceRange.endPrice.toString()).toString()
     );
