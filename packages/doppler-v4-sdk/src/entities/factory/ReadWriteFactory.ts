@@ -14,6 +14,7 @@ import {
   Hash,
   Hex,
   keccak256,
+  parseEther,
 } from 'viem';
 import { ReadFactory, AirlockABI } from './ReadFactory';
 import { CreateParams } from './types';
@@ -89,14 +90,14 @@ export class ReadWriteFactory extends ReadFactory {
     const minPrice = new Price(
       new Token(1, ETH_ADDRESS, 18),
       new Token(1, ETH_ADDRESS, 18),
-      '1',
-      priceRange.startPrice.toString()
+      parseEther('1').toString(),
+      parseEther(priceRange.startPrice.toString()).toString()
     );
     const maxPrice = new Price(
       new Token(1, ETH_ADDRESS, 18),
       new Token(1, ETH_ADDRESS, 18),
-      '1',
-      priceRange.endPrice.toString()
+      parseEther('1').toString(),
+      parseEther(priceRange.endPrice.toString()).toString()
     );
 
     const minSqrtRatio = encodeSqrtRatioX96(
