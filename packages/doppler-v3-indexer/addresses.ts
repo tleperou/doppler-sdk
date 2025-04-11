@@ -31,8 +31,8 @@ const baseStartBlock = 28415526;
 
 export type IndexerConfigs = Record<Network, DopplerConfig>;
 
-export const zoraFactoryBase = "0x02B2705500096Ff83F9eF78873ca5DFB06C00Ddc";
-export const zoraStartBlock = 28454839;
+export const zoraFactoryBase = "0x777777751622c0d3258f214F9DF38E35BF45baF3";
+export const zoraStartBlock = 28724081;
 
 export type DopplerConfig = {
   v2: V2Addresses;
