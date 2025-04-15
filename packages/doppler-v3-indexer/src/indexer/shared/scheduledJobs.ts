@@ -92,7 +92,8 @@ export const executeScheduledJobs = async ({
     // Log performance metrics
     const duration = (Date.now() - startTime) / 1000; // in seconds
     console.log(
-      `[${network.name}] Refreshed ${stalePoolsWithVolume.length
+      `[${network.name}] Refreshed ${
+        stalePoolsWithVolume.length
       } pools in ${duration.toFixed(2)}s (${(
         duration / stalePoolsWithVolume.length
       ).toFixed(3)}s per pool)`
@@ -158,7 +159,7 @@ async function findStalePoolsWithVolume(
         )
       )
       .orderBy(sql`COALESCE(${pool.lastRefreshed}, ${pool.createdAt})`)
-      .limit(100);
+      .limit(50);
 
     console.log(`Found ${results.length} pools needing refresh`);
 
@@ -238,12 +239,20 @@ async function refreshPoolComprehensive({
     context,
   });
 
-  const asset = await insertAssetIfNotExists({ assetAddress: poolInfo.pool.asset as Address, timestamp: 0n, context });
+  const asset = await insertAssetIfNotExists({
+    assetAddress: poolInfo.pool.asset as Address,
+    timestamp: 0n,
+    context,
+  });
 
   const isMigrated = asset.migrated;
 
-  const assetBalance = poolInfo.pool.isToken0 ? poolInfo.pool.reserves0 : poolInfo.pool.reserves1;
-  const quoteBalance = poolInfo.pool.isToken0 ? poolInfo.pool.reserves1 : poolInfo.pool.reserves0;
+  const assetBalance = poolInfo.pool.isToken0
+    ? poolInfo.pool.reserves0
+    : poolInfo.pool.reserves1;
+  const quoteBalance = poolInfo.pool.isToken0
+    ? poolInfo.pool.reserves1
+    : poolInfo.pool.reserves0;
 
   const dollarLiquidity = await computeDollarLiquidity({
     assetBalance,
@@ -304,7 +313,6 @@ async function refreshPoolComprehensive({
   //   console.error(`Failed to refresh pool ${poolAddress}: ${error}`);
   // }
 }
-
 
 /**
  * Computes the market cap for an asset
