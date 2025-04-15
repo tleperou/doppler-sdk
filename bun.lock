@@ -70,7 +70,7 @@
     },
     "packages/doppler-v4-sdk": {
       "name": "doppler-v4-sdk",
-      "version": "0.1.18-rc8",
+      "version": "0.2.0-rc3",
       "dependencies": {
         "@delvtech/drift": "^0.0.4",
         "@delvtech/drift-viem": "^0.0.4",
