@@ -1,5 +1,5 @@
 import { ponder } from "ponder:registry";
-import { getV3PoolData } from "@app/utils/v3-utils";
+import { computeV3Price, getV3PoolData } from "@app/utils/v3-utils";
 import { computeGraduationThresholdDelta } from "@app/utils/v3-utils/computeGraduationThreshold";
 import {
   insertPositionIfNotExists,
@@ -8,10 +8,14 @@ import {
 import { insertTokenIfNotExists } from "./shared/entities/token";
 import {
   insertOrUpdateDailyVolume,
-  update24HourPriceChange,
+  compute24HourPriceChange,
 } from "./shared/timeseries";
 import { insertPoolIfNotExists, updatePool } from "./shared/entities/pool";
-import { insertAssetIfNotExists, updateAsset } from "./shared/entities/asset";
+import {
+  insertAssetIfNotExists,
+  insertZoraAssetIfNotExists,
+  updateAsset,
+} from "./shared/entities/asset";
 import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { insertOrUpdateBuckets } from "./shared/timeseries";
 import { getV3PoolReserves } from "@app/utils/v3-utils/getV3PoolData";
@@ -36,7 +40,7 @@ ponder.on("ZoraFactory:CoinCreated", async ({ event, context }) => {
     isDerc20: false,
   });
 
-  await insertTokenIfNotExists({
+  const coinEntity = await insertTokenIfNotExists({
     tokenAddress: coin,
     creatorAddress,
     timestamp: event.block.timestamp,
@@ -54,11 +58,13 @@ ponder.on("ZoraFactory:CoinCreated", async ({ event, context }) => {
     isZora: true,
   });
 
-  await insertAssetIfNotExists({
+  await insertZoraAssetIfNotExists({
     assetAddress: coin,
     timestamp: event.block.timestamp,
     context,
-    isZora: true,
+    poolAddress: pool,
+    totalSupply: coinEntity.totalSupply,
+    numeraireAddress: currencyAddress,
   });
 
   if (ethPrice) {
@@ -314,60 +320,58 @@ ponder.on("ZoraUniswapV3Pool:Mint", async ({ event, context }) => {
 
 ponder.on("ZoraUniswapV3Pool:Swap", async ({ event, context }) => {
   const address = event.log.address;
-  const { amount0, amount1 } = event.args;
+  const { amount0, amount1, sqrtPriceX96 } = event.args;
 
   const poolEntity = await insertPoolIfNotExists({
     poolAddress: address,
     timestamp: event.block.timestamp,
     context,
-    isZora: true,
-  });
-
-  const {
-    slot0Data,
-    liquidity,
-    price,
-    fee,
-    reserve0,
-    reserve1,
-    token0,
-    token1,
-  } = await getV3PoolData({
-    address,
-    context,
-    isZora: true,
   });
 
   const ethPrice = await fetchEthPrice(event.block.timestamp, context);
 
-  const assetBalance = poolEntity.isToken0 ? reserve0 : reserve1;
-  const quoteBalance = poolEntity.isToken0 ? reserve1 : reserve0;
+  const price = await computeV3Price({
+    sqrtPriceX96,
+    isToken0: poolEntity.isToken0,
+    decimals: 18,
+  });
+
+  const assetBalance = poolEntity.isToken0
+    ? poolEntity.reserves0 + amount0
+    : poolEntity.reserves1 + amount1;
+  const quoteBalance = poolEntity.isToken0
+    ? poolEntity.reserves1 + amount1
+    : poolEntity.reserves0 + amount0;
+
+  const tokenIn =
+    poolEntity.isToken0 && amount0 > 0n
+      ? poolEntity.baseToken
+      : poolEntity.quoteToken;
+  const tokenOut =
+    poolEntity.isToken0 && amount0 > 0n
+      ? poolEntity.quoteToken
+      : poolEntity.baseToken;
 
   let amountIn;
   let amountOut;
-  let tokenIn;
-  let tokenOut;
   let fee0;
   let fee1;
   if (amount0 > 0n) {
     amountIn = amount0;
     amountOut = amount1;
-    tokenIn = token0;
-    tokenOut = token1;
-    fee0 = (amountIn * BigInt(fee)) / BigInt(1_000_000);
+    fee0 = (amountIn * BigInt(poolEntity.fee)) / BigInt(1_000_000);
     fee1 = 0n;
   } else {
     amountIn = amount1;
     amountOut = amount0;
-    tokenIn = token1;
-    tokenOut = token0;
-    fee1 = (amountIn * BigInt(fee)) / BigInt(1_000_000);
+    fee1 = (amountIn * BigInt(poolEntity.fee)) / BigInt(1_000_000);
     fee0 = 0n;
   }
 
   const quoteDelta = poolEntity.isToken0 ? amount1 - fee1 : amount0 - fee0;
 
   let dollarLiquidity;
+  let priceChangeInfo;
   if (ethPrice) {
     await insertOrUpdateBuckets({
       poolAddress: address,
@@ -388,11 +392,8 @@ ponder.on("ZoraUniswapV3Pool:Swap", async ({ event, context }) => {
       ethPrice,
     });
 
-    await update24HourPriceChange({
+    priceChangeInfo = await compute24HourPriceChange({
       poolAddress: address,
-      assetAddress: poolEntity.isToken0
-        ? (token0.toLowerCase() as Hex)
-        : (token1.toLowerCase() as Hex),
       currentPrice: price,
       ethPrice,
       currentTimestamp: event.block.timestamp,
@@ -401,9 +402,7 @@ ponder.on("ZoraUniswapV3Pool:Swap", async ({ event, context }) => {
     });
 
     await updateMarketCap({
-      assetAddress: poolEntity.isToken0
-        ? (token0.toLowerCase() as Hex)
-        : (token1.toLowerCase() as Hex),
+      assetAddress: poolEntity.baseToken,
       price,
       ethPrice,
       context,
@@ -421,7 +420,6 @@ ponder.on("ZoraUniswapV3Pool:Swap", async ({ event, context }) => {
     poolAddress: address,
     context,
     update: {
-      liquidity: liquidity,
       price: price,
       dollarLiquidity: dollarLiquidity,
       totalFee0: poolEntity.totalFee0 + fee0,
@@ -429,17 +427,16 @@ ponder.on("ZoraUniswapV3Pool:Swap", async ({ event, context }) => {
       graduationBalance: poolEntity.graduationBalance + quoteDelta,
       lastRefreshed: event.block.timestamp,
       lastSwapTimestamp: event.block.timestamp,
-      ...slot0Data,
+      percentDayChange: priceChangeInfo,
     },
   });
 
   await updateAsset({
-    assetAddress: poolEntity.isToken0
-      ? (token0.toLowerCase() as Hex)
-      : (token1.toLowerCase() as Hex),
+    assetAddress: poolEntity.baseToken,
     context,
     update: {
       liquidityUsd: dollarLiquidity ?? 0n,
+      percentDayChange: priceChangeInfo,
     },
   });
 });

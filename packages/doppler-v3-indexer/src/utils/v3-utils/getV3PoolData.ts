@@ -118,9 +118,8 @@ export const getV3PoolData = async ({
   const isToken0 = token0Result.toLowerCase() === poolState.asset.toLowerCase();
   const price = await computeV3Price({
     sqrtPriceX96: slot0Data.sqrtPrice,
-    baseToken: poolState.asset,
-    context,
     isToken0,
+    decimals: 18,
   });
 
   return {
@@ -225,18 +224,8 @@ export const getZoraPoolState = async ({
 }) => {
   const { client } = context;
 
-  const [slot0, liquidity, token0, token1, fee] = await client.multicall({
+  const [token0, token1] = await client.multicall({
     contracts: [
-      {
-        abi: UniswapV3PoolABI,
-        address: poolAddress,
-        functionName: "slot0",
-      },
-      {
-        abi: UniswapV3PoolABI,
-        address: poolAddress,
-        functionName: "liquidity",
-      },
       {
         abi: UniswapV3PoolABI,
         address: poolAddress,
@@ -246,11 +235,6 @@ export const getZoraPoolState = async ({
         abi: UniswapV3PoolABI,
         address: poolAddress,
         functionName: "token1",
-      },
-      {
-        abi: UniswapV3PoolABI,
-        address: poolAddress,
-        functionName: "fee",
       },
     ],
   });

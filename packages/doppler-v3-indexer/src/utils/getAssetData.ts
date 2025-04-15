@@ -49,34 +49,41 @@ export const getZoraAssetData = async (
   context: Context
 ): Promise<AssetData> => {
   const { client } = context;
-  const numeraireAddr = await client.readContract({
-    abi: ZoraCoinABI,
-    address: assetTokenAddr,
-    functionName: "currency",
+
+  const [numeraireAddr, poolAddr, totalSupply] = await client.multicall({
+    contracts: [
+      {
+        abi: ZoraCoinABI,
+        address: assetTokenAddr,
+        functionName: "currency",
+      },
+      {
+        abi: ZoraCoinABI,
+        address: assetTokenAddr,
+        functionName: "poolAddress",
+      },
+      {
+        abi: ZoraCoinABI,
+        address: assetTokenAddr,
+        functionName: "totalSupply",
+      },
+    ],
   });
 
-  const poolAddr = await client.readContract({
-    abi: ZoraCoinABI,
-    address: assetTokenAddr,
-    functionName: "poolAddress",
-  });
-
-  const totalSupply = await client.readContract({
-    abi: ZoraCoinABI,
-    address: assetTokenAddr,
-    functionName: "totalSupply",
-  });
+  const numeraireResult = numeraireAddr.result ?? zeroAddress;
+  const poolResult = poolAddr.result ?? zeroAddress;
+  const totalSupplyResult = totalSupply.result ?? BigInt(0);
 
   const zoraAssetData = {
-    numeraire: numeraireAddr,
-    pool: poolAddr,
+    numeraire: numeraireResult,
+    pool: poolResult,
     timelock: zeroAddress,
     governance: zeroAddress,
     liquidityMigrator: zeroAddress,
     poolInitializer: zeroAddress,
     migrationPool: zeroAddress,
     numTokensToSell: BigInt(0),
-    totalSupply: totalSupply,
+    totalSupply: totalSupplyResult,
     integrator: zeroAddress,
   };
 
