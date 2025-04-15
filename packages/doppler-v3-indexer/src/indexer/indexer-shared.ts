@@ -38,7 +38,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   const { db, client, network } = context;
   const { address } = event.log;
   const { timestamp } = event.block;
-  const { from, to } = event.args;
+  const { from, to, value } = event.args;
 
   const creatorAddress = event.transaction.from;
 
@@ -80,20 +80,6 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
       lastSeenAt: timestamp,
     }));
 
-  const fromUserBalanceEndBalance = await client.readContract({
-    abi: DERC20ABI,
-    address: address,
-    functionName: "balanceOf",
-    args: [from],
-  });
-
-  const toUserBalanceEndBalance = await client.readContract({
-    abi: DERC20ABI,
-    address: address,
-    functionName: "balanceOf",
-    args: [to],
-  });
-
   const toUserAsset = await insertUserAssetIfNotExists({
     userId: to.toLowerCase() as `0x${string}`,
     assetId: address.toLowerCase() as `0x${string}`,
@@ -106,7 +92,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     assetId: address.toLowerCase() as `0x${string}`,
     context,
     update: {
-      balance: toUserBalanceEndBalance,
+      balance: toUserAsset.balance + value,
       lastInteraction: timestamp,
     },
   });
@@ -124,15 +110,15 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     context,
     update: {
       lastInteraction: timestamp,
-      balance: fromUserBalanceEndBalance,
+      balance: fromUserAsset.balance - value,
     },
   });
 
   let holderCountDelta = 0;
-  if (toUserAsset.balance == 0n && toUserBalanceEndBalance > 0n) {
+  if (toUserAsset.balance == 0n && toUserAsset.balance + value > 0n) {
     holderCountDelta += 1;
   }
-  if (fromUserAsset.balance > 0n && fromUserBalanceEndBalance == 0n) {
+  if (fromUserAsset.balance > 0n && fromUserAsset.balance - value == 0n) {
     holderCountDelta -= 1;
   }
 
