@@ -99,14 +99,12 @@ ponder.on("ZoraUniswapV3Pool:Mint", async ({ event, context }) => {
   const address = event.log.address;
   const { tickLower, tickUpper, amount, owner } = event.args;
 
-  const poolEntity = await insertPoolIfNotExists({
-    poolAddress: address,
-    timestamp: event.block.timestamp,
-    context,
-    isZora: true,
+  const poolEntity = await context.db.find(pool, {
+    address,
+    chainId: BigInt(context.network.chainId),
   });
 
-  if (!poolEntity.baseToken) {
+  if (!poolEntity) {
     return;
   }
 
