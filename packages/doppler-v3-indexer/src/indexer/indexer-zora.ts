@@ -10,7 +10,11 @@ import {
   insertOrUpdateDailyVolume,
   compute24HourPriceChange,
 } from "./shared/timeseries";
-import { insertPoolIfNotExists, updatePool } from "./shared/entities/pool";
+import {
+  insertPoolIfNotExists,
+  insertZoraPoolIfNotExists,
+  updatePool,
+} from "./shared/entities/pool";
 import {
   insertAssetIfNotExists,
   insertZoraAssetIfNotExists,
@@ -51,11 +55,12 @@ ponder.on("ZoraFactory:CoinCreated", async ({ event, context }) => {
 
   const ethPrice = await fetchEthPrice(event.block.timestamp, context);
 
-  const poolEntity = await insertPoolIfNotExists({
+  const poolEntity = await insertZoraPoolIfNotExists({
     poolAddress: pool,
+    assetAddress: coin,
+    numeraireAddress: currencyAddress,
     timestamp: event.block.timestamp,
     context,
-    isZora: true,
   });
 
   await insertZoraAssetIfNotExists({
