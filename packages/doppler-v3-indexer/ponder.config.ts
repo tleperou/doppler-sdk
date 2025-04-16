@@ -73,11 +73,11 @@ export default createConfig({
       startBlock: base.startBlock,
       interval: 500, // every 1000 blocks
     },
-    MetricRefresherBaseSepolia: {
-      network: "baseSepolia",
-      startBlock: baseSepolia.startBlock,
-      interval: 5000, // every 1000 blocks
-    },
+    // MetricRefresherBaseSepolia: {
+    //   network: "baseSepolia",
+    //   startBlock: baseSepolia.startBlock,
+    //   interval: 5000, // every 1000 blocks
+    // },
   },
   contracts: {
     Airlock: {
