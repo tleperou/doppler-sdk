@@ -61,22 +61,22 @@ export default createConfig({
     MetricRefresherUnichain: {
       network: "unichain",
       startBlock: unichain.startBlock,
-      interval: 100, // every 1000 blocks
+      interval: 1000, // every 1000 blocks
     },
     MetricRefresherInk: {
       network: "ink",
       startBlock: ink.startBlock,
-      interval: 100, // every 1000 blocks
+      interval: 5000, // every 1000 blocks
     },
     MetricRefresherBase: {
       network: "base",
       startBlock: base.startBlock,
-      interval: 100, // every 1000 blocks
+      interval: 500, // every 1000 blocks
     },
     MetricRefresherBaseSepolia: {
       network: "baseSepolia",
       startBlock: baseSepolia.startBlock,
-      interval: 100, // every 1000 blocks
+      interval: 5000, // every 1000 blocks
     },
   },
   contracts: {

@@ -6,6 +6,7 @@ import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 import { updateUserAsset } from "./shared/entities/userAsset";
 import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
 import { DERC20ABI } from "@app/abis/DERC20ABI";
+import { zeroAddress } from "viem";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
@@ -35,7 +36,7 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
 });
 
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
-  const { db, client, network } = context;
+  const { db, network } = context;
   const { address } = event.log;
   const { timestamp } = event.block;
   const { from, to, value } = event.args;
