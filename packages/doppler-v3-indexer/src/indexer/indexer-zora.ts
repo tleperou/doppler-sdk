@@ -105,6 +105,10 @@ ponder.on("ZoraUniswapV3Pool:Mint", async ({ event, context }) => {
     isZora: true,
   });
 
+  if (!poolEntity.baseToken) {
+    return;
+  }
+
   await insertAssetIfNotExists({
     assetAddress: poolEntity.baseToken,
     timestamp: event.block.timestamp,
