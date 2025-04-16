@@ -2,8 +2,7 @@ import {
   ReadWriteContract,
   ReadWriteAdapter,
   Drift,
-  ContractWriteOptions,
-  OnMinedParam,
+  TransactionOptions,
   FunctionReturn,
 } from '@delvtech/drift';
 import {
@@ -492,7 +491,7 @@ export class ReadWriteFactory extends ReadFactory {
    */
   public async create(
     params: CreateParams,
-    options?: ContractWriteOptions & OnMinedParam
+    options?: TransactionOptions
   ): Promise<Hex> {
     return this.airlock.write('create', { createData: params }, options);
   }
@@ -516,7 +515,7 @@ export class ReadWriteFactory extends ReadFactory {
    */
   public async migrate(
     asset: Address,
-    options?: ContractWriteOptions & OnMinedParam
+    options?: TransactionOptions
   ): Promise<Hex> {
     return this.airlock.write('migrate', { asset }, options);
   }

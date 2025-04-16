@@ -27,7 +27,8 @@ export class ReadDoppler {
   constructor(
     dopplerAddress: Hex,
     stateViewAddress: Hex,
-    drift: Drift<ReadAdapter> = createDrift()
+    drift: Drift<ReadAdapter> = createDrift(),
+    poolId: Hex
   ) {
     this.address = dopplerAddress;
     this.doppler = drift.contract({
@@ -38,6 +39,8 @@ export class ReadDoppler {
       abi: stateViewAbi,
       address: stateViewAddress,
     });
+    this.poolId = poolId;
+    this.drift = drift;
   }
 
   public async getPosition(
