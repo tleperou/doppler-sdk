@@ -332,11 +332,14 @@ ponder.on("ZoraUniswapV3Pool:Swap", async ({ event, context }) => {
   const address = event.log.address;
   const { amount0, amount1, sqrtPriceX96 } = event.args;
 
-  const poolEntity = await insertPoolIfNotExists({
-    poolAddress: address,
-    timestamp: event.block.timestamp,
-    context,
+  const poolEntity = await context.db.find(pool, {
+    address,
+    chainId: BigInt(context.network.chainId),
   });
+
+  if (!poolEntity) {
+    return;
+  }
 
   const ethPrice = await fetchEthPrice(event.block.timestamp, context);
 
