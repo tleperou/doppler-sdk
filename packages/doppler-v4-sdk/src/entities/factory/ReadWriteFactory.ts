@@ -86,30 +86,6 @@ export class ReadWriteFactory extends ReadFactory {
       throw new Error('Tick spacing must be positive');
     }
   }
-  private priceToClosestTick(price: Price<Token, Token>): number {
-    const sorted = sortsBefore(price.baseCurrency, price.quoteCurrency);
-
-    const sqrtRatioX96 = sorted
-      ? encodeSqrtRatioX96(price.numerator, price.denominator)
-      : encodeSqrtRatioX96(price.denominator, price.numerator);
-
-    let tick = TickMath.getTickAtSqrtRatio(sqrtRatioX96);
-    const nextTickPrice = tickToPrice(
-      price.baseCurrency,
-      price.quoteCurrency,
-      tick + 1
-    );
-    if (sorted) {
-      if (!price.lessThan(nextTickPrice)) {
-        tick++;
-      }
-    } else {
-      if (!price.greaterThan(nextTickPrice)) {
-        tick++;
-      }
-    }
-    return tick;
-  }
 
   private computeTicks(priceRange: PriceRange, tickSpacing: number) {
     const startPriceString = parseEther(
