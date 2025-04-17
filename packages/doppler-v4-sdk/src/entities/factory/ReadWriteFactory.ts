@@ -19,15 +19,16 @@ import {
 import { ReadFactory, AirlockABI } from './ReadFactory';
 import { CreateParams } from './types';
 import { DERC20Bytecode, DopplerBytecode } from '@/abis';
-import { DAY_SECONDS, DEFAULT_PD_SLUGS } from '@/constants';
+import { DAY_SECONDS, DEFAULT_PD_SLUGS, WAD, WAD_STRING } from '@/constants';
 import { Price, Token } from '@uniswap/sdk-core';
-import { encodeSqrtRatioX96, TickMath } from '@uniswap/v3-sdk';
+import { encodeSqrtRatioX96, TickMath, tickToPrice } from '@uniswap/v3-sdk';
 import { DopplerData, TokenFactoryData } from './types';
 import {
   DopplerPreDeploymentConfig,
   DopplerV4Addresses,
   PriceRange,
 } from '@/types';
+import { sortsBefore } from '@uniswap/v4-sdk';
 
 const DEFAULT_INITIAL_VOTING_DELAY = 7200;
 const DEFAULT_INITIAL_VOTING_PERIOD = 50400;
@@ -85,29 +86,41 @@ export class ReadWriteFactory extends ReadFactory {
       throw new Error('Tick spacing must be positive');
     }
   }
+  private priceToClosestTick(price: Price<Token, Token>): number {
+    const sorted = sortsBefore(price.baseCurrency, price.quoteCurrency);
+
+    const sqrtRatioX96 = sorted
+      ? encodeSqrtRatioX96(price.numerator, price.denominator)
+      : encodeSqrtRatioX96(price.denominator, price.numerator);
+
+    let tick = TickMath.getTickAtSqrtRatio(sqrtRatioX96);
+    const nextTickPrice = tickToPrice(
+      price.baseCurrency,
+      price.quoteCurrency,
+      tick + 1
+    );
+    if (sorted) {
+      if (!price.lessThan(nextTickPrice)) {
+        tick++;
+      }
+    } else {
+      if (!price.greaterThan(nextTickPrice)) {
+        tick++;
+      }
+    }
+    return tick;
+  }
 
   private computeTicks(priceRange: PriceRange, tickSpacing: number) {
-    const minPrice = new Price(
-      new Token(1, zeroAddress, 18),
-      new Token(1, zeroAddress, 18),
-      parseEther('1').toString(),
-      parseEther(priceRange.startPrice.toString()).toString()
-    );
-    const maxPrice = new Price(
-      new Token(1, zeroAddress, 18),
-      new Token(1, zeroAddress, 18),
-      parseEther('1').toString(),
-      parseEther(priceRange.endPrice.toString()).toString()
-    );
+    const startPriceString = parseEther(
+      priceRange.startPrice.toString()
+    ).toString();
+    const endPriceString = parseEther(
+      priceRange.endPrice.toString()
+    ).toString();
 
-    const minSqrtRatio = encodeSqrtRatioX96(
-      minPrice.numerator,
-      minPrice.denominator
-    );
-    const maxSqrtRatio = encodeSqrtRatioX96(
-      maxPrice.numerator,
-      maxPrice.denominator
-    );
+    const minSqrtRatio = encodeSqrtRatioX96(WAD_STRING, startPriceString);
+    const maxSqrtRatio = encodeSqrtRatioX96(WAD_STRING, endPriceString);
 
     const startTick = TickMath.getTickAtSqrtRatio(minSqrtRatio);
     const endTick = TickMath.getTickAtSqrtRatio(maxSqrtRatio);
@@ -118,17 +131,29 @@ export class ReadWriteFactory extends ReadFactory {
     };
   }
 
+  // Computes optimal gamma parameter based on price range and time parameters
   private computeOptimalGamma(
     startTick: number,
     endTick: number,
-    duration: number,
+    durationDays: number,
     epochLength: number,
     tickSpacing: number
   ): number {
-    const totalTicks = endTick - startTick;
-    const numEpochs = duration / epochLength;
-    const gamma = Math.ceil(totalTicks / numEpochs);
-    return Math.ceil(gamma / tickSpacing) * tickSpacing;
+    // Calculate total number of epochs
+    const totalEpochs = (durationDays * DAY_SECONDS) / epochLength;
+
+    // Calculate required tick movement per epoch to cover the range
+    const tickDelta = Math.abs(endTick - startTick);
+    // Round up to nearest multiple of tick spacing
+    let gamma = Math.ceil(tickDelta / totalEpochs) * tickSpacing;
+    // Ensure gamma is at least 1 tick spacing
+    gamma = Math.max(tickSpacing, gamma);
+
+    if (gamma % tickSpacing !== 0) {
+      throw new Error('Computed gamma must be divisible by tick spacing');
+    }
+
+    return gamma;
   }
 
   private encodeTokenFactoryData(

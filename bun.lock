@@ -72,8 +72,7 @@
       "name": "doppler-v4-sdk",
       "version": "0.2.0-rc3",
       "dependencies": {
-        "@delvtech/drift": "^0.0.4",
-        "@delvtech/drift-viem": "^0.0.4",
+        "@delvtech/drift": "^0.8.4",
         "@types/node": "^22.13.17",
         "@uniswap/sdk-core": "^5.9.0",
         "@uniswap/v4-sdk": "^1.21.2",
@@ -1412,9 +1411,7 @@
 
     "doppler-v4-indexer/eslint-config-ponder": ["eslint-config-ponder@0.9.28", "", { "peerDependencies": { "@typescript-eslint/eslint-plugin": "^6.3.0", "@typescript-eslint/parser": "^6.3.0", "eslint": ">= 3" } }, "sha512-GMGuIgY4EzwALn+l6ru7kIBAYpaZigiitw1I0xV+vzYlPf4eNJXz0vBskPdk6sDczwy+hZ4WNir7zvXD2bs+uQ=="],
 
-    "doppler-v4-sdk/@delvtech/drift": ["@delvtech/drift@0.0.4", "", { "dependencies": { "lodash.ismatch": "^4.4.0", "lru-cache": "^11.0.2", "ox": "^0.6.9", "safe-stable-stringify": "^2.5.0" }, "peerDependencies": { "sinon": "^17.0.1" }, "optionalPeers": ["sinon"] }, "sha512-vvjUQZ6wSwuLW+hNfHXnLr/Mbmb5JDuNu1nRST+2kHxgZc5dO7TDMf55xNfR65UuYhemfBHFGYTD2RpY1UqRQw=="],
-
-    "doppler-v4-sdk/@delvtech/drift-viem": ["@delvtech/drift-viem@0.0.4", "", { "peerDependencies": { "@delvtech/drift": "0.0.4", "viem": "^2.22.16" } }, "sha512-LTViAISq/N8BILXwLWO/YvnA76xf8B2YKqTktmND6fGs4UOYeU2A2LmICWQqZtJjFo5vTQWOpHGVwfZq7IbF+Q=="],
+    "doppler-v4-sdk/@delvtech/drift": ["@delvtech/drift@0.8.4", "", { "dependencies": { "lodash.ismatch": "^4.4.0", "lru-cache": "^11.0.2", "ox": "^0.6.9", "safe-stable-stringify": "^2.5.0" }, "peerDependencies": { "sinon": "^17.0.1" }, "optionalPeers": ["sinon"] }, "sha512-7kEjM31BdLZBFjM23/DPM/YIvaQOpxsxOTcrX3iGg4+VtKF2hDpTmm8wJPUz5rPDWuv3pVKvEzTSczkdW7zfKA=="],
 
     "doppler-v4-sdk/@types/node": ["@types/node@22.14.0", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-Kmpl+z84ILoG+3T/zQFyAJsU6EPTmOCj8/2+83fSN6djd6I4o7uOuGIH6vq3PrjY5BGitSbFuMN18j3iknubbA=="],
 
