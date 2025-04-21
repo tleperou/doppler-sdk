@@ -1,1 +1,1 @@
-export { ReadQuoter } from "./ReadQuoter";
+export * from './ReadQuoter';
