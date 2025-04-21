@@ -64,7 +64,7 @@ export class ReadQuoter {
    * @returns Promise resolving to:
    * - Raw contract return values
    */
-  async quoteExactInputV3(
+  async quoteExactInputV4(
     params: FunctionArgs<V4QuoterABI, 'quoteExactInputSingle'>['params']
   ): Promise<FunctionReturn<V4QuoterABI, 'quoteExactInputSingle'>> {
     return await this.quoter.simulateWrite('quoteExactInputSingle', {
@@ -79,7 +79,7 @@ export class ReadQuoter {
    * @returns Promise resolving to:
    * - Raw contract return values
    */
-  async quoteExactOutputV3(
+  async quoteExactOutputV4(
     params: FunctionArgs<V4QuoterABI, 'quoteExactOutputSingle'>['params']
   ): Promise<FunctionReturn<V4QuoterABI, 'quoteExactOutputSingle'>> {
     return await this.quoter.simulateWrite('quoteExactOutputSingle', {
