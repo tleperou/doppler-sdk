@@ -17,6 +17,7 @@ export interface DopplerV4Addresses {
   dopplerDeployer: Address;
   universalRouter: Address;
   stateView: Address;
+  v4Quoter: Address;
 }
 
 export interface TokenConfig {
