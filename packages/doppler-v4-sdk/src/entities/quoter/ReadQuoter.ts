@@ -9,12 +9,6 @@ import {
 import { Address } from 'viem';
 import { v4QuoterAbi } from '../../abis';
 
-type QuoteV2Params = {
-  tokenIn: Address;
-  tokenOut: Address;
-  amountIn: bigint;
-};
-
 /**
  * Type alias for QuoterV2 contract ABI
  */
