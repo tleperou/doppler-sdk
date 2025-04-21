@@ -48,12 +48,12 @@ export class ReadQuoter {
    * @param drift - Drift instance for blockchain interaction (defaults to new instance)
    */
   constructor(
-    quoteV2Address: Address,
+    quoteV4Address: Address,
     drift: Drift<ReadAdapter> = createDrift()
   ) {
     this.quoter = drift.contract({
       abi: v4QuoterAbi,
-      address: quoteV2Address,
+      address: quoteV4Address,
     });
   }
 
