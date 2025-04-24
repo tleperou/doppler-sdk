@@ -5,8 +5,7 @@ import { insertTokenIfNotExists, updateToken } from "./shared/entities/token";
 import { insertV2PoolIfNotExists } from "./shared/entities/v2Pool";
 import { updateUserAsset } from "./shared/entities/userAsset";
 import { insertUserAssetIfNotExists } from "./shared/entities/userAsset";
-import { DERC20ABI } from "@app/abis/DERC20ABI";
-import { zeroAddress } from "viem";
+import { insertUserIfNotExists, updateUser } from "./shared/entities/user";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
@@ -36,15 +35,18 @@ ponder.on("Airlock:Migrate", async ({ event, context }) => {
 });
 
 ponder.on("DERC20:Transfer", async ({ event, context }) => {
-  const { db, network } = context;
   const { address } = event.log;
   const { timestamp } = event.block;
   const { from, to, value } = event.args;
 
   const creatorAddress = event.transaction.from;
 
+  const fromId = from.toLowerCase() as `0x${string}`;
+  const toId = to.toLowerCase() as `0x${string}`;
+  const assetId = address.toLowerCase() as `0x${string}`;
+
   const tokenData = await insertTokenIfNotExists({
-    tokenAddress: address,
+    tokenAddress: assetId,
     creatorAddress,
     timestamp,
     context,
@@ -52,45 +54,35 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   });
 
   const assetData = await insertAssetIfNotExists({
-    assetAddress: address,
+    assetAddress: assetId,
     timestamp,
     context,
   });
 
-  await db
-    .insert(user)
-    .values({
-      address: to.toLowerCase() as `0x${string}`,
-      chainId: BigInt(network.chainId),
-      createdAt: timestamp,
-      lastSeenAt: timestamp,
-    })
-    .onConflictDoUpdate((_) => ({
-      lastSeenAt: timestamp,
-    }));
+  await insertUserIfNotExists({
+    userId: toId,
+    timestamp,
+    context,
+  });
 
-  await db
-    .insert(user)
-    .values({
-      address: from.toLowerCase() as `0x${string}`,
-      chainId: BigInt(network.chainId),
-      createdAt: timestamp,
+  await updateUser({
+    userId: fromId,
+    context,
+    update: {
       lastSeenAt: timestamp,
-    })
-    .onConflictDoUpdate((_) => ({
-      lastSeenAt: timestamp,
-    }));
+    },
+  });
 
   const toUserAsset = await insertUserAssetIfNotExists({
-    userId: to.toLowerCase() as `0x${string}`,
-    assetId: address.toLowerCase() as `0x${string}`,
+    userId: toId,
+    assetId: assetId,
     timestamp,
     context,
   });
 
   await updateUserAsset({
-    userId: to.toLowerCase() as `0x${string}`,
-    assetId: address.toLowerCase() as `0x${string}`,
+    userId: toId,
+    assetId: assetId,
     context,
     update: {
       balance: toUserAsset.balance + value,
@@ -99,15 +91,15 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   });
 
   const fromUserAsset = await insertUserAssetIfNotExists({
-    userId: from.toLowerCase() as `0x${string}`,
-    assetId: address.toLowerCase() as `0x${string}`,
+    userId: fromId,
+    assetId: assetId,
     timestamp,
     context,
   });
 
   await updateUserAsset({
-    userId: from.toLowerCase() as `0x${string}`,
-    assetId: address.toLowerCase() as `0x${string}`,
+    userId: fromId,
+    assetId: assetId,
     context,
     update: {
       lastInteraction: timestamp,
@@ -124,7 +116,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   }
 
   await updateToken({
-    tokenAddress: address,
+    tokenAddress: assetId,
     context,
     update: {
       holderCount: tokenData.holderCount + holderCountDelta,
@@ -132,7 +124,7 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
   });
 
   await updateAsset({
-    assetAddress: address,
+    assetAddress: assetId,
     context,
     update: {
       holderCount: assetData.holderCount + holderCountDelta,
