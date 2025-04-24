@@ -1294,6 +1294,13 @@ export const derc20Abi = [
   },
   {
     type: 'function',
+    name: 'computeAvailableVestedAmount',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'currentYearStart',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
