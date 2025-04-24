@@ -9,17 +9,10 @@ import { insertUserIfNotExists, updateUser } from "./shared/entities/user";
 
 ponder.on("Airlock:Migrate", async ({ event, context }) => {
   const { timestamp } = event.block;
-  const { asset: assetId } = event.args;
-
-  const asset = await insertAssetIfNotExists({
-    assetAddress: assetId,
-    timestamp,
-    context,
-  });
+  const assetId = event.args.asset.toLowerCase() as `0x${string}`;
 
   await insertV2PoolIfNotExists({
     assetAddress: assetId,
-    poolAddress: asset.poolAddress,
     timestamp,
     context,
   });
@@ -65,13 +58,21 @@ ponder.on("DERC20:Transfer", async ({ event, context }) => {
     context,
   });
 
-  await updateUser({
+  const fromUser = await insertUserIfNotExists({
     userId: fromId,
+    timestamp,
     context,
-    update: {
-      lastSeenAt: timestamp,
-    },
   });
+
+  if (fromUser.lastSeenAt != timestamp) {
+    await updateUser({
+      userId: fromId,
+      context,
+      update: {
+        lastSeenAt: timestamp,
+      },
+    });
+  }
 
   const toUserAsset = await insertUserAssetIfNotExists({
     userId: toId,
