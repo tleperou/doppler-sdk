@@ -8,7 +8,7 @@ import { configs } from "addresses";
 const MIN_TICK = -887222;
 const MAX_TICK = 887272;
 
-const getAmount0Delta = async ({
+const getAmount0Delta = ({
   tickLower,
   tickUpper,
   liquidity,
@@ -18,7 +18,7 @@ const getAmount0Delta = async ({
   tickUpper: number;
   liquidity: bigint;
   roundUp: boolean;
-}): Promise<bigint> => {
+}): bigint => {
   const sqrtPriceA = TickMath.getSqrtRatioAtTick(tickLower);
   const sqrtPriceB = TickMath.getSqrtRatioAtTick(tickUpper);
 
@@ -32,7 +32,7 @@ const getAmount0Delta = async ({
   return BigInt(amount0Delta.toString());
 };
 
-const getAmount1Delta = async ({
+const getAmount1Delta = ({
   tickLower,
   tickUpper,
   liquidity,
@@ -42,7 +42,7 @@ const getAmount1Delta = async ({
   tickUpper: number;
   liquidity: bigint;
   roundUp: boolean;
-}): Promise<bigint> => {
+}): bigint => {
   const sqrtPriceA = TickMath.getSqrtRatioAtTick(tickLower);
   const sqrtPriceB = TickMath.getSqrtRatioAtTick(tickUpper);
 
@@ -56,19 +56,17 @@ const getAmount1Delta = async ({
   return BigInt(amount1Delta.toString());
 };
 
-export const computeGraduationThresholdDelta = async ({
+export const computeGraduationThresholdDelta = ({
   tickLower,
   tickUpper,
   liquidity,
   isToken0,
 }: {
-  poolAddress: Address;
-  context: Context;
   tickLower: number;
   tickUpper: number;
   liquidity: bigint;
   isToken0: boolean;
-}): Promise<bigint> => {
+}): bigint => {
   if (
     tickLower <= MIN_TICK + 100 ||
     tickLower >= MAX_TICK - 100 ||
@@ -79,13 +77,13 @@ export const computeGraduationThresholdDelta = async ({
   }
 
   const delta = isToken0
-    ? await getAmount1Delta({
+    ? getAmount1Delta({
         tickLower,
         tickUpper,
         liquidity,
         roundUp: true,
       })
-    : await getAmount0Delta({ tickLower, tickUpper, liquidity, roundUp: true });
+    : getAmount0Delta({ tickLower, tickUpper, liquidity, roundUp: true });
 
   return delta;
 };

@@ -3,18 +3,19 @@ import { computeDollarLiquidity } from "@app/utils/computeDollarLiquidity";
 import { pool } from "ponder:schema";
 import { Address, zeroAddress } from "viem";
 import { Context } from "ponder:registry";
-import { fetchEthPrice } from "../oracle";
 import { getZoraPoolData, PoolState } from "@app/utils/v3-utils/getV3PoolData";
 
 export const insertPoolIfNotExists = async ({
   poolAddress,
   timestamp,
   context,
+  ethPrice,
   isZora = false,
 }: {
   poolAddress: Address;
   timestamp: bigint;
   context: Context;
+  ethPrice: bigint;
   isZora?: boolean;
 }): Promise<typeof pool.$inferSelect> => {
   const { db, network } = context;
@@ -45,8 +46,6 @@ export const insertPoolIfNotExists = async ({
     token0,
     poolState,
   } = poolData;
-
-  const ethPrice = await fetchEthPrice(timestamp, context);
 
   const isToken0 = token0.toLowerCase() === poolState.asset.toLowerCase();
 
@@ -129,12 +128,14 @@ export const insertZoraPoolIfNotExists = async ({
   numeraireAddress,
   timestamp,
   context,
+  ethPrice,
 }: {
   poolAddress: Address;
   assetAddress: Address;
   numeraireAddress: Address;
   timestamp: bigint;
   context: Context;
+  ethPrice: bigint;
 }): Promise<typeof pool.$inferSelect> => {
   const { db, network } = context;
   const address = poolAddress.toLowerCase() as `0x${string}`;
@@ -170,8 +171,6 @@ export const insertZoraPoolIfNotExists = async ({
 
   const { slot0Data, liquidity, price, fee, reserve0, reserve1, token0 } =
     poolData;
-
-  const ethPrice = await fetchEthPrice(timestamp, context);
 
   const isToken0 = token0.toLowerCase() === poolState.asset.toLowerCase();
 
